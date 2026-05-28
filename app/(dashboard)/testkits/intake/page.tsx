@@ -130,7 +130,7 @@ export default function IntakePage() {
   }
 
   return (
-    <div className="p-8 max-w-2xl">
+    <div className="p-8 max-w-3xl">
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-[#1e293b]">Testkit inscannen</h1>
         <p className="text-sm text-[#64748b] mt-0.5">Scan of typ een barcode om een kit in te voeren of toe te wijzen.</p>

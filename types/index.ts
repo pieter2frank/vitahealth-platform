@@ -63,3 +63,87 @@ export interface Arbo {
   postal_code: string | null
   created_at: string
 }
+
+// ─── Vragenlijsten ───────────────────────────────────────────────────────────
+
+export interface QuestionnaireOption {
+  value: string
+  label: string
+  code?: string
+  system?: string
+}
+
+export interface QuestionnaireQuestion {
+  id: string
+  linkId?: string
+  type: 'radio' | 'number' | 'long_text' | 'rating_10'
+  fhir_type?: string
+  label: string
+  category?: string
+  required?: boolean
+  options?: QuestionnaireOption[]
+  leftLabel?: string
+  rightLabel?: string
+}
+
+export interface QuestionnaireDefinition {
+  id: string
+  title: string
+  status?: string
+  questions: QuestionnaireQuestion[]
+}
+
+// ─── Programma's ─────────────────────────────────────────────────────────────
+
+export interface ProgramDay {
+  day_index: number
+  type: string
+  title: string
+  description: string
+  content_blocks: ProgramContentBlock[]
+}
+
+export interface ProgramContentBlock {
+  type: 'header' | 'text' | 'tip_box' | 'youtube' | 'audio' | 'image' | 'question'
+  text?: string
+  videoId?: string
+  caption?: string
+  url?: string
+  title?: string
+  id?: string
+  questionType?: string
+  options?: string[]
+  placeholder?: string
+  min?: number
+  max?: number
+}
+
+export interface ProgramMeta {
+  title: string
+  description: string
+  tags: string[]
+  isPremium: boolean
+  imageKey?: string
+  visibilityCode?: string | null
+  version?: number
+  last_updated?: string
+  duration_days: number
+}
+
+export interface ProgramDefinition {
+  id: string
+  meta: ProgramMeta
+  schedule: ProgramDay[]
+}
+
+// ─── Batches ──────────────────────────────────────────────────────────────────
+
+export interface Batch {
+  id: string
+  badge_id: string
+  sent_date: string
+  notes: string | null
+  status: 'sent' | 'results_received'
+  results_date: string | null
+  created_at: string
+}

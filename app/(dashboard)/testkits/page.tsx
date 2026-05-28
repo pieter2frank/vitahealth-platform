@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
 import { formatDateTime } from '@/lib/utils'
 import { Plus, ScanLine } from 'lucide-react'
+import { ClickableRow } from '@/components/ui/ClickableRow'
 
 const STATUS_MAP: Record<string, { label: string; cls: string }> = {
   received:         { label: 'Ontvangen',     cls: 'bg-orange-100 text-orange-700 border-orange-200' },
@@ -91,7 +92,7 @@ export default async function TestkitsPage({
                 const s = STATUS_MAP[kit.status] ?? { label: kit.status, cls: 'bg-gray-100 text-gray-600' }
 
                 return (
-                  <tr key={kit.id} className="hover:bg-[#f8fafc] transition-colors">
+                  <ClickableRow key={kit.id} href={`/testkits/${kit.id}`} className="hover:bg-[#f8fafc] transition-colors">
                     <td className="px-4 py-3 font-mono font-medium text-[#1e293b]">{kit.barcode}</td>
                     <td className="px-4 py-3 text-[#64748b]">{formatDateTime(kit.date)}</td>
                     <td className="px-4 py-3 text-[#64748b]">{assignedTo}</td>
@@ -100,12 +101,8 @@ export default async function TestkitsPage({
                         {s.label}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-right">
-                      <Link href={`/testkits/${kit.id}`} className="text-xs text-[#1f1683] hover:underline">
-                        Details →
-                      </Link>
-                    </td>
-                  </tr>
+                    <td className="px-4 py-3 text-right text-[#94a3b8] text-xs">→</td>
+                  </ClickableRow>
                 )
               })}
             </tbody>

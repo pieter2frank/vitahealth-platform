@@ -1,10 +1,10 @@
 'use client'
 import { Suspense, useState } from 'react'
+import Image from 'next/image'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
-import { TestTube2 } from 'lucide-react'
 
 function LoginForm() {
   const router = useRouter()
@@ -65,15 +65,7 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#f8fafc] to-[#eef4ff] p-4">
       <div className="w-full max-w-sm">
         <div className="mb-8 flex justify-center">
-          <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-xl bg-[#1f1683] flex items-center justify-center shadow-lg">
-              <TestTube2 size={22} className="text-white" />
-            </div>
-            <div>
-              <div className="text-lg font-bold text-[#1f1683]">Vita Health</div>
-              <div className="text-xs text-[#94a3b8]">Platform</div>
-            </div>
-          </div>
+          <Image src="/logo.svg" alt="Vita Health" width={180} height={55} priority />
         </div>
         <div className="rounded-xl border border-[#e2e8f0] bg-white p-8 shadow-sm">
           <h1 className="mb-1 text-xl font-semibold text-[#1e293b]">Inloggen</h1>
