@@ -210,6 +210,7 @@ export default async function TestkitDetailPage({
             status: kit.status,
             badge_id: kit.badge_id,
             assigned: kit.assigned,
+            assignedClientId: client?.id ?? null,
           }} />
         </div>
       </div>

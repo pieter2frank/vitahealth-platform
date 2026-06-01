@@ -10,6 +10,7 @@ import { ClientQuestionnaireSection } from './ClientQuestionnaireSection'
 import { ClientNotesSection } from './ClientNotesSection'
 import { ClientDocumentsSection } from './ClientDocumentsSection'
 import { EnrollmentStatusSection } from './EnrollmentStatusSection'
+import { ReminderButton } from './ReminderButton'
 
 export default async function ClientDetailPage({
   params,
@@ -95,6 +96,11 @@ export default async function ClientDetailPage({
             </p>
           </div>
           <div className="flex items-center gap-2">
+            <ReminderButton
+              clientId={client.id}
+              clientEmail={client.email}
+              enrollmentStatus={client.enrollment_status ?? 'aangemeld'}
+            />
             <Link
               href={`/clienten/${id}?bewerken=1`}
               className="inline-flex items-center gap-2 rounded-lg border border-[#e2e8f0] bg-white px-3 py-2 text-sm font-medium text-[#64748b] hover:bg-[#f8fafc] transition-colors"
@@ -121,6 +127,7 @@ export default async function ClientDetailPage({
       <EnrollmentStatusSection
         clientId={client.id}
         initialStatus={client.enrollment_status ?? 'aangemeld'}
+        assignedKitId={testkits?.[0]?.id ?? null}
       />
 
       {/* ── Bovenste rij: 3 blokken ────────────────────────────────────────── */}

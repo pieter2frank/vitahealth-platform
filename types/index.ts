@@ -76,14 +76,24 @@ export interface QuestionnaireOption {
 export interface QuestionnaireQuestion {
   id: string
   linkId?: string
-  type: 'radio' | 'number' | 'long_text' | 'rating_10'
+  type: 'radio' | 'number' | 'long_text' | 'rating_10' | 'short_text' | 'checkbox' | 'scale' | 'boolean'
   fhir_type?: string
   label: string
   category?: string
   required?: boolean
   options?: QuestionnaireOption[]
+  // radio / rating_10 / scale labels
   leftLabel?: string
   rightLabel?: string
+  // checkbox: optioneel maximum aantal aangevinkte keuzes
+  maxSelections?: number
+  // scale: configureerbare bereik (default 1–5)
+  min?: number
+  max?: number
+  // omgekeerd scoren: hoge waarde = ongunstig (kleuren worden gespiegeld)
+  reversed?: boolean
+  // semantische rol voor afgeleide metrics (bijv. BMI) of auto-berekende waarden
+  role?: 'height_cm' | 'weight_kg' | 'age_years'
 }
 
 export interface QuestionnaireDefinition {

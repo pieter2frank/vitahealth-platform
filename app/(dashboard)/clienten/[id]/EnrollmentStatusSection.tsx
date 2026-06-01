@@ -28,13 +28,14 @@ const TRANSITIONS: Partial<Record<string, Transition>> = {
 // ─── Props ────────────────────────────────────────────────────────────────────
 
 interface Props {
-  clientId:      string
-  initialStatus: string
+  clientId:        string
+  initialStatus:   string
+  assignedKitId:   string | null
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export function EnrollmentStatusSection({ clientId, initialStatus }: Props) {
+export function EnrollmentStatusSection({ clientId, initialStatus, assignedKitId }: Props) {
   const { role }  = useUser()
   const [status,  setStatus]  = useState(initialStatus)
   const [saving,  setSaving]  = useState(false)
@@ -53,6 +54,12 @@ export function EnrollmentStatusSection({ clientId, initialStatus }: Props) {
   const canTransition = !isRejected && transition && (!transition.artsOnly || canSeeResults(role))
   const canReject     = status === 'vragenlijst_ingevuld' && canSeeResults(role)
 
+  // Mapping: welke cliëntstatus triggert welke testkit-update
+  const KIT_SYNC: Partial<Record<EnrollmentStatus, { status: string; dateField: string }>> = {
+    kit_retour:     { status: 'retour',            dateField: 'retour_date' },
+    uitslag_bekend: { status: 'results_available', dateField: 'results_date' },
+  }
+
   // ── Goedkeuren ──────────────────────────────────────────────────────────────
   async function advance() {
     if (!transition) return
@@ -63,8 +70,18 @@ export function EnrollmentStatusSection({ clientId, initialStatus }: Props) {
       .from('vh_client')
       .update({ enrollment_status: transition.next })
       .eq('id', clientId)
+    if (err) { setSaving(false); setError(err.message); return }
+
+    // Synchroniseer testkit-status indien van toepassing
+    const kitSync = KIT_SYNC[transition.next]
+    if (kitSync && assignedKitId) {
+      await supabase
+        .from('vh_testkit')
+        .update({ status: kitSync.status, [kitSync.dateField]: new Date().toISOString() })
+        .eq('id', assignedKitId)
+    }
+
     setSaving(false)
-    if (err) { setError(err.message); return }
     setStatus(transition.next)
   }
 

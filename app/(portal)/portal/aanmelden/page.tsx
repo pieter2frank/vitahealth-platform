@@ -4,8 +4,30 @@ import type { QuestionnaireDefinition, QuestionnaireQuestion } from '@/types'
 
 export const metadata = { title: 'Aanmelden — Vita Health' }
 
-export default async function AanmeldenPage() {
+interface PageProps {
+  searchParams: Promise<{ email?: string; token?: string }>
+}
+
+export default async function AanmeldenPage({ searchParams }: PageProps) {
+  const { email: initialEmail, token } = await searchParams
   const supabase = await createClient()
+
+  // Token → direct naar juiste stap sturen (veilig, server-side)
+  let initialResumeInfo: {
+    clientId: string; status: string; firstName: string; assignmentId: string | null
+  } | undefined
+
+  if (token) {
+    const { data } = await supabase.rpc('resolve_intake_token', { p_token: token })
+    if (data?.exists) {
+      initialResumeInfo = {
+        clientId:     data.client_id,
+        status:       data.status,
+        firstName:    data.first_name,
+        assignmentId: data.assignment_id ?? null,
+      }
+    }
+  }
 
   // Intake vragenlijst ophalen uit instellingen
   const { data: setting } = await supabase
@@ -44,7 +66,11 @@ export default async function AanmeldenPage() {
           </p>
         </div>
 
-        <EnrollmentForm intakeQuestionnaire={intakeQuestionnaire} />
+        <EnrollmentForm
+          intakeQuestionnaire={intakeQuestionnaire}
+          initialEmail={initialEmail}
+          initialResumeInfo={initialResumeInfo}
+        />
       </div>
     </main>
   )

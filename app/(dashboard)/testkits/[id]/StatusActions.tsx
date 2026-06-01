@@ -13,6 +13,7 @@ interface Props {
     status: TestkitStatus
     badge_id: string | null
     assigned: boolean
+    assignedClientId: string | null
   }
 }
 
@@ -26,12 +27,24 @@ export function StatusActions({ kit }: Props) {
   const [retourDate, setRetourDate] = useState(new Date().toISOString().split('T')[0])
   const [resultsDate, setResultsDate] = useState(new Date().toISOString().split('T')[0])
 
-  async function update(payload: Record<string, unknown>) {
+  async function update(
+    payload: Record<string, unknown>,
+    clientSync?: { enrollment_status: string },
+  ) {
     setSaving(true)
     setError('')
     const supabase = createClient()
     const { error: err } = await supabase.from('vh_testkit').update(payload).eq('id', kit.id)
     if (err) { setError(err.message); setSaving(false); return }
+
+    // Synchroniseer cliëntstatus indien van toepassing
+    if (clientSync && kit.assignedClientId) {
+      await supabase
+        .from('vh_client')
+        .update({ enrollment_status: clientSync.enrollment_status })
+        .eq('id', kit.assignedClientId)
+    }
+
     router.refresh()
     setSaving(false)
   }
@@ -71,7 +84,10 @@ export function StatusActions({ kit }: Props) {
               />
             </div>
             <Button
-              onClick={() => update({ status: 'retour', retour_date: retourDate })}
+              onClick={() => update(
+                { status: 'retour', retour_date: retourDate },
+                { enrollment_status: 'kit_retour' },
+              )}
               loading={saving}
               className="gap-2"
             >
@@ -135,7 +151,10 @@ export function StatusActions({ kit }: Props) {
               />
             </div>
             <Button
-              onClick={() => update({ status: 'results_available', results_date: resultsDate })}
+              onClick={() => update(
+                { status: 'results_available', results_date: resultsDate },
+                { enrollment_status: 'uitslag_bekend' },
+              )}
               loading={saving}
               variant="accent"
               className="gap-2"

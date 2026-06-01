@@ -17,11 +17,20 @@ function ratingStyle(v: number): string {
 
 function displayVal(q: QuestionnaireQuestion, raw: unknown): string {
   if (raw === null || raw === undefined || raw === '') return '—'
+  if (Array.isArray(raw) && raw.length === 0) return '—'
   if (q.type === 'radio' && q.options) {
     return q.options.find(o => o.value === String(raw))?.label ?? String(raw)
   }
+  if (q.type === 'checkbox' && q.options && Array.isArray(raw)) {
+    return (raw as string[])
+      .map(v => q.options!.find(o => o.value === v)?.label ?? v)
+      .join(', ') || '—'
+  }
   if (q.type === 'long_text' && typeof raw === 'string') {
     return raw.length > 80 ? raw.slice(0, 80) + '…' : raw
+  }
+  if (q.type === 'boolean') {
+    return raw === true || raw === 'true' ? 'Ja' : 'Nee'
   }
   return String(raw)
 }
@@ -37,14 +46,88 @@ function groupByCategory(qs: QuestionnaireQuestion[]) {
   return groups
 }
 
+// Score-types: vergelijkbare beoordelingsschalen die een gemiddelde rechtvaardigen
+const SCORE_TYPES: QuestionnaireQuestion['type'][] = ['rating_10', 'scale']
+
+// Mag een categorie-gemiddelde worden getoond?
+// Ja alleen als ALLE vragen in de categorie:
+//   1. hetzelfde type hebben
+//   2. een score-type zijn (rating_10 of scale)
+//   3. voor scale: hetzelfde min/max bereik hebben
+function canShowCatAvg(qs: QuestionnaireQuestion[]): boolean {
+  if (qs.length === 0) return false
+  const firstType = qs[0].type
+  if (!SCORE_TYPES.includes(firstType)) return false
+  if (!qs.every(q => q.type === firstType)) return false
+  if (firstType === 'scale') {
+    const firstMin = qs[0].min ?? 1
+    const firstMax = qs[0].max ?? 5
+    if (!qs.every(q => (q.min ?? 1) === firstMin && (q.max ?? 5) === firstMax)) return false
+  }
+  return true
+}
+
 function catAvg(qs: QuestionnaireQuestion[], responses: Record<string, unknown>): number | null {
   const nums = qs
-    .filter(q => q.type === 'rating_10')
+    .filter(q => SCORE_TYPES.includes(q.type))
     .map(q => responses[q.id])
     .filter(v => v !== null && v !== undefined)
     .map(Number)
+    .filter(n => !isNaN(n))
   if (nums.length === 0) return null
   return Math.round((nums.reduce((a, b) => a + b, 0) / nums.length) * 10) / 10
+}
+
+// Kleur voor een gemiddelde waarde binnen het bereik van de categorie
+// Omgekeerd als ALLE vragen in de categorie reversed zijn
+function catAvgStyle(qs: QuestionnaireQuestion[], avg: number): string {
+  const allReversed = qs.length > 0 && qs.every(q => q.reversed === true)
+  if (qs[0].type === 'scale') {
+    const min = qs[0].min ?? 1
+    const max = qs[0].max ?? 5
+    const mapped = ((avg - min) / (max - min)) * 9 + 1
+    return scoreToColor(mapped, allReversed)
+  }
+  return scoreToColor(avg, allReversed)
+}
+
+// Kleur voor een individuele score-waarde (met ondersteuning voor omgekeerd scoren)
+function scoreToColor(score1to10: number, reversed: boolean): string {
+  return ratingStyle(reversed ? 11 - Math.round(score1to10) : Math.round(score1to10))
+}
+
+function numStyle(q: QuestionnaireQuestion, v: number): string {
+  const rev = q.reversed === true
+  if (q.type === 'rating_10') return scoreToColor(v, rev)
+  if (q.type === 'scale') {
+    const min = q.min ?? 1
+    const max = q.max ?? 5
+    const mapped = ((v - min) / (max - min)) * 9 + 1
+    return scoreToColor(mapped, rev)
+  }
+  return ratingStyle(v)
+}
+
+// BMI-kleur
+function bmiStyle(bmi: number): string {
+  if (bmi < 18.5) return 'bg-orange-400 text-white'    // ondergewicht
+  if (bmi < 25)   return 'bg-emerald-500 text-white'   // normaal gewicht
+  if (bmi < 30)   return 'bg-yellow-300 text-gray-800' // overgewicht
+  return 'bg-red-500 text-white'                        // obesitas
+}
+
+function bmiLabel(bmi: number): string {
+  if (bmi < 18.5) return 'Ondergewicht'
+  if (bmi < 25)   return 'Normaal'
+  if (bmi < 30)   return 'Overgewicht'
+  return 'Obesitas'
+}
+
+function calcBmi(heightCm: unknown, weightKg: unknown): number | null {
+  const h = Number(heightCm)
+  const w = Number(weightKg)
+  if (!h || !w || h < 50 || w < 10) return null
+  return Math.round((w / (h / 100) ** 2) * 10) / 10
 }
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -99,6 +182,14 @@ export function ResultsModal({ questionnaireId, questionnaireTitle, clientId }: 
   const groups = groupByCategory(questions)
   const hasCategories = groups.some(g => g.cat !== null)
   const isMultiple = records.length > 1
+
+  // BMI — bereken per invulmoment als lengte + gewicht beschikbaar zijn
+  const heightQ = questions.find(q => q.role === 'height_cm')
+  const weightQ = questions.find(q => q.role === 'weight_kg')
+  const bmiValues = (heightQ && weightQ)
+    ? records.map(r => calcBmi(r.responses[heightQ.id], r.responses[weightQ.id]))
+    : []
+  const hasBmi = bmiValues.some(v => v !== null)
 
   return (
     <>
@@ -184,14 +275,14 @@ export function ResultsModal({ questionnaireId, questionnaireTitle, clientId }: 
                                   {group.cat ?? 'Overige vragen'}
                                 </span>
 
-                                {/* Gemiddelde per invulmoment voor rating_10 categorieën */}
-                                {group.qs.every(q => q.type === 'rating_10') && (
+                                {/* Gemiddelde — alleen als alle vragen in de categorie hetzelfde score-type en bereik hebben */}
+                                {canShowCatAvg(group.qs) && (
                                   <div className="flex items-center gap-1.5">
                                     <span className="text-[10px] text-[#94a3b8]">gem.:</span>
                                     {records.map((r, i) => {
                                       const avg = catAvg(group.qs, r.responses)
                                       return avg !== null ? (
-                                        <span key={r.id} className={`inline-flex items-center justify-center h-5 min-w-[20px] px-1 rounded text-[10px] font-bold ${ratingStyle(Math.round(avg))}`}>
+                                        <span key={r.id} className={`inline-flex items-center justify-center h-5 min-w-[20px] px-1 rounded text-[10px] font-bold ${catAvgStyle(group.qs, avg)}`}>
                                           {avg}
                                         </span>
                                       ) : null
@@ -219,51 +310,99 @@ export function ResultsModal({ questionnaireId, questionnaireTitle, clientId }: 
                         {/* Vragen */}
                         {group.qs.map((q) => {
                           const vals = records.map(r => r.responses[q.id])
-                          const isNum = q.type === 'rating_10' || q.type === 'number'
+                          // isNum alleen voor score-types: rating_10 en scale
+                          // 'number' type (leeftijd, lengte, gewicht) toont als plain text
+                          const isNum = SCORE_TYPES.includes(q.type)
                           const numVals = isNum ? vals.map(v => (v !== null && v !== undefined ? Number(v) : null)) : []
                           const first = isNum && numVals.length ? numVals[0] : null
                           const last  = isNum && numVals.length ? numVals[numVals.length - 1] : null
                           const delta = isMultiple && first !== null && last !== null ? last - first : null
+                          // Bij reversed vragen is een negatieve delta een verbetering
+                          const rev = q.reversed === true
 
                           return (
-                            <tr key={q.id} className="border-b border-[#f1f5f9] hover:bg-[#fafbfc] transition-colors">
-                              <td className="px-5 py-2.5 text-[#1e293b] leading-snug">{q.label}</td>
+                            <Fragment key={q.id}>
+                              <tr className="border-b border-[#f1f5f9] hover:bg-[#fafbfc] transition-colors">
+                                <td className="px-5 py-2.5 text-[#1e293b] leading-snug">{q.label}</td>
 
-                              {records.map((r) => {
-                                const raw = r.responses[q.id]
-                                const num = isNum && raw !== null && raw !== undefined ? Number(raw) : null
-                                return (
-                                  <td key={r.id} className="px-3 py-2.5 text-center">
-                                    {q.type === 'rating_10' && num !== null ? (
-                                      <span className={`inline-flex items-center justify-center h-7 w-7 rounded-full text-xs font-bold ${ratingStyle(num)}`}>
-                                        {num}
+                                {records.map((r) => {
+                                  const raw = r.responses[q.id]
+                                  const num = isNum && raw !== null && raw !== undefined ? Number(raw) : null
+                                  return (
+                                    <td key={r.id} className="px-3 py-2.5 text-center">
+                                      {isNum && num !== null ? (
+                                        <span className={`inline-flex items-center justify-center h-7 w-7 rounded-full text-xs font-bold ${numStyle(q, num)}`}>
+                                          {num}
+                                        </span>
+                                      ) : (
+                                        <span className="text-[#64748b] text-xs break-words max-w-[120px] block mx-auto">
+                                          {displayVal(q, raw)}
+                                        </span>
+                                      )}
+                                    </td>
+                                  )
+                                })}
+
+                                {/* Delta cel — kleur omgekeerd bij reversed vragen */}
+                                {isMultiple && (
+                                  <td className="px-3 py-2.5 text-center">
+                                    {delta !== null ? (
+                                      <span className={`text-xs font-semibold ${
+                                        delta === 0 ? 'text-[#94a3b8]'
+                                        : (delta > 0) !== rev ? 'text-green-600'
+                                        : 'text-red-500'
+                                      }`}>
+                                        {delta > 0 ? `+${delta}` : delta === 0 ? '=' : delta}
                                       </span>
                                     ) : (
-                                      <span className="text-[#64748b] text-xs break-words max-w-[120px] block mx-auto">
-                                        {displayVal(q, raw)}
-                                      </span>
+                                      <span className="text-[#e2e8f0] text-xs">—</span>
                                     )}
                                   </td>
-                                )
-                              })}
+                                )}
+                              </tr>
 
-                              {/* Delta cel */}
-                              {isMultiple && (
-                                <td className="px-3 py-2.5 text-center">
-                                  {delta !== null ? (
-                                    <span className={`text-xs font-semibold ${
-                                      delta > 0 ? 'text-green-600'
-                                      : delta < 0 ? 'text-red-500'
-                                      : 'text-[#94a3b8]'
-                                    }`}>
-                                      {delta > 0 ? `+${delta}` : delta === 0 ? '=' : delta}
-                                    </span>
-                                  ) : (
-                                    <span className="text-[#e2e8f0] text-xs">—</span>
-                                  )}
-                                </td>
+                              {/* BMI-rij — direct na de gewicht-vraag, als lengte ook bekend is */}
+                              {q.role === 'weight_kg' && hasBmi && (
+                                <tr className="border-b border-[#f1f5f9] bg-[#fafbff] hover:bg-[#f3f4ff] transition-colors">
+                                  <td className="px-5 py-2.5 text-[#1e293b] leading-snug font-medium">
+                                    BMI
+                                    <span className="ml-1.5 text-[10px] text-[#94a3b8] font-normal">berekend</span>
+                                  </td>
+                                  {bmiValues.map((bmi, i) => (
+                                    <td key={i} className="px-3 py-2.5 text-center">
+                                      {bmi !== null ? (
+                                        <div className="flex flex-col items-center gap-0.5">
+                                          <span className={`inline-flex items-center justify-center h-7 min-w-[28px] px-1 rounded-full text-xs font-bold ${bmiStyle(bmi)}`}>
+                                            {bmi}
+                                          </span>
+                                          <span className="text-[9px] text-[#94a3b8]">{bmiLabel(bmi)}</span>
+                                        </div>
+                                      ) : (
+                                        <span className="text-[#e2e8f0] text-xs">—</span>
+                                      )}
+                                    </td>
+                                  ))}
+                                  {isMultiple && (() => {
+                                    const first = bmiValues[0]
+                                    const last  = bmiValues[bmiValues.length - 1]
+                                    const d = (first !== null && last !== null)
+                                      ? Math.round((last - first) * 10) / 10
+                                      : null
+                                    return (
+                                      <td className="px-3 py-2.5 text-center">
+                                        {d !== null && d !== 0 ? (
+                                          <span className="text-xs text-[#94a3b8]">
+                                            {d > 0 ? `+${d}` : d}
+                                          </span>
+                                        ) : (
+                                          <span className="text-[#e2e8f0] text-xs">—</span>
+                                        )}
+                                      </td>
+                                    )
+                                  })()}
+                                </tr>
                               )}
-                            </tr>
+                            </Fragment>
                           )
                         })}
                       </Fragment>

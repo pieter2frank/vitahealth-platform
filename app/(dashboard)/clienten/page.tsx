@@ -1,16 +1,16 @@
 import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
 import { formatDate } from '@/lib/utils'
-import { UserPlus, Search } from 'lucide-react'
+import { UserPlus, Search, X } from 'lucide-react'
 import { ClickableRow } from '@/components/ui/ClickableRow'
 import { ENROLLMENT_LABELS, ENROLLMENT_COLORS, type EnrollmentStatus } from '@/lib/enrollment'
 
 export default async function ClientenPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string }>
+  searchParams: Promise<{ q?: string; status?: string }>
 }) {
-  const { q } = await searchParams
+  const { q, status } = await searchParams
   const supabase = await createClient()
 
   let query = supabase
@@ -21,8 +21,13 @@ export default async function ClientenPage({
   if (q) {
     query = query.or(`last_name.ilike.%${q}%,first_name.ilike.%${q}%,email.ilike.%${q}%`)
   }
+  if (status) {
+    query = query.eq('enrollment_status', status)
+  }
 
   const { data: clients, error } = await query
+
+  const activeStatusLabel = status ? (ENROLLMENT_LABELS[status] ?? status) : null
 
   return (
     <div className="p-8">
@@ -42,18 +47,31 @@ export default async function ClientenPage({
         </Link>
       </div>
 
-      {/* Zoekbalk */}
-      <form method="GET" className="mb-4">
-        <div className="relative max-w-sm">
-          <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#94a3b8]" />
-          <input
-            name="q"
-            defaultValue={q}
-            placeholder="Zoek op naam of e-mail..."
-            className="h-9 w-full rounded-lg border border-[#e2e8f0] bg-white pl-9 pr-3 text-sm text-[#1e293b] placeholder:text-[#94a3b8] focus:outline-none focus:ring-2 focus:ring-[#1f1683]/30 focus:border-[#1f1683]"
-          />
-        </div>
-      </form>
+      {/* Zoekbalk + actief statusfilter */}
+      <div className="mb-4 flex items-center gap-3 flex-wrap">
+        <form method="GET" className="flex items-center gap-2">
+          {status && <input type="hidden" name="status" value={status} />}
+          <div className="relative max-w-sm">
+            <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#94a3b8]" />
+            <input
+              name="q"
+              defaultValue={q}
+              placeholder="Zoek op naam of e-mail..."
+              className="h-9 w-full rounded-lg border border-[#e2e8f0] bg-white pl-9 pr-3 text-sm text-[#1e293b] placeholder:text-[#94a3b8] focus:outline-none focus:ring-2 focus:ring-[#1f1683]/30 focus:border-[#1f1683]"
+            />
+          </div>
+        </form>
+
+        {activeStatusLabel && (
+          <Link
+            href={q ? `/clienten?q=${encodeURIComponent(q)}` : '/clienten'}
+            className="inline-flex items-center gap-1.5 rounded-full border border-[#1f1683] bg-[#eef4ff] px-3 py-1 text-xs font-medium text-[#1f1683] hover:bg-[#dde9ff] transition-colors"
+          >
+            Status: {activeStatusLabel}
+            <X size={12} />
+          </Link>
+        )}
+      </div>
 
       <div className="rounded-xl border border-[#e2e8f0] bg-white shadow-sm overflow-hidden">
         {error ? (

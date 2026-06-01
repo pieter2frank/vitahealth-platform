@@ -56,6 +56,15 @@ export default function NieuweClientPage() {
       return
     }
 
+    // Uitnodigingsmail versturen als er een e-mailadres is ingevuld
+    if (payload.email) {
+      fetch('/api/email/uitnodiging', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ clientId: data.id }),
+      }).catch(() => { /* stil falen */ })
+    }
+
     router.push(`/clienten/${data.id}`)
   }
 
