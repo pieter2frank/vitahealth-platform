@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { Sidebar } from '@/components/layout/Sidebar'
 import { UserProvider } from '@/components/providers/UserProvider'
 import { InactivityGuard } from '@/components/providers/InactivityGuard'
+import { RealtimeNotifications } from '@/components/providers/RealtimeNotifications'
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient()
@@ -53,6 +54,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
             </main>
           </div>
         </div>
+        <RealtimeNotifications />
       </InactivityGuard>
     </UserProvider>
   )
