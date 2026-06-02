@@ -3,7 +3,6 @@ import Link from 'next/link'
 import { formatDate } from '@/lib/utils'
 import { Package, Plus, TestTube2, CheckCircle2, Clock } from 'lucide-react'
 import { ClickableRow } from '@/components/ui/ClickableRow'
-import { BatchesExportButton } from './BatchesExportButton'
 
 export default async function BatchesPage() {
   const supabase = await createClient()
@@ -41,16 +40,13 @@ export default async function BatchesPage() {
             Groepeer retour-testkits en verstuur ze naar Nightingale Health
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          <BatchesExportButton />
-          <Link
-            href="/batches/nieuw"
-            className="inline-flex items-center gap-2 rounded-lg bg-[#1f1683] px-4 py-2 text-sm font-medium text-white hover:bg-[#1a1270] transition-colors"
-          >
-            <Plus size={15} />
-            Nieuwe batch
-          </Link>
-        </div>
+        <Link
+          href="/batches/nieuw"
+          className="inline-flex items-center gap-2 rounded-lg bg-[#1f1683] px-4 py-2 text-sm font-medium text-white hover:bg-[#1a1270] transition-colors"
+        >
+          <Plus size={15} />
+          Nieuwe batch
+        </Link>
       </div>
 
       {/* Stats */}

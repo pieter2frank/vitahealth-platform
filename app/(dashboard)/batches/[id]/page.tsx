@@ -7,6 +7,7 @@ import {
   CalendarCheck, StickyNote, CheckCircle2
 } from 'lucide-react'
 import { BatchActions } from './BatchActions'
+import { BatchExportButton } from './BatchExportButton'
 import { DeleteButton } from '@/components/ui/DeleteButton'
 import type { Client, Company, Arbo } from '@/types'
 
@@ -81,6 +82,7 @@ export default async function BatchDetailPage({
                 Verzonden naar NH
               </span>
             )}
+            <BatchExportButton batchId={batch.id} />
             <DeleteButton
               table="vh_batch"
               id={batch.id}

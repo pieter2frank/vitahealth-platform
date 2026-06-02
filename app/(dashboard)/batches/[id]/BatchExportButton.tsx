@@ -2,7 +2,11 @@
 import { useState } from 'react'
 import { FileSpreadsheet, Loader2 } from 'lucide-react'
 
-export function BatchesExportButton() {
+interface Props {
+  batchId: string
+}
+
+export function BatchExportButton({ batchId }: Props) {
   const [loading, setLoading] = useState(false)
   const [error, setError]     = useState('')
 
@@ -10,18 +14,17 @@ export function BatchesExportButton() {
     setLoading(true)
     setError('')
     try {
-      const res = await fetch('/api/export/batches')
+      const res = await fetch(`/api/export/batch/${batchId}`)
       if (!res.ok) { setError('Export mislukt.'); return }
 
       const blob = await res.blob()
       const url  = URL.createObjectURL(blob)
       const a    = document.createElement('a')
 
-      // Bestandsnaam uit Content-Disposition header lezen indien aanwezig
-      const cd       = res.headers.get('Content-Disposition') ?? ''
-      const match    = cd.match(/filename="([^"]+)"/)
-      a.download = match ? match[1] : 'batches-export.xlsx'
-      a.href     = url
+      const cd    = res.headers.get('Content-Disposition') ?? ''
+      const match = cd.match(/filename="([^"]+)"/)
+      a.download  = match ? match[1] : `batch-export.xlsx`
+      a.href      = url
       a.click()
       URL.revokeObjectURL(url)
     } catch {
@@ -40,7 +43,7 @@ export function BatchesExportButton() {
       >
         {loading
           ? <><Loader2 size={15} className="animate-spin" /> Exporteren…</>
-          : <><FileSpreadsheet size={15} className="text-green-600" /> Exporteer Excel</>
+          : <><FileSpreadsheet size={15} className="text-green-600" /> Excel exporteren</>
         }
       </button>
       {error && <span className="text-xs text-red-600">{error}</span>}
