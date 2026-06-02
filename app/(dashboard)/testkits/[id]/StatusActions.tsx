@@ -4,27 +4,113 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
-import { PackageCheck, Send, FlaskConical, RotateCcw, Unlink, AlertTriangle } from 'lucide-react'
+import { PackageCheck, Send, FlaskConical, RotateCcw, Unlink, AlertTriangle, Printer, Truck } from 'lucide-react'
 import type { TestkitStatus } from '@/types'
+
+// ─── Verzendlabel printen ─────────────────────────────────────────────────────
+
+interface ClientAddress {
+  firstName:  string
+  lastName:   string
+  address:    string | null
+  postalCode: string | null
+  city:       string | null
+}
+
+function printLabel(client: ClientAddress, barcode: string) {
+  const w = window.open('', '_blank', 'width=500,height=420')
+  if (!w) { alert('Pop-up geblokkeerd. Sta pop-ups toe voor dit venster.'); return }
+  w.document.write(`<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8">
+  <title>Verzendlabel — ${barcode}</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: Arial, sans-serif; background: #fff; padding: 24px; }
+    .label {
+      border: 2px solid #000;
+      border-radius: 6px;
+      padding: 20px 24px;
+      width: 340px;
+      page-break-inside: avoid;
+    }
+    .from {
+      font-size: 10px;
+      color: #555;
+      border-bottom: 1px solid #ccc;
+      padding-bottom: 10px;
+      margin-bottom: 14px;
+    }
+    .from strong { display: block; font-size: 11px; color: #000; margin-bottom: 2px; }
+    .to-label { font-size: 9px; text-transform: uppercase; letter-spacing: 1px; color: #888; margin-bottom: 6px; }
+    .to-name  { font-size: 16px; font-weight: bold; color: #000; margin-bottom: 4px; }
+    .to-addr  { font-size: 13px; color: #222; line-height: 1.5; }
+    .barcode  {
+      margin-top: 16px;
+      padding-top: 12px;
+      border-top: 1px solid #ccc;
+      font-family: monospace;
+      font-size: 13px;
+      color: #333;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .barcode span { font-weight: bold; letter-spacing: .05em; }
+    @media print {
+      body { padding: 0; }
+      button { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="label">
+    <div class="from">
+      <strong>Vita Health</strong>
+      Afzender: Vita Health · info@vita-health.nl
+    </div>
+    <div class="to-label">Aan:</div>
+    <div class="to-name">${client.firstName} ${client.lastName}</div>
+    <div class="to-addr">
+      ${client.address ?? '—'}<br>
+      ${client.postalCode ?? ''} ${client.city ?? ''}
+    </div>
+    <div class="barcode">
+      Kit: <span>${barcode}</span>
+    </div>
+  </div>
+  <script>window.onload = function() { window.print() }<\/script>
+</body>
+</html>`)
+  w.document.close()
+}
+
+// ─── Props ────────────────────────────────────────────────────────────────────
 
 interface Props {
   kit: {
-    id: string
-    status: TestkitStatus
-    badge_id: string | null
-    assigned: boolean
+    id:               string
+    barcode:          string
+    status:           TestkitStatus
+    badge_id:         string | null
+    assigned:         boolean
     assignedClientId: string | null
   }
+  clientAddress?: ClientAddress
 }
 
-export function StatusActions({ kit }: Props) {
+// ─── Component ────────────────────────────────────────────────────────────────
+
+export function StatusActions({ kit, clientAddress }: Props) {
   const router = useRouter()
-  const [saving, setSaving] = useState(false)
-  const [error, setError] = useState('')
+  const [saving, setSaving]           = useState(false)
+  const [error, setError]             = useState('')
   const [confirmUnlink, setConfirmUnlink] = useState(false)
-  const [badgeId, setBadgeId] = useState(kit.badge_id ?? '')
-  const [badgeDate, setBadgeDate] = useState(new Date().toISOString().split('T')[0])
-  const [retourDate, setRetourDate] = useState(new Date().toISOString().split('T')[0])
+  const [badgeId, setBadgeId]         = useState(kit.badge_id ?? '')
+  const [sentDate, setSentDate]       = useState(new Date().toISOString().split('T')[0])
+  const [badgeDate, setBadgeDate]     = useState(new Date().toISOString().split('T')[0])
+  const [retourDate, setRetourDate]   = useState(new Date().toISOString().split('T')[0])
   const [resultsDate, setResultsDate] = useState(new Date().toISOString().split('T')[0])
 
   async function update(
@@ -37,7 +123,6 @@ export function StatusActions({ kit }: Props) {
     const { error: err } = await supabase.from('vh_testkit').update(payload).eq('id', kit.id)
     if (err) { setError(err.message); setSaving(false); return }
 
-    // Synchroniseer cliëntstatus indien van toepassing
     if (clientSync && kit.assignedClientId) {
       await supabase
         .from('vh_client')
@@ -68,8 +153,52 @@ export function StatusActions({ kit }: Props) {
         <p className="rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-sm text-red-600">{error}</p>
       )}
 
-      {/* assigned → retour */}
-      {(kit.status === 'received' || kit.status === 'assigned') && (
+      {/* assigned → kit_verstuurd */}
+      {kit.status === 'assigned' && (
+        <div className="space-y-3">
+          <p className="text-sm text-[#64748b]">
+            Is de testkit verstuurd naar de cliënt?
+          </p>
+          <div className="flex items-end gap-3 flex-wrap">
+            <div className="flex-1 min-w-[160px]">
+              <Input
+                label="Verzenddatum"
+                type="date"
+                value={sentDate}
+                onChange={e => setSentDate(e.target.value)}
+              />
+            </div>
+            <Button
+              onClick={() => update(
+                { status: 'kit_verstuurd', kit_sent_date: sentDate },
+                { enrollment_status: 'kit_opgestuurd' },
+              )}
+              loading={saving}
+              className="gap-2"
+            >
+              <Truck size={15} />
+              Kit verstuurd
+            </Button>
+          </div>
+
+          {/* Verzendlabel printen */}
+          {clientAddress && (
+            <div className="pt-1 border-t border-[#f1f5f9]">
+              <button
+                type="button"
+                onClick={() => printLabel(clientAddress, kit.barcode)}
+                className="inline-flex items-center gap-2 rounded-lg border border-[#e2e8f0] bg-white px-3 py-2 text-sm font-medium text-[#64748b] hover:bg-[#f8fafc] transition-colors"
+              >
+                <Printer size={14} />
+                Verzendlabel printen
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* kit_verstuurd → retour */}
+      {kit.status === 'kit_verstuurd' && (
         <div className="space-y-3">
           <p className="text-sm text-[#64748b]">
             Heeft de cliënt de testkit teruggestuurd?
@@ -88,6 +217,47 @@ export function StatusActions({ kit }: Props) {
                 { status: 'retour', retour_date: retourDate },
                 { enrollment_status: 'kit_retour' },
               )}
+              loading={saving}
+              className="gap-2"
+            >
+              <PackageCheck size={15} />
+              Retour ontvangen
+            </Button>
+          </div>
+
+          {/* Label nogmaals printen als de kit al verstuurd is */}
+          {clientAddress && (
+            <div className="pt-1 border-t border-[#f1f5f9]">
+              <button
+                type="button"
+                onClick={() => printLabel(clientAddress, kit.barcode)}
+                className="inline-flex items-center gap-2 rounded-lg border border-[#e2e8f0] bg-white px-3 py-2 text-sm font-medium text-[#64748b] hover:bg-[#f8fafc] transition-colors"
+              >
+                <Printer size={14} />
+                Verzendlabel opnieuw printen
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* received → direct retour (edge case: niet-toegewezen kit) */}
+      {kit.status === 'received' && (
+        <div className="space-y-3">
+          <p className="text-sm text-[#64748b]">
+            Retour ontvangen van een niet-toegewezen kit?
+          </p>
+          <div className="flex items-end gap-3">
+            <div className="flex-1">
+              <Input
+                label="Retourdatum"
+                type="date"
+                value={retourDate}
+                onChange={e => setRetourDate(e.target.value)}
+              />
+            </div>
+            <Button
+              onClick={() => update({ status: 'retour', retour_date: retourDate })}
               loading={saving}
               className="gap-2"
             >
@@ -218,11 +388,12 @@ export function StatusActions({ kit }: Props) {
           <button
             onClick={() => {
               const prev: Record<TestkitStatus, TestkitStatus> = {
-                assigned: 'received',
-                retour: 'assigned',
+                assigned:         'received',
+                kit_verstuurd:    'assigned',
+                retour:           'kit_verstuurd',
                 sent_nightingale: 'retour',
-                results_available: 'sent_nightingale',
-                received: 'received',
+                results_available:'sent_nightingale',
+                received:         'received',
               }
               update({ status: prev[kit.status] })
             }}

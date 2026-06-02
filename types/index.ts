@@ -1,6 +1,7 @@
 export type TestkitStatus =
   | 'received'
   | 'assigned'
+  | 'kit_verstuurd'
   | 'retour'
   | 'sent_nightingale'
   | 'results_available'

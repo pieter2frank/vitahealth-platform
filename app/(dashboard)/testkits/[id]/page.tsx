@@ -36,9 +36,10 @@ export default async function TestkitDetailPage({
     : null
 
   const steps: { key: string; label: string; date: string | null; extra?: React.ReactNode }[] = [
-    { key: 'received',         label: 'Ontvangen',          date: kit.date },
-    { key: 'assigned',         label: 'Toegewezen',         date: kit.assigned_date },
-    { key: 'retour',           label: 'Retour ontvangen',   date: kit.retour_date },
+    { key: 'received',      label: 'Ontvangen',                  date: kit.date },
+    { key: 'assigned',      label: 'Toegewezen',                 date: kit.assigned_date },
+    { key: 'kit_verstuurd', label: 'Verstuurd naar cliënt',      date: kit.kit_sent_date ?? null },
+    { key: 'retour',        label: 'Retour ontvangen',           date: kit.retour_date },
     {
       key: 'sent_nightingale',
       label: 'Verzonden naar Nightingale',
@@ -50,7 +51,7 @@ export default async function TestkitDetailPage({
     { key: 'results_available', label: 'Resultaten beschikbaar', date: kit.results_date },
   ]
 
-  const statusOrder = ['received', 'assigned', 'retour', 'sent_nightingale', 'results_available']
+  const statusOrder = ['received', 'assigned', 'kit_verstuurd', 'retour', 'sent_nightingale', 'results_available']
   const currentIndex = statusOrder.indexOf(kit.status)
 
   return (
@@ -130,6 +131,12 @@ export default async function TestkitDetailPage({
                 <span className="font-medium text-[#1e293b]">{formatDate(kit.assigned_date)}</span>
               </div>
             )}
+            {kit.kit_sent_date && (
+              <div className="flex justify-between text-[#64748b]">
+                <span>Verstuurd</span>
+                <span className="font-medium text-[#1e293b]">{formatDate(kit.kit_sent_date)}</span>
+              </div>
+            )}
             {kit.retour_date && (
               <div className="flex justify-between text-[#64748b]">
                 <span>Retour</span>
@@ -205,13 +212,23 @@ export default async function TestkitDetailPage({
           </div>
 
           {/* Acties */}
-          <StatusActions kit={{
-            id: kit.id,
-            status: kit.status,
-            badge_id: kit.badge_id,
-            assigned: kit.assigned,
-            assignedClientId: client?.id ?? null,
-          }} />
+          <StatusActions
+            kit={{
+              id:               kit.id,
+              barcode:          kit.barcode,
+              status:           kit.status,
+              badge_id:         kit.badge_id,
+              assigned:         kit.assigned,
+              assignedClientId: client?.id ?? null,
+            }}
+            clientAddress={client ? {
+              firstName:  client.first_name,
+              lastName:   client.last_name,
+              address:    client.address,
+              postalCode: client.postal_code,
+              city:       client.city,
+            } : undefined}
+          />
         </div>
       </div>
     </div>

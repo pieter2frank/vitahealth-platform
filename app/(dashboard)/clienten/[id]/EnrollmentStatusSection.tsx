@@ -56,6 +56,7 @@ export function EnrollmentStatusSection({ clientId, initialStatus, assignedKitId
 
   // Mapping: welke cliëntstatus triggert welke testkit-update
   const KIT_SYNC: Partial<Record<EnrollmentStatus, { status: string; dateField: string }>> = {
+    kit_opgestuurd: { status: 'kit_verstuurd',     dateField: 'kit_sent_date' },
     kit_retour:     { status: 'retour',            dateField: 'retour_date' },
     uitslag_bekend: { status: 'results_available', dateField: 'results_date' },
   }
