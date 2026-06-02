@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
+import { Clock } from 'lucide-react'
 
 function LoginForm() {
   const router = useRouter()
@@ -13,6 +14,8 @@ function LoginForm() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+
+  const inactief = params.get('reden') === 'inactiviteit'
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -30,6 +33,14 @@ function LoginForm() {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
+      {inactief && (
+        <div className="flex items-center gap-2 rounded-lg bg-amber-50 border border-amber-200 px-3 py-2.5">
+          <Clock size={14} className="text-amber-600 shrink-0" />
+          <p className="text-sm text-amber-700">
+            Je bent automatisch uitgelogd wegens 5 minuten inactiviteit.
+          </p>
+        </div>
+      )}
       <Input
         label="E-mailadres"
         type="email"
