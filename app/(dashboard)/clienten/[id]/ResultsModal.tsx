@@ -66,21 +66,23 @@ function numStyle(q: QuestionnaireQuestion, v: number): string {
   return ratingStyle(v)
 }
 
-// Schaalduiding: "bijna niet < 1 - 5 > bijna altijd"
+// Schaalduiding: "bijna niet < 1 – 5 > bijna altijd"
+// Toont altijd het bereik voor scale/rating_10 vragen, labels zijn optioneel
 function scaleHint(q: QuestionnaireQuestion): string | null {
   if (q.type === 'scale') {
     const min = q.min ?? 1
     const max = q.max ?? 5
-    if (q.leftLabel && q.rightLabel) return `${q.leftLabel} < ${min} – ${max} > ${q.rightLabel}`
-    if (q.leftLabel)  return `${q.leftLabel} < ${min} – ${max}`
-    if (q.rightLabel) return `${min} – ${max} > ${q.rightLabel}`
-    return null
+    const range = `${min} – ${max}`
+    if (q.leftLabel && q.rightLabel) return `${q.leftLabel} < ${range} > ${q.rightLabel}`
+    if (q.leftLabel)  return `${q.leftLabel} < ${range}`
+    if (q.rightLabel) return `${range} > ${q.rightLabel}`
+    return `schaal ${range}`
   }
   if (q.type === 'rating_10') {
     if (q.leftLabel && q.rightLabel) return `${q.leftLabel} < 1 – 10 > ${q.rightLabel}`
     if (q.leftLabel)  return `${q.leftLabel} < 1 – 10`
     if (q.rightLabel) return `1 – 10 > ${q.rightLabel}`
-    return null
+    return 'schaal 1 – 10'
   }
   return null
 }
