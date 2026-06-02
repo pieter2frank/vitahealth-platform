@@ -46,50 +46,8 @@ function groupByCategory(qs: QuestionnaireQuestion[]) {
   return groups
 }
 
-// Score-types: vergelijkbare beoordelingsschalen die een gemiddelde rechtvaardigen
+// Score-types: vergelijkbare beoordelingsschalen
 const SCORE_TYPES: QuestionnaireQuestion['type'][] = ['rating_10', 'scale']
-
-// Mag een categorie-gemiddelde worden getoond?
-// Ja alleen als ALLE vragen in de categorie:
-//   1. hetzelfde type hebben
-//   2. een score-type zijn (rating_10 of scale)
-//   3. voor scale: hetzelfde min/max bereik hebben
-function canShowCatAvg(qs: QuestionnaireQuestion[]): boolean {
-  if (qs.length === 0) return false
-  const firstType = qs[0].type
-  if (!SCORE_TYPES.includes(firstType)) return false
-  if (!qs.every(q => q.type === firstType)) return false
-  if (firstType === 'scale') {
-    const firstMin = qs[0].min ?? 1
-    const firstMax = qs[0].max ?? 5
-    if (!qs.every(q => (q.min ?? 1) === firstMin && (q.max ?? 5) === firstMax)) return false
-  }
-  return true
-}
-
-function catAvg(qs: QuestionnaireQuestion[], responses: Record<string, unknown>): number | null {
-  const nums = qs
-    .filter(q => SCORE_TYPES.includes(q.type))
-    .map(q => responses[q.id])
-    .filter(v => v !== null && v !== undefined)
-    .map(Number)
-    .filter(n => !isNaN(n))
-  if (nums.length === 0) return null
-  return Math.round((nums.reduce((a, b) => a + b, 0) / nums.length) * 10) / 10
-}
-
-// Kleur voor een gemiddelde waarde binnen het bereik van de categorie
-// Omgekeerd als ALLE vragen in de categorie reversed zijn
-function catAvgStyle(qs: QuestionnaireQuestion[], avg: number): string {
-  const allReversed = qs.length > 0 && qs.every(q => q.reversed === true)
-  if (qs[0].type === 'scale') {
-    const min = qs[0].min ?? 1
-    const max = qs[0].max ?? 5
-    const mapped = ((avg - min) / (max - min)) * 9 + 1
-    return scoreToColor(mapped, allReversed)
-  }
-  return scoreToColor(avg, allReversed)
-}
 
 // Kleur voor een individuele score-waarde (met ondersteuning voor omgekeerd scoren)
 function scoreToColor(score1to10: number, reversed: boolean): string {
@@ -270,39 +228,9 @@ export function ResultsModal({ questionnaireId, questionnaireTitle, clientId }: 
                         {hasCategories && (
                           <tr className="bg-[#f8fafc]">
                             <td colSpan={records.length + (isMultiple ? 2 : 1)} className="px-5 py-2 border-b border-[#e2e8f0]">
-                              <div className="flex items-center gap-3 flex-wrap">
-                                <span className="text-xs font-semibold text-[#64748b] uppercase tracking-wider">
-                                  {group.cat ?? 'Overige vragen'}
-                                </span>
-
-                                {/* Gemiddelde — alleen als alle vragen in de categorie hetzelfde score-type en bereik hebben */}
-                                {canShowCatAvg(group.qs) && (
-                                  <div className="flex items-center gap-1.5">
-                                    <span className="text-[10px] text-[#94a3b8]">gem.:</span>
-                                    {records.map((r, i) => {
-                                      const avg = catAvg(group.qs, r.responses)
-                                      return avg !== null ? (
-                                        <span key={r.id} className={`inline-flex items-center justify-center h-5 min-w-[20px] px-1 rounded text-[10px] font-bold ${catAvgStyle(group.qs, avg)}`}>
-                                          {avg}
-                                        </span>
-                                      ) : null
-                                    })}
-                                    {/* Delta voor gemiddelde */}
-                                    {isMultiple && (() => {
-                                      const first = catAvg(group.qs, records[0].responses)
-                                      const last  = catAvg(group.qs, records[records.length - 1].responses)
-                                      if (first === null || last === null) return null
-                                      const d = Math.round((last - first) * 10) / 10
-                                      if (d === 0) return null
-                                      return (
-                                        <span className={`text-[10px] font-semibold ${d > 0 ? 'text-green-600' : 'text-red-500'}`}>
-                                          ({d > 0 ? '+' : ''}{d})
-                                        </span>
-                                      )
-                                    })()}
-                                  </div>
-                                )}
-                              </div>
+                              <span className="text-xs font-semibold text-[#64748b] uppercase tracking-wider">
+                                {group.cat ?? 'Overige vragen'}
+                              </span>
                             </td>
                           </tr>
                         )}
