@@ -181,23 +181,17 @@ export default async function ClientDetailPage({
 
         {/* Testkits */}
         <div className="rounded-xl border border-[#e2e8f0] bg-white shadow-sm">
-          <div className="flex items-center justify-between border-b border-[#e2e8f0] px-5 py-4">
-            <h2 className="text-sm font-semibold text-[#1e293b] flex items-center gap-2">
+          <div className="border-b border-[#e2e8f0] px-5 py-4">
+            <h2 className="text-sm font-semibold text-[#1e293b] flex items-center gap-2 mb-3">
               <TestTube2 size={15} className="text-[#94a3b8]" />
               Testkits ({testkits?.length ?? 0})
             </h2>
-            <Link href={`/testkits/intake?client=${id}`} className="text-xs text-[#1f1683] hover:underline">
-              + Toewijzen
-            </Link>
+            <TestkitLinker
+              clientId={client.id}
+              clientName={`${client.first_name} ${client.last_name}`}
+            />
           </div>
-          {!testkits || testkits.length === 0 ? (
-            <div className="p-5">
-              <TestkitLinker
-                clientId={client.id}
-                clientName={`${client.first_name} ${client.last_name}`}
-              />
-            </div>
-          ) : (
+          {testkits && testkits.length > 0 && (
             <div className="divide-y divide-[#f1f5f9] overflow-y-auto max-h-60">
               {testkits.map((kit) => (
                 <div key={kit.id} className="flex items-center gap-3 px-4 py-2.5 hover:bg-[#f8fafc] transition-colors">
