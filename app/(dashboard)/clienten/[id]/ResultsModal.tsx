@@ -66,6 +66,25 @@ function numStyle(q: QuestionnaireQuestion, v: number): string {
   return ratingStyle(v)
 }
 
+// Schaalduiding: "bijna niet < 1 - 5 > bijna altijd"
+function scaleHint(q: QuestionnaireQuestion): string | null {
+  if (q.type === 'scale') {
+    const min = q.min ?? 1
+    const max = q.max ?? 5
+    if (q.leftLabel && q.rightLabel) return `${q.leftLabel} < ${min} – ${max} > ${q.rightLabel}`
+    if (q.leftLabel)  return `${q.leftLabel} < ${min} – ${max}`
+    if (q.rightLabel) return `${min} – ${max} > ${q.rightLabel}`
+    return null
+  }
+  if (q.type === 'rating_10') {
+    if (q.leftLabel && q.rightLabel) return `${q.leftLabel} < 1 – 10 > ${q.rightLabel}`
+    if (q.leftLabel)  return `${q.leftLabel} < 1 – 10`
+    if (q.rightLabel) return `1 – 10 > ${q.rightLabel}`
+    return null
+  }
+  return null
+}
+
 // BMI-kleur
 function bmiStyle(bmi: number): string {
   if (bmi < 18.5) return 'bg-orange-400 text-white'    // ondergewicht
@@ -168,7 +187,7 @@ export function ResultsModal({ questionnaireId, questionnaireTitle, clientId }: 
           onClick={close}
         >
           <div
-            className="w-full max-w-3xl bg-white rounded-2xl shadow-xl overflow-hidden my-auto"
+            className="w-full max-w-4xl bg-white rounded-2xl shadow-xl overflow-hidden my-auto"
             onClick={e => e.stopPropagation()}
           >
             {/* Header */}
@@ -202,7 +221,7 @@ export function ResultsModal({ questionnaireId, questionnaireTitle, clientId }: 
                   {/* Column headers: dates */}
                   <thead>
                     <tr className="border-b-2 border-[#e2e8f0] bg-white">
-                      <th className="px-5 py-3 text-left font-medium text-[#64748b] w-[38%]">Vraag</th>
+                      <th className="px-5 py-3 text-left font-medium text-[#64748b] w-[44%]">Vraag</th>
                       {records.map((r, i) => (
                         <th key={r.id} className="px-3 py-3 text-center font-medium text-[#64748b] min-w-[72px]">
                           {isMultiple && (
@@ -251,7 +270,14 @@ export function ResultsModal({ questionnaireId, questionnaireTitle, clientId }: 
                           return (
                             <Fragment key={q.id}>
                               <tr className="border-b border-[#f1f5f9] hover:bg-[#fafbfc] transition-colors">
-                                <td className="px-5 py-2.5 text-[#1e293b] leading-snug">{q.label}</td>
+                                <td className="px-5 py-2.5 text-[#1e293b] leading-snug">
+                                  {q.label}
+                                  {scaleHint(q) && (
+                                    <span className="block text-[10px] text-[#94a3b8] mt-0.5 font-normal">
+                                      {scaleHint(q)}
+                                    </span>
+                                  )}
+                                </td>
 
                                 {records.map((r) => {
                                   const raw = r.responses[q.id]

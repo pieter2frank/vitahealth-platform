@@ -57,7 +57,7 @@ export default async function AanmeldenPage({ searchParams }: PageProps) {
 
   return (
     <main className="py-10 px-6">
-      <div className="mx-auto max-w-xl">
+      <div className="mx-auto max-w-2xl">
         {/* Paginakop */}
         <div className="mb-8 text-center">
           <h1 className="text-2xl font-bold text-[#1e293b]">Aanmelden voor de biomarkertest</h1>
