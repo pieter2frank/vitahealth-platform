@@ -5,6 +5,7 @@ import { formatDate, formatDateTime, STATUS_LABELS, STATUS_COLORS } from '@/lib/
 import { ArrowLeft, Pencil, TestTube2, Stethoscope, Phone, Mail, MapPin } from 'lucide-react'
 import { EditArboForm } from './EditArboForm'
 import { DeleteButton } from '@/components/ui/DeleteButton'
+import { KitScannerSection } from '@/components/testkits/KitScannerSection'
 
 export default async function ArbodienstDetailPage({
   params,
@@ -111,10 +112,8 @@ export default async function ArbodienstDetailPage({
             <TestTube2 size={15} className="text-[#94a3b8]" />
             Testkits ({testkits?.length ?? 0})
           </h2>
-          <Link href={`/testkits/intake?arbo=${id}`} className="text-xs text-[#1f1683] hover:underline">
-            + Testkit toewijzen
-          </Link>
         </div>
+        <KitScannerSection entityId={id} entityType="arbo" />
         {!testkits || testkits.length === 0 ? (
           <p className="px-5 py-6 text-center text-sm text-[#94a3b8]">Geen testkits toegewezen.</p>
         ) : (

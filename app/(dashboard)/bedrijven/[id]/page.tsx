@@ -5,6 +5,7 @@ import { formatDate, formatDateTime, STATUS_LABELS, STATUS_COLORS } from '@/lib/
 import { ArrowLeft, Pencil, TestTube2, Building2, Phone, Mail, MapPin, Hash } from 'lucide-react'
 import { EditCompanyForm } from './EditCompanyForm'
 import { DeleteButton } from '@/components/ui/DeleteButton'
+import { KitScannerSection } from '@/components/testkits/KitScannerSection'
 
 export default async function BedrijfDetailPage({
   params,
@@ -115,10 +116,8 @@ export default async function BedrijfDetailPage({
             <TestTube2 size={15} className="text-[#94a3b8]" />
             Testkits ({testkits?.length ?? 0})
           </h2>
-          <Link href={`/testkits/intake?company=${id}`} className="text-xs text-[#1f1683] hover:underline">
-            + Testkit toewijzen
-          </Link>
         </div>
+        <KitScannerSection entityId={id} entityType="company" />
         {!testkits || testkits.length === 0 ? (
           <p className="px-5 py-6 text-center text-sm text-[#94a3b8]">Geen testkits toegewezen.</p>
         ) : (
