@@ -38,8 +38,11 @@ export function KitScannerSection({ entityId, entityType }: Props) {
   const [loading, setLoading]   = useState(false)
   const [scans, setScans]       = useState<ScanResult[]>([])
 
-  // Auto-focus het invoerveld bij mounten
+  // Auto-focus bij mounten én na elke verwerking (ook na router.refresh())
   useEffect(() => { inputRef.current?.focus() }, [])
+  useEffect(() => {
+    if (!loading) inputRef.current?.focus()
+  }, [loading])
 
   const processBarcode = useCallback(async (raw: string) => {
     const trimmed = raw.trim()
@@ -108,12 +111,11 @@ export function KitScannerSection({ entityId, entityType }: Props) {
     }
 
     setScans(prev => [result, ...prev].slice(0, 15))
-    setLoading(false)
-
     // Ververs de serverside kittabel op de pagina
     if (result.status !== 'error') router.refresh()
 
-    inputRef.current?.focus()
+    // loading → false triggert de useEffect die focus terugzet
+    setLoading(false)
   }, [entityId, entityType, loading, router])
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
