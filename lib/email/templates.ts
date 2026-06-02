@@ -3,6 +3,17 @@
 
 const YEAR = new Date().getFullYear()
 
+/** Escapet HTML-tekens in gebruikersdata zodat XSS via e-mail onmogelijk is. */
+function esc(str: string | null | undefined): string {
+  if (!str) return ''
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#x27;')
+}
+
 function shell(title: string, body: string): string {
   return `<!DOCTYPE html>
 <html lang="nl">
@@ -39,8 +50,12 @@ function shell(title: string, body: string): string {
 }
 
 function btn(href: string, label: string): string {
+  // Alleen https-URLs toestaan — blokkeer javascript:, data: en andere schema's
+  const safeHref = href.startsWith('https://') || href.startsWith('http://')
+    ? esc(href)
+    : '#'
   return `<div style="text-align:center;margin:28px 0 24px;">
-    <a href="${href}" style="display:inline-block;background:linear-gradient(135deg,#1f1683,#3b55c8);color:white;text-decoration:none;padding:14px 36px;border-radius:8px;font-size:14px;font-weight:700;letter-spacing:.3px;">
+    <a href="${safeHref}" style="display:inline-block;background:linear-gradient(135deg,#1f1683,#3b55c8);color:white;text-decoration:none;padding:14px 36px;border-radius:8px;font-size:14px;font-weight:700;letter-spacing:.3px;">
       ${label} →
     </a>
   </div>`
@@ -51,7 +66,7 @@ function p(text: string, style = ''): string {
 }
 
 function greeting(firstName: string): string {
-  return `<p style="margin:0 0 20px;color:#1e293b;font-size:15px;font-weight:600;">Beste ${firstName},</p>`
+  return `<p style="margin:0 0 20px;color:#1e293b;font-size:15px;font-weight:600;">Beste ${esc(firstName)},</p>`
 }
 
 // ─── 1. Uitnodiging ───────────────────────────────────────────────────────────

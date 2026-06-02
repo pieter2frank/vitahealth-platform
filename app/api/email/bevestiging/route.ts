@@ -3,15 +3,17 @@ import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { bevestigingEmail } from '@/lib/email/templates'
 import { REQUIRED_CONSENTS } from '@/lib/consents'
+import { isUuid } from '@/lib/validation'
 
 const resend = new Resend(process.env.RESEND_API_KEY)
 
 // Publiek endpoint — aanroepen vanuit portaal EnrollmentForm na afronden intake.
 // Verificatie via clientId + assignmentId combinatie in de database.
 export async function POST(req: Request) {
-  const { clientId, assignmentId } = await req.json()
-  if (!clientId || !assignmentId) {
-    return NextResponse.json({ error: 'clientId en assignmentId zijn verplicht.' }, { status: 400 })
+  const body = await req.json()
+  const { clientId, assignmentId } = body
+  if (!isUuid(clientId) || !isUuid(assignmentId)) {
+    return NextResponse.json({ error: 'Ongeldige invoer.' }, { status: 400 })
   }
 
   const admin = createAdminClient()

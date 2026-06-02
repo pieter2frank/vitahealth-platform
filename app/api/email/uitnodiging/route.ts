@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { uitnodigingEmail } from '@/lib/email/templates'
+import { isUuid } from '@/lib/validation'
 
 const resend = new Resend(process.env.RESEND_API_KEY)
 
@@ -12,8 +13,9 @@ export async function POST(req: Request) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Niet geautoriseerd.' }, { status: 401 })
 
-  const { clientId } = await req.json()
-  if (!clientId) return NextResponse.json({ error: 'clientId ontbreekt.' }, { status: 400 })
+  const body = await req.json()
+  const { clientId } = body
+  if (!isUuid(clientId)) return NextResponse.json({ error: 'Ongeldig clientId.' }, { status: 400 })
 
   const admin = createAdminClient()
 
