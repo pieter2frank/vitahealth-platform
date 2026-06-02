@@ -92,53 +92,11 @@ values (
       },
 
       {
-        "id": "s6_telefoon",
+        "id": "s6_scherm",
         "type": "radio",
-        "label": "Hoe vaak gebruik je de laatste uur voor het slapen je telefoon?",
+        "label": "Hoe vaak gebruik je het laatste uur voor het slapen je telefoon, tablet, laptop of tv?",
         "category": "Schermgebruik voor het slapen",
-        "required": false,
-        "options": [
-          { "value": "nooit",      "label": "Nooit" },
-          { "value": "soms",       "label": "Soms" },
-          { "value": "regelmatig", "label": "Regelmatig" },
-          { "value": "vaak",       "label": "Vaak" }
-        ]
-      },
-
-      {
-        "id": "s6_tablet",
-        "type": "radio",
-        "label": "Hoe vaak gebruik je de laatste uur voor het slapen je tablet?",
-        "category": "Schermgebruik voor het slapen",
-        "required": false,
-        "options": [
-          { "value": "nooit",      "label": "Nooit" },
-          { "value": "soms",       "label": "Soms" },
-          { "value": "regelmatig", "label": "Regelmatig" },
-          { "value": "vaak",       "label": "Vaak" }
-        ]
-      },
-
-      {
-        "id": "s6_laptop",
-        "type": "radio",
-        "label": "Hoe vaak gebruik je de laatste uur voor het slapen je laptop?",
-        "category": "Schermgebruik voor het slapen",
-        "required": false,
-        "options": [
-          { "value": "nooit",      "label": "Nooit" },
-          { "value": "soms",       "label": "Soms" },
-          { "value": "regelmatig", "label": "Regelmatig" },
-          { "value": "vaak",       "label": "Vaak" }
-        ]
-      },
-
-      {
-        "id": "s6_tv",
-        "type": "radio",
-        "label": "Hoe vaak kijk je de laatste uur voor het slapen tv?",
-        "category": "Schermgebruik voor het slapen",
-        "required": false,
+        "required": true,
         "options": [
           { "value": "nooit",      "label": "Nooit" },
           { "value": "soms",       "label": "Soms" },
@@ -179,4 +137,7 @@ values (
   }
   $json$
 )
-on conflict (slug) do nothing;
+on conflict (slug) do update set
+  title        = excluded.title,
+  json_content = excluded.json_content,
+  status       = excluded.status;
