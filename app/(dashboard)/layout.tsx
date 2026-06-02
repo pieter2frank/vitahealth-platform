@@ -9,6 +9,18 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   if (!user) redirect('/auth/login')
 
+  // 2FA afdwingen — aal2 = wachtwoord + authenticator-code
+  const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel()
+  if (aal && aal.currentLevel !== 'aal2') {
+    if (aal.nextLevel === 'aal2') {
+      // Heeft 2FA ingesteld maar nog niet geverifieerd deze sessie
+      redirect('/auth/mfa/verify')
+    } else {
+      // Heeft nog geen 2FA ingesteld — verplicht instellen
+      redirect('/auth/mfa/enroll')
+    }
+  }
+
   const [
     { count: newOrderCount },
     { data: medewerker },
