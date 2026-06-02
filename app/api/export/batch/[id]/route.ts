@@ -46,7 +46,7 @@ export async function GET(
     .order('barcode', { ascending: true })
 
   const clientIds = (kits ?? [])
-    .map(k => (k.vh_client as Pick<Client, 'id' | 'birth_date'> | null)?.id)
+    .map(k => (k.vh_client as unknown as Pick<Client, 'id' | 'birth_date'> | null)?.id)
     .filter((cid): cid is string => !!cid)
 
   // 3. Meest recente vragenlijstrespons per cliënt
@@ -67,7 +67,7 @@ export async function GET(
 
   // 4. Rijen opbouwen
   const rows = (kits ?? []).map(kit => {
-    const client    = kit.vh_client as Pick<Client, 'id' | 'birth_date'> | null
+    const client    = kit.vh_client as unknown as Pick<Client, 'id' | 'birth_date'> | null
     const resp      = client ? responseMap.get(client.id) : null
     const genderRaw = resp?.d1_geslacht as string | undefined
 

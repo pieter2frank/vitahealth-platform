@@ -34,9 +34,9 @@ export default async function BatchDetailPage({
     .order('retour_date', { ascending: true })
 
   const kits = (kitsRaw ?? []).map(kit => {
-    const c  = kit.vh_client  as Pick<Client, 'id' | 'first_name' | 'last_name'> | null
-    const co = kit.vh_company as Pick<Company, 'id' | 'name'> | null
-    const a  = kit.vh_arbo    as Pick<Arbo, 'id' | 'name'> | null
+    const c  = kit.vh_client  as unknown as Pick<Client, 'id' | 'first_name' | 'last_name'> | null
+    const co = kit.vh_company as unknown as Pick<Company, 'id' | 'name'> | null
+    const a  = kit.vh_arbo    as unknown as Pick<Arbo, 'id' | 'name'> | null
     return {
       id: kit.id,
       barcode: kit.barcode,
