@@ -697,8 +697,7 @@ export function EnrollmentForm({ intakeQuestionnaire, initialEmail, initialResum
 
                     {/* RATING 1–10 */}
                     {q.type === 'rating_10' && (
-                      <div className="flex flex-wrap items-center gap-2 mt-1">
-                        {q.leftLabel && <span className="text-xs text-[#94a3b8]">{q.leftLabel}</span>}
+                      <div className="mt-1">
                         <div className="flex gap-1.5 flex-wrap">
                           {[1,2,3,4,5,6,7,8,9,10].map(n => {
                             const selected = responses[q.id] === n
@@ -723,7 +722,12 @@ export function EnrollmentForm({ intakeQuestionnaire, initialEmail, initialResum
                             )
                           })}
                         </div>
-                        {q.rightLabel && <span className="text-xs text-[#94a3b8]">{q.rightLabel}</span>}
+                        {(q.leftLabel || q.rightLabel) && (
+                          <div className="flex justify-between mt-1.5 px-0.5">
+                            <span className="text-xs text-[#94a3b8]">{q.leftLabel ?? ''}</span>
+                            <span className="text-xs text-[#94a3b8]">{q.rightLabel ?? ''}</span>
+                          </div>
+                        )}
                       </div>
                     )}
 
@@ -733,8 +737,7 @@ export function EnrollmentForm({ intakeQuestionnaire, initialEmail, initialResum
                       const scaleMax = q.max ?? 5
                       const steps = Array.from({ length: scaleMax - scaleMin + 1 }, (_, i) => scaleMin + i)
                       return (
-                        <div className="flex flex-wrap items-center gap-2 mt-1">
-                          {q.leftLabel && <span className="text-xs text-[#94a3b8] shrink-0">{q.leftLabel}</span>}
+                        <div className="mt-1">
                           <div className="flex gap-1.5 flex-wrap">
                             {steps.map(n => {
                               const selected = responses[q.id] === n
@@ -759,7 +762,12 @@ export function EnrollmentForm({ intakeQuestionnaire, initialEmail, initialResum
                               )
                             })}
                           </div>
-                          {q.rightLabel && <span className="text-xs text-[#94a3b8] shrink-0">{q.rightLabel}</span>}
+                          {(q.leftLabel || q.rightLabel) && (
+                            <div className="flex justify-between mt-1.5 px-0.5">
+                              <span className="text-xs text-[#94a3b8]">{q.leftLabel ?? ''}</span>
+                              <span className="text-xs text-[#94a3b8]">{q.rightLabel ?? ''}</span>
+                            </div>
+                          )}
                         </div>
                       )
                     })()}
