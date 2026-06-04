@@ -49,7 +49,7 @@ const STEPS: Step[] = [
     key: 'vragenlijst_ingevuld',
     label: 'Vragenlijst ingevuld',
     description: 'Je gezondheidsvragenlijst is ontvangen.',
-    actie: 'Een arts beoordeelt jouw intake.',
+    actie: 'Een medisch deskundige beoordeelt jouw intake.',
   },
   {
     key: 'intake_akkoord',

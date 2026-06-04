@@ -51,7 +51,7 @@ export function SettingsForm({ questionnaires, currentValue }: Props) {
           Intake vragenlijst
         </label>
         <p className="text-xs text-[#64748b] mb-3">
-          Deelnemers vullen deze vragenlijst in tijdens de aanmeldprocedure. Een arts beoordeelt de
+          Deelnemers vullen deze vragenlijst in tijdens de aanmeldprocedure. Een medisch deskundige beoordeelt de
           antwoorden en geeft vervolgens een GO voor het opsturen van de testkit.
         </p>
         <select
