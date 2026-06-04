@@ -255,8 +255,8 @@ export default async function AuditlogPage({
                   </td>
                 </tr>
               ) : events.map((e: AuditEvent) => {
-                const actor  = profileMap[e.actor_user_id]
-                const client = clientMap[e.subject_client_id]
+                const actor  = e.actor_user_id  ? profileMap[e.actor_user_id]  : undefined
+                const client = e.subject_client_id ? clientMap[e.subject_client_id] : undefined
                 const outcome = e.outcome as 'success' | 'denied' | 'failed'
 
                 return (
