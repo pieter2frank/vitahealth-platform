@@ -91,7 +91,7 @@ export async function GET(
   const wb = XLSX.utils.book_new()
   XLSX.utils.book_append_sheet(wb, ws, batch.badge_id)
 
-  const buffer = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' }) as Buffer
+  const buffer = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' }) as Uint8Array
   const filename = `batch-${batch.badge_id}.xlsx`
 
   return new Response(buffer, {
