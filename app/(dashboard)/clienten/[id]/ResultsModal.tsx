@@ -136,6 +136,19 @@ export function ResultsModal({ questionnaireId, questionnaireTitle, clientId }: 
     setLoading(true)
     const supabase = createClient()
 
+    // Auditlog: inzage vragenlijstresultaten (medische data)
+    fetch('/api/audit/log', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        subjectClientId: clientId,
+        resourceType: 'questionnaire_response',
+        resourceId: questionnaireId,
+        action: 'view',
+        reason: `Vragenlijstresultaten ingezien`,
+      }),
+    }).catch(() => {})
+
     const [{ data: recs }, { data: qDef }] = await Promise.all([
       supabase
         .from('vh_questionnaire_response')

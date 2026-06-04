@@ -7,8 +7,9 @@ import { cn } from '@/lib/utils'
 import type { LucideIcon } from 'lucide-react'
 import {
   LayoutDashboard, TestTube2, Users, Building2, Stethoscope,
-  Package, LogOut, CircleUserRound, ClipboardList, ScrollText, Dumbbell, Settings,
+  Package, LogOut, CircleUserRound, ClipboardList, ScrollText, Dumbbell, Settings, ShieldCheck,
 } from 'lucide-react'
+import { isAdmin } from '@/lib/auth/roles'
 import { createClient } from '@/lib/supabase/client'
 import { useUser } from '@/components/providers/UserProvider'
 
@@ -108,6 +109,25 @@ export function Sidebar({ newOrderCount = 0 }: SidebarProps) {
           </Fragment>
         ))}
       </nav>
+
+      {/* Admin: auditlog onderaan nav */}
+      {isAdmin(role) && (
+        <div className="px-3 pt-2 pb-1 border-t border-[#f1f5f9] mt-1">
+          <Link
+            href="/auditlog"
+            className={cn(
+              'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+              pathname.startsWith('/auditlog')
+                ? 'bg-[#eef4ff] text-[#1f1683]'
+                : 'text-[#94a3b8] hover:bg-[#f8fafc] hover:text-[#1e293b]'
+            )}
+          >
+            <ShieldCheck size={17} className={pathname.startsWith('/auditlog') ? 'text-[#1f1683]' : 'text-[#94a3b8]'} />
+            <span className="flex-1">Auditlog</span>
+            <span className="text-[9px] font-semibold uppercase tracking-wide text-[#94a3b8] border border-[#e2e8f0] rounded px-1">Admin</span>
+          </Link>
+        </div>
+      )}
 
       {/* Ingelogde gebruiker + uitloggen */}
       <div className="border-t border-[#e2e8f0] p-3 space-y-1">
