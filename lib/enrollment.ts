@@ -19,6 +19,7 @@ export type EnrollmentStatus = typeof ENROLLMENT_STATUSES[number]
 export const ENROLLMENT_LABELS: Record<string, string> = {
   aangemeld:            'Aangemeld',
   toestemming_gegeven:  'Toestemming',
+  intake_on_hold:       'On hold',
   vragenlijst_ingevuld: 'Vragenlijst',
   intake_akkoord:       'Intake akkoord',
   intake_afgewezen:     'Intake afgewezen',
@@ -33,6 +34,7 @@ export const ENROLLMENT_LABELS: Record<string, string> = {
 export const ENROLLMENT_COLORS: Record<string, string> = {
   aangemeld:            'bg-slate-100 text-slate-700 border-slate-200',
   toestemming_gegeven:  'bg-blue-50 text-blue-700 border-blue-200',
+  intake_on_hold:       'bg-orange-100 text-orange-800 border-orange-300',
   vragenlijst_ingevuld: 'bg-violet-50 text-violet-700 border-violet-200',
   intake_akkoord:       'bg-emerald-50 text-emerald-700 border-emerald-200',
   intake_afgewezen:     'bg-red-50 text-red-700 border-red-200',

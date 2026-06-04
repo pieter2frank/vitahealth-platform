@@ -7,7 +7,7 @@ import {
   ENROLLMENT_STATUSES, ENROLLMENT_LABELS, ENROLLMENT_COLORS,
   enrollmentStatusIndex, type EnrollmentStatus,
 } from '@/lib/enrollment'
-import { CheckCircle2, ChevronRight, Loader2, XCircle, AlertTriangle } from 'lucide-react'
+import { CheckCircle2, ChevronRight, Loader2, XCircle, AlertTriangle, Phone } from 'lucide-react'
 
 // ─── Volgende status per stap (goedkeuringspad) ────────────────────────────────
 
@@ -41,17 +41,18 @@ export function EnrollmentStatusSection({ clientId, initialStatus, assignedKitId
   const [saving,  setSaving]  = useState(false)
   const [rejecting, setRejecting] = useState(false)
   const [confirmReject, setConfirmReject] = useState(false)
+  const [onHoldAction, setOnHoldAction]   = useState(false)
   const [error,   setError]   = useState('')
 
   // ── Index voor de tijdlijn ──────────────────────────────────────────────────
-  // intake_afgewezen zit niet in de hoofdlijn; toon de tijdlijn t/m vragenlijst_ingevuld
   const isRejected    = status === 'intake_afgewezen'
-  const timelineIndex = isRejected
-    ? enrollmentStatusIndex('vragenlijst_ingevuld')
+  const isOnHold      = status === 'intake_on_hold'
+  const timelineIndex = (isRejected || isOnHold)
+    ? enrollmentStatusIndex('toestemming_gegeven')
     : enrollmentStatusIndex(status)
 
   const transition    = TRANSITIONS[status]
-  const canTransition = !isRejected && transition && (!transition.artsOnly || canSeeResults(role))
+  const canTransition = !isRejected && !isOnHold && transition && (!transition.artsOnly || canSeeResults(role))
   const canReject     = status === 'vragenlijst_ingevuld' && canSeeResults(role)
 
   // Mapping: welke cliëntstatus triggert welke testkit-update
@@ -164,6 +165,86 @@ export function EnrollmentStatusSection({ clientId, initialStatus, assignedKitId
             )
           })}
         </div>
+
+        {/* ── On-hold banner + acties ──────────────────────────────────────── */}
+        {isOnHold && (
+          <div className="mt-4 space-y-3">
+            <div className="flex items-start gap-2 rounded-lg border border-orange-200 bg-orange-50 px-3 py-2.5">
+              <Phone size={15} className="text-orange-600 shrink-0 mt-0.5" />
+              <div>
+                <p className="text-sm font-medium text-orange-800">Actie vereist: contact opnemen</p>
+                <p className="text-xs text-orange-700 mt-0.5">
+                  De cliënt heeft aangegeven dat mogelijk een uitsluitingscriterium op hem/haar van toepassing is.
+                  Neem contact op en kies daarna een actie.
+                </p>
+              </div>
+            </div>
+            {!onHoldAction ? (
+              <div className="flex gap-2 flex-wrap">
+                <button
+                  onClick={() => setOnHoldAction(true)}
+                  className="inline-flex items-center gap-2 rounded-lg bg-[#1f1683] px-4 py-2 text-sm font-medium text-white hover:bg-[#1a1270] transition-colors"
+                >
+                  <ChevronRight size={14} />
+                  Actie kiezen na contact
+                </button>
+              </div>
+            ) : (
+              <div className="rounded-lg border border-[#e2e8f0] bg-[#f8fafc] p-3 space-y-2">
+                <p className="text-xs font-semibold text-[#475569] uppercase tracking-wide">Kies een actie:</p>
+                <div className="flex gap-2 flex-wrap">
+                  {/* Toch doorgaan */}
+                  <button
+                    onClick={async () => {
+                      setSaving(true); setError('')
+                      const res = await fetch('/api/email/intake-hervatten', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ clientId }),
+                      })
+                      setSaving(false)
+                      if (res.ok) {
+                        setStatus('toestemming_gegeven')
+                        setOnHoldAction(false)
+                      } else {
+                        const j = await res.json()
+                        setError(j.error ?? 'Versturen mislukt.')
+                      }
+                    }}
+                    disabled={saving}
+                    className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700 transition-colors disabled:opacity-50"
+                  >
+                    {saving ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle2 size={14} />}
+                    Toch doorgaan — mail sturen
+                  </button>
+                  {/* Intake stoppen */}
+                  <button
+                    onClick={async () => {
+                      setRejecting(true); setError('')
+                      const supabase = (await import('@/lib/supabase/client')).createClient()
+                      const { error: err } = await supabase
+                        .from('vh_client')
+                        .update({ enrollment_status: 'intake_afgewezen' })
+                        .eq('id', clientId)
+                      setRejecting(false)
+                      if (err) { setError(err.message); return }
+                      setStatus('intake_afgewezen')
+                      setOnHoldAction(false)
+                    }}
+                    disabled={rejecting}
+                    className="inline-flex items-center gap-2 rounded-lg border border-red-200 bg-white px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50 transition-colors disabled:opacity-50"
+                  >
+                    {rejecting ? <Loader2 size={14} className="animate-spin" /> : <XCircle size={14} />}
+                    Intake stoppen
+                  </button>
+                  <button onClick={() => setOnHoldAction(false)} className="text-sm text-[#94a3b8] hover:text-[#64748b]">
+                    Annuleren
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* ── Afgewezen-banner ─────────────────────────────────────────────── */}
         {isRejected && (

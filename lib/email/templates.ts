@@ -235,7 +235,32 @@ export function intakeGoedgekeurdEmail(opts: {
   }
 }
 
-// ─── 4. Reminder ──────────────────────────────────────────────────────────────
+// ─── 4. Intake hervatten (na on-hold → toch doorgaan) ────────────────────────
+
+export function intakeHervattingEmail(opts: {
+  firstName: string
+  vragenlijstUrl: string
+}): { subject: string; html: string } {
+  const body = `
+    ${greeting(opts.firstName)}
+    ${p('Bedankt voor je geduld. Na ons contact is besloten dat je kunt doorgaan met de Vita Health biomarkertest. Klik op onderstaande knop om de gezondheidsvragenlijst in te vullen.')}
+
+    <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:16px 22px;margin-bottom:28px;">
+      <p style="margin:0;font-size:13px;color:#166534;line-height:1.6;">
+        ✓ &nbsp;Je intake is goedgekeurd. Vul de vragenlijst in om het aanmeldproces af te ronden.
+      </p>
+    </div>
+
+    ${btn(opts.vragenlijstUrl, 'Vragenlijst invullen')}
+    ${p('Vragen? Bezoek onze <a href="https://helpdesk.vita-health.nl" style="color:#1f1683;">helpdesk</a>.', 'text-align:center;font-size:12px;color:#94a3b8;')}
+  `
+  return {
+    subject: 'Je kunt doorgaan met de Vita Health vragenlijst',
+    html: shell('Ga verder met je aanmelding', body),
+  }
+}
+
+// ─── 5. Reminder ──────────────────────────────────────────────────────────────
 
 export function reminderEmail(opts: {
   firstName: string

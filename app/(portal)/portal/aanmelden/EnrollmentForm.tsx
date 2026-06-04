@@ -40,6 +40,8 @@ export function EnrollmentForm({ intakeQuestionnaire, initialEmail, initialResum
   const totalSteps = intakeQuestionnaire ? 4 : 3
   const [step, setStep]         = useState(1)
   const [saving, setSaving]     = useState(false)
+  // Screener voor stap 4: null=nog niet beantwoord, 'ok'=doorgaan, 'hold'=on hold
+  const [screeningChoice, setScreeningChoice] = useState<'ok' | 'hold' | null>(null)
   const [error, setError]       = useState('')
   const [done, setDone]         = useState(false)
   // Als initialResumeInfo meegegeven is (token-link): direct banner tonen, geen check nodig
@@ -685,8 +687,93 @@ export function EnrollmentForm({ intakeQuestionnaire, initialEmail, initialResum
           </div>
         )}
 
+        {/* ── Stap 4: Screener (uitsluitingscriteria) ─────────────────────────── */}
+        {step === 4 && intakeQuestionnaire && screeningChoice === null && (
+          <div className="p-6 space-y-5">
+            <h2 className="text-base font-semibold text-[#1e293b]">Geschiktheidscheck</h2>
+
+            {/* Waarschuwingsblok */}
+            <div className="rounded-lg border border-orange-200 bg-orange-50 p-4">
+              <p className="text-sm font-semibold text-orange-800 mb-2">
+                De bloedafnamekit is niet voor iedereen geschikt. U kunt mogelijk niet deelnemen als u:
+              </p>
+              <ul className="space-y-1 text-sm text-orange-700">
+                {[
+                  'jonger bent dan 18 jaar;',
+                  'zwanger bent of borstvoeding geeft;',
+                  'een bloedingsstoornis heeft (zoals hemofilie of een vergelijkbare aandoening);',
+                  'bloedverdunners of antistollingsmedicatie gebruikt;',
+                  'bekend bent met ernstige bloedarmoede;',
+                  'in de afgelopen drie maanden een bloedtransfusie heeft gehad;',
+                  'in de afgelopen drie maanden een operatie heeft ondergaan;',
+                  'op het moment van afname koorts of een actieve infectie heeft;',
+                  'twijfelt of vingerprikafname voor u veilig is.',
+                ].map((item, i) => (
+                  <li key={i} className="flex gap-2">
+                    <span className="shrink-0">•</span>
+                    <span>{item}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* Keuzebuttons */}
+            <p className="text-sm font-medium text-[#1e293b]">Maak een keuze:</p>
+            <div className="space-y-3">
+              <button
+                type="button"
+                onClick={() => setScreeningChoice('ok')}
+                className="w-full flex items-start gap-3 rounded-lg border border-[#e2e8f0] bg-white p-4 text-left hover:border-[#1f1683] hover:bg-[#eef4ff] transition-colors group"
+              >
+                <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 border-[#e2e8f0] group-hover:border-[#1f1683]">
+                  <span className="h-2.5 w-2.5 rounded-full" />
+                </span>
+                <span>
+                  <span className="block text-sm font-medium text-[#1e293b]">Deze punten zijn niet op mij van toepassing</span>
+                  <span className="block text-xs text-[#64748b] mt-0.5">Ik kan doorgaan met de vragenlijst.</span>
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={async () => {
+                  if (!clientId) return
+                  const supabase = (await import('@/lib/supabase/client')).createClient()
+                  await supabase.from('vh_client').update({ enrollment_status: 'intake_on_hold' }).eq('id', clientId)
+                  setScreeningChoice('hold')
+                }}
+                className="w-full flex items-start gap-3 rounded-lg border border-[#e2e8f0] bg-white p-4 text-left hover:border-orange-400 hover:bg-orange-50 transition-colors group"
+              >
+                <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 border-[#e2e8f0] group-hover:border-orange-400">
+                  <span className="h-2.5 w-2.5 rounded-full" />
+                </span>
+                <span>
+                  <span className="block text-sm font-medium text-[#1e293b]">Ik denk dat één van deze punten op mij van toepassing is</span>
+                  <span className="block text-xs text-[#64748b] mt-0.5">Vita Health neemt contact met u op om dit te bespreken.</span>
+                </span>
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* ── Stap 4: On hold melding ──────────────────────────────────────────── */}
+        {step === 4 && intakeQuestionnaire && screeningChoice === 'hold' && (
+          <div className="p-8 text-center space-y-4">
+            <div className="inline-flex h-14 w-14 items-center justify-center rounded-full bg-orange-100 mx-auto">
+              <AlertTriangle size={26} className="text-orange-600" />
+            </div>
+            <div>
+              <h2 className="text-lg font-bold text-[#1e293b] mb-2">We nemen contact met u op</h2>
+              <p className="text-sm text-[#64748b] leading-relaxed max-w-sm mx-auto">
+                Bedankt voor uw eerlijkheid. Een medewerker van Vita Health neemt zo snel mogelijk
+                contact met u op om te bespreken of deelname voor u veilig en mogelijk is.
+              </p>
+            </div>
+          </div>
+        )}
+
         {/* ── Stap 4: Intake vragenlijst ──────────────────────────────────────── */}
-        {step === 4 && intakeQuestionnaire && (
+        {step === 4 && intakeQuestionnaire && screeningChoice === 'ok' && (
           <form onSubmit={handleSubmitQuestionnaire} className="p-6 space-y-5">
             <h2 className="text-base font-semibold text-[#1e293b]">{intakeQuestionnaire.title}</h2>
             <p className="text-sm text-[#64748b]">
