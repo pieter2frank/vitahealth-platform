@@ -105,6 +105,7 @@ export default function IntakePage() {
       if (insertError) { setError(insertError.message); setSaving(false); return }
     } else {
       // Bestaande kit updaten (toewijzing)
+      if (!found) { setSaving(false); return }
       const payload: Record<string, unknown> = {
         status: selectedAssign ? 'assigned' : found.status,
         assigned: !!selectedAssign || found.assigned,
