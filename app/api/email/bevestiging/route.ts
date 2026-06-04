@@ -47,7 +47,7 @@ export async function POST(req: Request) {
   }
 
   const portalUrl = process.env.NEXT_PUBLIC_PORTAL_URL ?? ''
-  const statusUrl = `${portalUrl}/status/${token}`
+  const statusUrl = `${portalUrl}/portal/status/${token}`
 
   const { subject, html } = bevestigingEmail({
     firstName: client.first_name,
