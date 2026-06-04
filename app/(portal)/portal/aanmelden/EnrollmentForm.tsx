@@ -738,8 +738,12 @@ export function EnrollmentForm({ intakeQuestionnaire, initialEmail, initialResum
                 type="button"
                 onClick={async () => {
                   if (!clientId) return
-                  const supabase = (await import('@/lib/supabase/client')).createClient()
-                  await supabase.from('vh_client').update({ enrollment_status: 'intake_on_hold' }).eq('id', clientId)
+                  // Via API route met admin client — RLS blokkeert directe update vanuit portaal
+                  await fetch('/api/portal/intake-screener', {
+                    method:  'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body:    JSON.stringify({ clientId, choice: 'hold' }),
+                  })
                   setScreeningChoice('hold')
                 }}
                 className="w-full flex items-start gap-3 rounded-lg border border-[#e2e8f0] bg-white p-4 text-left hover:border-orange-400 hover:bg-orange-50 transition-colors group"
