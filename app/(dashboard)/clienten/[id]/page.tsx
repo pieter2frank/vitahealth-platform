@@ -68,7 +68,7 @@ export default async function ClientDetailPage({
   const questionnaireAssignments = (qaRaw ?? []).map(a => ({
     id: a.id,
     questionnaire_id: a.questionnaire_id,
-    questionnaire_title: (a.vh_questionnaire as { title: string } | null)?.title ?? '—',
+    questionnaire_title: (a.vh_questionnaire as unknown as { title: string } | null)?.title ?? '—',
     status: a.status as string,
     assigned_at: a.assigned_at as string,
   }))

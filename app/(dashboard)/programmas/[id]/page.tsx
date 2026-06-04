@@ -169,7 +169,7 @@ export default async function ProgrammaDetailPage({
             ) : (
               <ul className="divide-y divide-[#f1f5f9]">
                 {assignments.map((a) => {
-                  const client = a.vh_client as { id: string; first_name: string; last_name: string } | null
+                  const client = a.vh_client as unknown as { id: string; first_name: string; last_name: string } | null
                   return (
                     <li key={a.id} className="px-4 py-3 flex items-center justify-between gap-2">
                       <div className="min-w-0">
