@@ -29,7 +29,7 @@ export default function PortalLayout({ children }: { children: React.ReactNode }
       {/* Footer */}
       <footer className="border-t border-[#e2e8f0] mt-16">
         <div className="mx-auto max-w-4xl px-6 py-8 text-center text-sm text-[#94a3b8]">
-          <p>© {new Date().getFullYear()} Vita Health · <a href="mailto:info@vita-health.nl" className="hover:text-[#64748b]">info@vita-health.nl</a></p>
+          <p>© {new Date().getFullYear()} Vita Health · <a href="https://helpdesk.vita-health.nl" className="hover:text-[#64748b]">helpdesk.vita-health.nl</a></p>
         </div>
       </footer>
     </div>

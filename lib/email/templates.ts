@@ -41,7 +41,7 @@ function shell(title: string, body: string): string {
     <div style="border-top:1px solid #f1f5f9;padding:20px 36px;text-align:center;background:#f8fafc;">
       <p style="margin:0;color:#94a3b8;font-size:11px;line-height:1.6;">
         © ${YEAR} Vita Health &nbsp;·&nbsp;
-        <a href="mailto:info@vita-health.nl" style="color:#94a3b8;text-decoration:none;">info@vita-health.nl</a>
+        <a href="https://helpdesk.vita-health.nl" style="color:#94a3b8;text-decoration:none;">helpdesk.vita-health.nl</a>
       </p>
     </div>
   </div>
@@ -104,7 +104,7 @@ export function uitnodigingEmail(opts: {
     </div>
 
     ${btn(opts.intakeUrl, 'Intake starten')}
-    ${p('Vragen? Neem contact op via <a href="mailto:info@vita-health.nl" style="color:#1f1683;">info@vita-health.nl</a>.', 'text-align:center;font-size:12px;color:#94a3b8;')}
+    ${p('Vragen? Bezoek onze <a href="https://helpdesk.vita-health.nl" style="color:#1f1683;">helpdesk</a>.', 'text-align:center;font-size:12px;color:#94a3b8;')}
   `
   return {
     subject: 'Uitnodiging: start jouw Vita Health intake',
@@ -145,7 +145,7 @@ export function bevestigingEmail(opts: {
 
     ${p('Je ontvangt nader bericht zodra de intake is beoordeeld. Via onderstaande knop kun je de actuele status van jouw aanmelding altijd volgen.')}
     ${btn(opts.statusUrl, 'Mijn status bekijken')}
-    ${p('Vragen? Neem contact op via <a href="mailto:info@vita-health.nl" style="color:#1f1683;">info@vita-health.nl</a>.', 'text-align:center;font-size:12px;color:#94a3b8;')}
+    ${p('Vragen? Bezoek onze <a href="https://helpdesk.vita-health.nl" style="color:#1f1683;">helpdesk</a>.', 'text-align:center;font-size:12px;color:#94a3b8;')}
   `
   return {
     subject: 'Bevestiging: jouw Vita Health intake is ontvangen',
@@ -199,7 +199,7 @@ export function intakeGoedgekeurdEmail(opts: {
 
     ${p('Wil je de huidige status van jouw aanmelding bekijken? Klik op de knop hieronder.')}
     ${btn(opts.statusUrl, 'Mijn status bekijken')}
-    ${p('Vragen? Neem contact op via <a href="mailto:info@vita-health.nl" style="color:#1f1683;">info@vita-health.nl</a>.', 'text-align:center;font-size:12px;color:#94a3b8;')}
+    ${p('Vragen? Bezoek onze <a href="https://helpdesk.vita-health.nl" style="color:#1f1683;">helpdesk</a>.', 'text-align:center;font-size:12px;color:#94a3b8;')}
   `
   return {
     subject: 'Jouw intake is goedgekeurd — testkit wordt verstuurd',
@@ -229,7 +229,7 @@ export function reminderEmail(opts: {
     </div>
 
     ${btn(opts.intakeUrl, 'Intake hervatten')}
-    ${p('Heb je de intake bewust niet afgerond of heb je vragen? Stuur een e-mail naar <a href="mailto:info@vita-health.nl" style="color:#1f1683;">info@vita-health.nl</a>.', 'text-align:center;font-size:12px;color:#94a3b8;')}
+    ${p('Heb je de intake bewust niet afgerond of heb je vragen? Bezoek onze <a href="https://helpdesk.vita-health.nl" style="color:#1f1683;">helpdesk</a>.', 'text-align:center;font-size:12px;color:#94a3b8;')}
   `
   return {
     subject: 'Herinnering: jouw Vita Health intake is nog niet afgerond',

@@ -89,8 +89,8 @@ function generateEmailHtml(first_name: string, last_name: string) {
       </div>
 
       <p style="margin:0 0 24px;color:#64748b;font-size:13px;">
-        Heb je vragen? Stuur een e-mail naar
-        <a href="mailto:info@vita-health.nl" style="color:#1f1683;">info@vita-health.nl</a>.
+        Heb je vragen? Bezoek onze
+        <a href="https://helpdesk.vita-health.nl" style="color:#1f1683;">helpdesk</a>.
       </p>
     </div>
 

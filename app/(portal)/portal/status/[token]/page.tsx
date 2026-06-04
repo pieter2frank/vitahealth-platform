@@ -217,9 +217,9 @@ export default async function StatusPage({
         <div className="mt-6 rounded-xl border border-[#e2e8f0] bg-white p-5 text-center">
           <p className="text-sm text-[#64748b] leading-relaxed">
             Vragen over jouw aanmelding of testkit?<br />
-            Stuur een e-mail naar{' '}
-            <a href="mailto:info@vita-health.nl" className="text-[#1f1683] font-medium hover:underline">
-              info@vita-health.nl
+            Bezoek onze{' '}
+            <a href="https://helpdesk.vita-health.nl" className="text-[#1f1683] font-medium hover:underline">
+              helpdesk
             </a>
           </p>
         </div>
