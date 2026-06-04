@@ -23,7 +23,7 @@ const schema = z.object({
     'email_sent', 'status_change', 'access_granted', 'access_denied',
   ]),
   reason:          z.string().max(200).optional().nullable(),
-  metadata:        z.record(z.union([z.string(), z.number(), z.boolean(), z.null()])).optional(),
+  metadata:        z.record(z.string(), z.union([z.string(), z.number(), z.boolean(), z.null()])).optional(),
 })
 
 export async function POST(req: Request) {
