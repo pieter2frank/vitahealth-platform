@@ -124,35 +124,51 @@ async function sendToBetterStack(event: AuditEventInput, requestId: string): Pro
 
 // ── Kern: logAuditEvent ───────────────────────────────────────────────────────
 
+// ── Helper: bouw het insert-object ───────────────────────────────────────────
+
+function buildInsertRow(event: AuditEventInput, requestId: string) {
+  return {
+    actor_user_id:     event.actorUserId   ?? null,
+    actor_role:        event.actorRole,
+    subject_client_id: event.subjectClientId ?? null,
+    resource_type:     event.resourceType,
+    resource_id:       event.resourceId    ?? null,
+    action:            event.action,
+    access_basis:      event.actorRole,
+    reason:            event.reason        ?? null,
+    request_id:        requestId,
+    outcome:           event.outcome,
+    denial_reason:     event.denialReason  ?? null,
+    ip_hash:           event.ipAddress ? hashValue(event.ipAddress) : null,
+    session_id_hash:   event.sessionId    ? hashValue(event.sessionId) : null,
+    metadata:          event.metadata      ?? {},
+  }
+}
+
 /**
- * Schrijft een audit-event naar audit.vh_events via de beveiligde
- * security-definer functie én naar Better Stack (externe kopie).
+ * Schrijft een audit-event direct naar audit.vh_events via de admin client.
+ * De admin client heeft de service_role key en bypast RLS volledig.
  * Gooit nooit een fout naar de aanroeper.
  */
 export async function logAuditEvent(event: AuditEventInput): Promise<void> {
   const requestId = event.requestId ?? randomUUID()
   try {
     const admin = createAdminClient()
-    // Beide writes parallel — Supabase én Better Stack
-    await Promise.allSettled([
-      admin.rpc('log_event', {
-        p_actor_user_id:     event.actorUserId ?? null,
-        p_actor_role:        event.actorRole,
-        p_subject_client_id: event.subjectClientId ?? null,
-        p_resource_type:     event.resourceType,
-        p_resource_id:       event.resourceId ?? null,
-        p_action:            event.action,
-        p_access_basis:      event.actorRole,
-        p_reason:            event.reason ?? null,
-        p_request_id:        requestId,
-        p_outcome:           event.outcome,
-        p_denial_reason:     event.denialReason ?? null,
-        p_ip_hash:           event.ipAddress ? hashValue(event.ipAddress) : null,
-        p_session_id_hash:   event.sessionId  ? hashValue(event.sessionId) : null,
-        p_metadata:          event.metadata ?? {},
-      }),
-      sendToBetterStack(event, requestId),
-    ])
+    const row = buildInsertRow(event, requestId)
+
+    // Directe insert via admin client (service_role bypast RLS + schema)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (admin as any)
+      .schema('audit')
+      .from('vh_events')
+      .insert(row)
+
+    if (error) {
+      console.error('[audit] Insert fout:', error.message)
+    }
+
+    // Externe kopie parallel versturen
+    sendToBetterStack(event, requestId).catch(() => {})
   } catch (err) {
     console.error('[audit] WAARSCHUWING: audit event kon niet worden geschreven:', err)
   }
@@ -165,24 +181,15 @@ export async function logAuditEvent(event: AuditEventInput): Promise<void> {
 export async function logAuditEventOrThrow(event: AuditEventInput): Promise<void> {
   const requestId = event.requestId ?? randomUUID()
   const admin = createAdminClient()
-  const { error } = await admin.rpc('log_event', {
-    p_actor_user_id:     event.actorUserId ?? null,
-    p_actor_role:        event.actorRole,
-    p_subject_client_id: event.subjectClientId ?? null,
-    p_resource_type:     event.resourceType,
-    p_resource_id:       event.resourceId ?? null,
-    p_action:            event.action,
-    p_access_basis:      event.actorRole,
-    p_reason:            event.reason ?? null,
-    p_request_id:        requestId,
-    p_outcome:           event.outcome,
-    p_denial_reason:     event.denialReason ?? null,
-    p_ip_hash:           event.ipAddress ? hashValue(event.ipAddress) : null,
-    p_session_id_hash:   event.sessionId  ? hashValue(event.sessionId) : null,
-    p_metadata:          event.metadata ?? {},
-  })
+  const row = buildInsertRow(event, requestId)
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { error } = await (admin as any)
+    .schema('audit')
+    .from('vh_events')
+    .insert(row)
+
   if (error) throw new Error(`Auditlog schrijven mislukt: ${error.message}`)
-  // Better Stack: parallel, niet blokkerend (Supabase is al geslaagd)
   sendToBetterStack(event, requestId).catch(() => {})
 }
 
