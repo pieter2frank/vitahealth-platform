@@ -865,8 +865,8 @@ export function EnrollmentForm({ intakeQuestionnaire, initialEmail, initialResum
 
                     {/* RATING 1–10 */}
                     {q.type === 'rating_10' && (
-                      <div className="mt-1">
-                        <div className="flex gap-1.5 flex-wrap">
+                      <div className="mt-1 inline-flex flex-col">
+                        <div className="flex gap-1.5">
                           {[1,2,3,4,5,6,7,8,9,10].map(n => {
                             const selected = responses[q.id] === n
                             return (
@@ -891,7 +891,7 @@ export function EnrollmentForm({ intakeQuestionnaire, initialEmail, initialResum
                           })}
                         </div>
                         {(q.leftLabel || q.rightLabel) && (
-                          <div className="flex justify-between mt-1.5 px-0.5">
+                          <div className="flex justify-between mt-1.5">
                             <span className="text-xs text-[#94a3b8]">{q.leftLabel ?? ''}</span>
                             <span className="text-xs text-[#94a3b8]">{q.rightLabel ?? ''}</span>
                           </div>
@@ -905,8 +905,8 @@ export function EnrollmentForm({ intakeQuestionnaire, initialEmail, initialResum
                       const scaleMax = q.max ?? 5
                       const steps = Array.from({ length: scaleMax - scaleMin + 1 }, (_, i) => scaleMin + i)
                       return (
-                        <div className="mt-1">
-                          <div className="flex gap-1.5 flex-wrap">
+                        <div className="mt-1 inline-flex flex-col">
+                          <div className="flex gap-1.5">
                             {steps.map(n => {
                               const selected = responses[q.id] === n
                               return (
@@ -931,7 +931,7 @@ export function EnrollmentForm({ intakeQuestionnaire, initialEmail, initialResum
                             })}
                           </div>
                           {(q.leftLabel || q.rightLabel) && (
-                            <div className="flex justify-between mt-1.5 px-0.5">
+                            <div className="flex justify-between mt-1.5">
                               <span className="text-xs text-[#94a3b8]">{q.leftLabel ?? ''}</span>
                               <span className="text-xs text-[#94a3b8]">{q.rightLabel ?? ''}</span>
                             </div>
