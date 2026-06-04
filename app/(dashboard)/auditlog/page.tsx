@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import type { SupabaseClient } from '@supabase/supabase-js'
+import type { SupabaseClient } from '@supabase/supabase-js' // eslint-disable-line @typescript-eslint/no-unused-vars
 import { redirect } from 'next/navigation'
 import { format } from 'date-fns'
 import { nl } from 'date-fns/locale'
@@ -69,32 +69,25 @@ export default async function AuditlogPage({
   const page = Math.max(1, parseInt(pageParam ?? '1', 10))
   const offset = (page - 1) * PAGE_SIZE
 
-  // ── Data ophalen via admin client (audit schema) ───────────────────────────
+  // ── Data ophalen via public RPC functies (PostgREST exposeert alleen public) ──
   const admin: SupabaseClient = createAdminClient()
-  // audit schema via aparte client-instantie
-  const auditAdmin: SupabaseClient = createAdminClient()
+
+  const [eventsResult, countResult] = await Promise.all([
+    admin.rpc('get_audit_events', {
+      p_action:        action        ?? null,
+      p_resource_type: resource      ?? null,
+      p_limit:         PAGE_SIZE,
+      p_offset:        offset,
+    }),
+    admin.rpc('count_audit_events', {
+      p_action:        action        ?? null,
+      p_resource_type: resource      ?? null,
+    }),
+  ])
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const auditFrom = (auditAdmin as any).schema('audit')
-
-  let query = auditFrom
-    .from('vh_events')
-    .select(`
-      id, created_at,
-      actor_user_id, actor_role,
-      subject_client_id,
-      resource_type, resource_id,
-      action, reason, outcome, denial_reason,
-      metadata
-    `, { count: 'exact' })
-    .order('created_at', { ascending: false })
-    .range(offset, offset + PAGE_SIZE - 1)
-
-  if (action)   query = query.eq('action', action)
-  if (resource) query = query.eq('resource_type', resource)
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: rawEvents, count } = await query as { data: any[] | null; count: number | null }
+  const rawEvents: any[] = eventsResult.data ?? []
+  const count: number    = (countResult.data as unknown as number) ?? 0
 
   interface AuditEvent {
     id: string
