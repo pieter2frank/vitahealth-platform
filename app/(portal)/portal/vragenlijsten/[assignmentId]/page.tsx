@@ -20,8 +20,8 @@ export default async function PubliekeVragenlijstPage({
 
   if (!assignment) notFound()
 
-  const client = assignment.vh_client as { first_name: string; last_name: string } | null
-  const q = assignment.vh_questionnaire as { title: string; json_content: QuestionnaireDefinition } | null
+  const client = assignment.vh_client as unknown as { first_name: string; last_name: string } | null
+  const q = assignment.vh_questionnaire as unknown as { title: string; json_content: QuestionnaireDefinition } | null
 
   if (!q) notFound()
 

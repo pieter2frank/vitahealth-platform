@@ -27,10 +27,10 @@ export default async function TestkitsPage({
     date:       kit.date,
     status:     kit.status,
     assigned:   kit.assigned,
-    assignedTo: (kit.vh_client as { first_name: string; last_name: string } | null)
-      ? `${(kit.vh_client as { first_name: string; last_name: string }).first_name} ${(kit.vh_client as { first_name: string; last_name: string }).last_name}`
-      : (kit.vh_company as { name: string } | null)?.name
-      ?? (kit.vh_arbo    as { name: string } | null)?.name
+    assignedTo: (kit.vh_client as unknown as { first_name: string; last_name: string } | null)
+      ? `${(kit.vh_client as unknown as { first_name: string; last_name: string }).first_name} ${(kit.vh_client as unknown as { first_name: string; last_name: string }).last_name}`
+      : (kit.vh_company as unknown as { name: string } | null)?.name
+      ?? (kit.vh_arbo    as unknown as { name: string } | null)?.name
       ?? '—',
   }))
 

@@ -15,9 +15,9 @@ export default async function NieuweBatchPage() {
 
   // Plat maken voor de client component (geen serializatie-issues met geneste objecten)
   const retourKits = (retourRaw ?? []).map((kit) => {
-    const c = kit.vh_client as { first_name: string; last_name: string } | null
-    const co = kit.vh_company as { name: string } | null
-    const a = kit.vh_arbo as { name: string } | null
+    const c = kit.vh_client as unknown as { first_name: string; last_name: string } | null
+    const co = kit.vh_company as unknown as { name: string } | null
+    const a = kit.vh_arbo as unknown as { name: string } | null
     return {
       id: kit.id,
       barcode: kit.barcode,
