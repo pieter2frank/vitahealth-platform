@@ -78,33 +78,82 @@ function hashValue(value: string): string {
   return createHash('sha256').update(`${HASH_SALT}:${value}`).digest('hex').slice(0, 32)
 }
 
+// ── Better Stack log drain ────────────────────────────────────────────────────
+// Stuur elk audit-event ook naar Better Stack als tamper-resistant externe kopie.
+// Zelfs als de Supabase database gecompromitteerd wordt, blijft dit log intact.
+
+async function sendToBetterStack(event: AuditEventInput, requestId: string): Promise<void> {
+  const token = process.env.BETTERSTACK_SOURCE_TOKEN
+  if (!token) return // Niet geconfigureerd — stil overslaan
+
+  try {
+    await fetch('https://in.logs.betterstack.com', {
+      method:  'POST',
+      headers: {
+        'Content-Type':  'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        // Better Stack standaard velden
+        dt:      new Date().toISOString(),
+        level:   event.outcome === 'denied' || event.outcome === 'failed' ? 'warn' : 'info',
+        message: `${event.action} ${event.resourceType} — ${event.outcome}`,
+
+        // Audit-specifieke velden (geen medische inhoud)
+        actor_user_id:     event.actorUserId,
+        actor_role:        event.actorRole,
+        subject_client_id: event.subjectClientId,
+        resource_type:     event.resourceType,
+        resource_id:       event.resourceId,
+        action:            event.action,
+        outcome:           event.outcome,
+        denial_reason:     event.denialReason,
+        reason:            event.reason,
+        request_id:        requestId,
+        // IP gehasht — nooit raw
+        ip_hash:           event.ipAddress ? hashValue(event.ipAddress) : null,
+        metadata:          event.metadata ?? {},
+        source:            'vitahealth-audit',
+      }),
+    })
+  } catch {
+    // Extern loggen mag nooit de applicatie blokkeren
+    console.warn('[audit] Better Stack niet bereikbaar — alleen Supabase-log beschikbaar')
+  }
+}
+
 // ── Kern: logAuditEvent ───────────────────────────────────────────────────────
 
 /**
  * Schrijft een audit-event naar audit.vh_events via de beveiligde
- * security-definer functie. Gooit nooit een fout naar de aanroeper.
+ * security-definer functie én naar Better Stack (externe kopie).
+ * Gooit nooit een fout naar de aanroeper.
  */
 export async function logAuditEvent(event: AuditEventInput): Promise<void> {
+  const requestId = event.requestId ?? randomUUID()
   try {
     const admin = createAdminClient()
-    await admin.rpc('log_event', {
-      p_actor_user_id:     event.actorUserId ?? null,
-      p_actor_role:        event.actorRole,
-      p_subject_client_id: event.subjectClientId ?? null,
-      p_resource_type:     event.resourceType,
-      p_resource_id:       event.resourceId ?? null,
-      p_action:            event.action,
-      p_access_basis:      event.actorRole,
-      p_reason:            event.reason ?? null,
-      p_request_id:        event.requestId ?? randomUUID(),
-      p_outcome:           event.outcome,
-      p_denial_reason:     event.denialReason ?? null,
-      p_ip_hash:           event.ipAddress ? hashValue(event.ipAddress) : null,
-      p_session_id_hash:   event.sessionId  ? hashValue(event.sessionId) : null,
-      p_metadata:          event.metadata ?? {},
-    })
+    // Beide writes parallel — Supabase én Better Stack
+    await Promise.allSettled([
+      admin.rpc('log_event', {
+        p_actor_user_id:     event.actorUserId ?? null,
+        p_actor_role:        event.actorRole,
+        p_subject_client_id: event.subjectClientId ?? null,
+        p_resource_type:     event.resourceType,
+        p_resource_id:       event.resourceId ?? null,
+        p_action:            event.action,
+        p_access_basis:      event.actorRole,
+        p_reason:            event.reason ?? null,
+        p_request_id:        requestId,
+        p_outcome:           event.outcome,
+        p_denial_reason:     event.denialReason ?? null,
+        p_ip_hash:           event.ipAddress ? hashValue(event.ipAddress) : null,
+        p_session_id_hash:   event.sessionId  ? hashValue(event.sessionId) : null,
+        p_metadata:          event.metadata ?? {},
+      }),
+      sendToBetterStack(event, requestId),
+    ])
   } catch (err) {
-    // Nooit de aanroeper laten falen door een logfout — maar wel zichtbaar maken
     console.error('[audit] WAARSCHUWING: audit event kon niet worden geschreven:', err)
   }
 }
@@ -114,6 +163,7 @@ export async function logAuditEvent(event: AuditEventInput): Promise<void> {
  * Gebruik dit voor kritieke acties: export, download, statuswijziging.
  */
 export async function logAuditEventOrThrow(event: AuditEventInput): Promise<void> {
+  const requestId = event.requestId ?? randomUUID()
   const admin = createAdminClient()
   const { error } = await admin.rpc('log_event', {
     p_actor_user_id:     event.actorUserId ?? null,
@@ -124,7 +174,7 @@ export async function logAuditEventOrThrow(event: AuditEventInput): Promise<void
     p_action:            event.action,
     p_access_basis:      event.actorRole,
     p_reason:            event.reason ?? null,
-    p_request_id:        event.requestId ?? randomUUID(),
+    p_request_id:        requestId,
     p_outcome:           event.outcome,
     p_denial_reason:     event.denialReason ?? null,
     p_ip_hash:           event.ipAddress ? hashValue(event.ipAddress) : null,
@@ -132,6 +182,8 @@ export async function logAuditEventOrThrow(event: AuditEventInput): Promise<void
     p_metadata:          event.metadata ?? {},
   })
   if (error) throw new Error(`Auditlog schrijven mislukt: ${error.message}`)
+  // Better Stack: parallel, niet blokkerend (Supabase is al geslaagd)
+  sendToBetterStack(event, requestId).catch(() => {})
 }
 
 // ── withAudit wrapper ─────────────────────────────────────────────────────────
