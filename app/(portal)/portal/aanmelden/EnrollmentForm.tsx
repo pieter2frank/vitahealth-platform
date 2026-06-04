@@ -553,6 +553,33 @@ export function EnrollmentForm({ intakeQuestionnaire, initialEmail, initialResum
           <div className="p-6 space-y-5">
             <h2 className="text-base font-semibold text-[#1e293b]">Toestemmingen</h2>
 
+            {/* Documentenblok */}
+            <div className="rounded-lg border border-[#e2e8f0] bg-[#f8fafc] p-4">
+              <p className="text-sm text-[#475569] mb-3 leading-relaxed">
+                Lees de onderstaande documenten zorgvuldig door voordat u de toestemmingen bevestigt:
+              </p>
+              <div className="flex flex-col sm:flex-row gap-2">
+                <a
+                  href="/deelnemersinformatie-vita-health.pdf"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 rounded-lg border border-[#1f1683] bg-white px-4 py-2 text-sm font-medium text-[#1f1683] hover:bg-[#eef4ff] transition-colors"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                  Deelnemersinformatie
+                </a>
+                <a
+                  href="/privacyverklaring-vita-health.pdf"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 rounded-lg border border-[#e2e8f0] bg-white px-4 py-2 text-sm font-medium text-[#475569] hover:border-[#1f1683] hover:text-[#1f1683] hover:bg-[#eef4ff] transition-colors"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                  Privacyverklaring
+                </a>
+              </div>
+            </div>
+
             {/* Verplichte toestemmingen */}
             <div>
               <p className="text-xs font-semibold text-[#64748b] uppercase tracking-wide mb-3">
