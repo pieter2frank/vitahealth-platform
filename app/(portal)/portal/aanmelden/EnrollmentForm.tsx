@@ -169,7 +169,7 @@ export function EnrollmentForm({ intakeQuestionnaire, initialEmail, initialResum
       return
     }
 
-    // Stap 2 → 3: vh_client aanmaken
+    // Stap 2 → 3: vh_client aanmaken of bijwerken
     if (step === 2) {
       const err = validateStep2()
       if (err) { setError(err); return }
@@ -177,30 +177,45 @@ export function EnrollmentForm({ intakeQuestionnaire, initialEmail, initialResum
       setSaving(true)
       const supabase = createClient()
 
-      const { data: newClient, error: insertErr } = await supabase
-        .from('vh_client')
-        .insert({
-          first_name:        firstName.trim(),
-          last_name:         lastName.trim(),
-          email:             email.trim(),
-          phone:             phone.trim() || null,
-          birth_date:        birthDate || null,
-          address:           address.trim(),
-          postal_code:       postalCode.trim(),
-          city:              city.trim(),
-          enrollment_status: 'aangemeld',
-        })
-        .select('id')
-        .single()
-
-      setSaving(false)
-
-      if (insertErr || !newClient) {
-        setError('Registratie mislukt: ' + (insertErr?.message ?? 'onbekende fout'))
-        return
+      const adresPayload = {
+        phone:      phone.trim() || null,
+        birth_date: birthDate    || null,
+        address:    address.trim(),
+        postal_code: postalCode.trim(),
+        city:       city.trim(),
       }
 
-      setClientId(newClient.id)
+      if (clientId) {
+        // Uitgenodigde cliënt: bestaand record bijwerken
+        const { error: updateErr } = await supabase
+          .from('vh_client')
+          .update(adresPayload)
+          .eq('id', clientId)
+
+        setSaving(false)
+        if (updateErr) { setError('Opslaan mislukt: ' + updateErr.message); return }
+      } else {
+        // Nieuwe cliënt: record aanmaken
+        const { data: newClient, error: insertErr } = await supabase
+          .from('vh_client')
+          .insert({
+            first_name:        firstName.trim(),
+            last_name:         lastName.trim(),
+            email:             email.trim(),
+            enrollment_status: 'aangemeld',
+            ...adresPayload,
+          })
+          .select('id')
+          .single()
+
+        setSaving(false)
+        if (insertErr || !newClient) {
+          setError('Registratie mislukt: ' + (insertErr?.message ?? 'onbekende fout'))
+          return
+        }
+        setClientId(newClient.id)
+      }
+
       setStep(3)
       window.scrollTo({ top: 0, behavior: 'smooth' })
       return
