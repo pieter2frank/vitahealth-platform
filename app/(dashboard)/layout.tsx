@@ -1,9 +1,11 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { Sidebar } from '@/components/layout/Sidebar'
 import { UserProvider } from '@/components/providers/UserProvider'
 import { InactivityGuard } from '@/components/providers/InactivityGuard'
 import { RealtimeNotifications } from '@/components/providers/RealtimeNotifications'
+import { AlertBanner } from '@/components/admin/AlertBanner'
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient()
@@ -27,7 +29,6 @@ export default async function DashboardLayout({ children }: { children: React.Re
     { count: newOrderCount },
     { data: medewerker },
   ] = await Promise.all([
-    // Badge toont nieuw aangemelde deelnemers die nog verwerkt moeten worden
     supabase
       .from('vh_client')
       .select('*', { count: 'exact', head: true })
@@ -39,6 +40,19 @@ export default async function DashboardLayout({ children }: { children: React.Re
       .maybeSingle(),
   ])
 
+  // Openstaande alerts ophalen (alleen voor admins)
+  let activeAlerts: { id: string; alert_type: string; severity: string; title: string; message: string; created_at: string }[] = []
+  if (medewerker?.role === 'admin') {
+    const admin = createAdminClient()
+    const { data } = await admin
+      .from('vh_alert')
+      .select('id, alert_type, severity, title, message, created_at')
+      .is('resolved_at', null)
+      .order('created_at', { ascending: false })
+      .limit(10)
+    activeAlerts = data ?? []
+  }
+
   return (
     <UserProvider
       email={user.email ?? null}
@@ -49,6 +63,11 @@ export default async function DashboardLayout({ children }: { children: React.Re
         <div className="flex h-screen overflow-hidden bg-[#f8fafc]">
           <Sidebar newOrderCount={newOrderCount ?? 0} />
           <div className="flex flex-1 flex-col overflow-hidden">
+            {activeAlerts.length > 0 && (
+              <div className="px-6 pt-4 pb-0">
+                <AlertBanner alerts={activeAlerts} />
+              </div>
+            )}
             <main className="flex-1 overflow-y-auto">
               {children}
             </main>

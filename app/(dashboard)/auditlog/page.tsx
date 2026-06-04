@@ -3,7 +3,9 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { redirect } from 'next/navigation'
 import { format } from 'date-fns'
 import { nl } from 'date-fns/locale'
-import { ShieldCheck, AlertTriangle, CheckCircle2, XCircle } from 'lucide-react'
+import { ShieldCheck, AlertTriangle, CheckCircle2, XCircle, Bell } from 'lucide-react'
+import { AlertBanner } from '@/components/admin/AlertBanner'
+import { ResolveAlertButton } from './ResolveAlertButton'
 
 export const metadata = { title: 'Auditlog — Vita Health' }
 
@@ -104,6 +106,21 @@ export default async function AuditlogPage({
 
   const clientMap = Object.fromEntries((clients ?? []).map(c => [c.id, c]))
 
+  // Openstaande alerts ophalen
+  const { data: activeAlerts } = await admin
+    .from('vh_alert')
+    .select('id, alert_type, severity, title, message, created_at')
+    .is('resolved_at', null)
+    .order('created_at', { ascending: false })
+    .limit(20)
+
+  // Alle alerts (ook afgehandeld) voor het overzicht
+  const { data: allAlerts } = await admin
+    .from('vh_alert')
+    .select('id, alert_type, severity, title, message, created_at, resolved_at')
+    .order('created_at', { ascending: false })
+    .limit(50)
+
   const totalPages = Math.ceil((count ?? 0) / PAGE_SIZE)
 
   return (
@@ -123,6 +140,42 @@ export default async function AuditlogPage({
           {count ?? 0} events totaal
         </div>
       </div>
+
+      {/* Actieve alerts */}
+      {(activeAlerts ?? []).length > 0 && (
+        <div className="mb-6 space-y-2">
+          <div className="flex items-center gap-2 mb-2">
+            <Bell size={14} className="text-orange-500" />
+            <span className="text-xs font-semibold text-[#64748b] uppercase tracking-wide">
+              Openstaande alerts ({(activeAlerts ?? []).length})
+            </span>
+          </div>
+          <AlertBanner alerts={activeAlerts ?? []} />
+
+          {/* Alle openstaande alerts als lijst */}
+          {(activeAlerts ?? []).length > 1 && (
+            <div className="rounded-lg border border-[#e2e8f0] divide-y divide-[#f1f5f9]">
+              {(activeAlerts ?? []).map(a => (
+                <div key={a.id} className="flex items-start gap-3 px-4 py-3">
+                  <span className={`mt-0.5 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase border ${
+                    a.severity === 'critical' ? 'bg-red-50 text-red-700 border-red-200' :
+                    a.severity === 'warning'  ? 'bg-orange-50 text-orange-700 border-orange-200' :
+                                               'bg-blue-50 text-blue-700 border-blue-200'
+                  }`}>{a.severity}</span>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-[#1e293b]">{a.title}</p>
+                    <p className="text-xs text-[#64748b] mt-0.5">{a.message}</p>
+                    <p className="text-[10px] text-[#94a3b8] mt-1">
+                      {format(new Date(a.created_at), 'd MMM yyyy HH:mm', { locale: nl })}
+                    </p>
+                  </div>
+                  <ResolveAlertButton alertId={a.id} />
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Filters — server-side via links */}
       <div className="mb-5 flex items-center gap-2 flex-wrap">
