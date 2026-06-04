@@ -317,12 +317,10 @@ export function EnrollmentStatusSection({ clientId, initialStatus, assignedKitId
                   <button onClick={() => setOnHoldAction(false)} className="text-xs text-[#94a3b8] hover:text-[#64748b] w-full text-center pt-1">
                     Annuleren
                   </button>
-                  <button onClick={() => setOnHoldAction(false)} className="text-sm text-[#94a3b8] hover:text-[#64748b]">
-                    Annuleren
-                  </button>
                 </div>
-              </div>
-            )}
+              )}
+            </div>
+
           </div>
         )}
 
