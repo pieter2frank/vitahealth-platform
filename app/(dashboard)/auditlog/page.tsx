@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import type { SupabaseClient } from '@supabase/supabase-js'
 import { redirect } from 'next/navigation'
 import { format } from 'date-fns'
 import { nl } from 'date-fns/locale'
@@ -69,9 +70,14 @@ export default async function AuditlogPage({
   const offset = (page - 1) * PAGE_SIZE
 
   // ── Data ophalen via admin client (audit schema) ───────────────────────────
-  const admin = createAdminClient()
+  const admin: SupabaseClient = createAdminClient()
+  // audit schema via aparte client-instantie
+  const auditAdmin: SupabaseClient = createAdminClient()
 
-  let query = admin
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const auditFrom = (auditAdmin as any).schema('audit')
+
+  let query = auditFrom
     .from('vh_events')
     .select(`
       id, created_at,
@@ -81,7 +87,6 @@ export default async function AuditlogPage({
       action, reason, outcome, denial_reason,
       metadata
     `, { count: 'exact' })
-    .schema('audit')
     .order('created_at', { ascending: false })
     .range(offset, offset + PAGE_SIZE - 1)
 
