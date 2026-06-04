@@ -93,23 +93,40 @@ export default async function AuditlogPage({
   if (action)   query = query.eq('action', action)
   if (resource) query = query.eq('resource_type', resource)
 
-  const { data: events, count } = await query
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: rawEvents, count } = await query as { data: any[] | null; count: number | null }
+
+  interface AuditEvent {
+    id: string
+    created_at: string
+    actor_user_id: string | null
+    actor_role: string
+    subject_client_id: string | null
+    resource_type: string
+    resource_id: string | null
+    action: string
+    reason: string | null
+    outcome: string
+    denial_reason: string | null
+    metadata: Record<string, unknown>
+  }
+  const events: AuditEvent[] = (rawEvents ?? []) as AuditEvent[]
 
   // ── Medewerkersnamen ophalen voor actor_user_id's ──────────────────────────
-  const actorIds = [...new Set((events ?? []).map(e => e.actor_user_id).filter(Boolean))]
+  const actorIds = [...new Set(events.map((e: AuditEvent) => e.actor_user_id).filter((id): id is string => !!id))]
   const { data: profiles } = actorIds.length
     ? await admin.from('profiles').select('id, full_name, email').in('id', actorIds)
     : { data: [] }
 
-  const profileMap = Object.fromEntries((profiles ?? []).map(p => [p.id, p]))
+  const profileMap = Object.fromEntries((profiles ?? []).map((p: { id: string; full_name: string | null; email: string }) => [p.id, p]))
 
   // ── Cliëntnamen ophalen voor subject_client_id's ───────────────────────────
-  const clientIds = [...new Set((events ?? []).map(e => e.subject_client_id).filter(Boolean))]
+  const clientIds = [...new Set(events.map((e: AuditEvent) => e.subject_client_id).filter((id): id is string => !!id))]
   const { data: clients } = clientIds.length
     ? await admin.from('vh_client').select('id, first_name, last_name').in('id', clientIds)
     : { data: [] }
 
-  const clientMap = Object.fromEntries((clients ?? []).map(c => [c.id, c]))
+  const clientMap = Object.fromEntries((clients ?? []).map((c: { id: string; first_name: string; last_name: string }) => [c.id, c]))
 
   // Openstaande alerts ophalen
   const { data: activeAlerts } = await admin
@@ -231,13 +248,13 @@ export default async function AuditlogPage({
               </tr>
             </thead>
             <tbody className="divide-y divide-[#f1f5f9]">
-              {(events ?? []).length === 0 ? (
+              {events.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="px-4 py-10 text-center text-sm text-[#94a3b8]">
                     Geen audit events gevonden.
                   </td>
                 </tr>
-              ) : (events ?? []).map(e => {
+              ) : events.map((e: AuditEvent) => {
                 const actor  = profileMap[e.actor_user_id]
                 const client = clientMap[e.subject_client_id]
                 const outcome = e.outcome as 'success' | 'denied' | 'failed'
