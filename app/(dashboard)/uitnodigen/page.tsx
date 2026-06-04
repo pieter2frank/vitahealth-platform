@@ -116,9 +116,12 @@ export default function UitnodigingPage() {
             >
               Nog een uitnodiging
             </Button>
-            <Button asChild>
-              <Link href="/clienten">Naar cliënten</Link>
-            </Button>
+            <Link
+              href="/clienten"
+              className="inline-flex items-center gap-2 rounded-lg bg-[#1f1683] px-4 py-2 text-sm font-medium text-white hover:bg-[#1a1270] transition-colors"
+            >
+              Naar cliënten
+            </Link>
           </div>
         </div>
       </div>
@@ -178,9 +181,12 @@ export default function UitnodigingPage() {
             <Send size={14} />
             Uitnodiging versturen
           </Button>
-          <Button type="button" variant="outline" asChild>
-            <Link href="/clienten">Annuleren</Link>
-          </Button>
+          <Link
+            href="/clienten"
+            className="inline-flex items-center gap-2 rounded-lg border border-[#e2e8f0] bg-white px-4 py-2 text-sm font-medium text-[#475569] hover:border-[#1f1683] hover:text-[#1f1683] transition-colors"
+          >
+            Annuleren
+          </Link>
         </div>
       </form>
     </div>
