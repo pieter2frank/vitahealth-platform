@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import * as XLSX from 'xlsx'
 import { isUuid } from '@/lib/validation'
 import type { Client } from '@/types'
+import { logAuditEventOrThrow } from '@/lib/audit'
 
 function calcAge(birthDate: string | null): number | string {
   if (!birthDate) return ''
@@ -21,13 +22,17 @@ const GENDER_LABELS: Record<string, string> = {
 }
 
 export async function GET(
-  _req: Request,
+  req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
   const { id } = await params
   if (!isUuid(id)) return new Response('Ongeldig batch ID', { status: 400 })
 
   const supabase = await createClient()
+
+  // Medewerker identificeren voor auditlog
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return new Response('Niet geautoriseerd', { status: 401 })
 
   // 1. Batch ophalen
   const { data: batch } = await supabase
@@ -96,6 +101,20 @@ export async function GET(
     type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
   })
   const filename = `batch-${batch.badge_id}.xlsx`
+
+  // ── Auditlog: blokkerend — export mag niet zonder log ──────────────────────
+  const ip = req.headers.get('x-forwarded-for') ?? req.headers.get('cf-connecting-ip') ?? ''
+  await logAuditEventOrThrow({
+    actorUserId:    user.id,
+    actorRole:      'medewerker_regulier',
+    resourceType:   'batch_export',
+    resourceId:     id,
+    action:         'export',
+    outcome:        'success',
+    reason:         `Batch ${batch.badge_id} geëxporteerd naar Excel`,
+    ipAddress:      ip,
+    metadata:       { batch_id: id, badge_id: batch.badge_id, kit_count: (kits ?? []).length },
+  })
 
   return new Response(blob, {
     headers: {

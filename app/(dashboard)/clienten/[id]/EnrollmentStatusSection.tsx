@@ -86,6 +86,20 @@ export function EnrollmentStatusSection({ clientId, initialStatus, assignedKitId
     setSaving(false)
     setStatus(transition.next)
 
+    // Auditlog: statuswijziging
+    fetch('/api/audit/log', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        subjectClientId: clientId,
+        resourceType: 'enrollment_status',
+        resourceId: clientId,
+        action: 'status_change',
+        reason: `Status gewijzigd naar ${transition.next}`,
+        metadata: { from: status, to: transition.next },
+      }),
+    }).catch(() => {})
+
     // E-mail versturen bij goedkeuring intake
     if (transition.next === 'intake_akkoord') {
       fetch('/api/email/intake-goedgekeurd', {

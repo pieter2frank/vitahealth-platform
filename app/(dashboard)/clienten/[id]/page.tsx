@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
+import { logAuditEvent } from '@/lib/audit'
 import Link from 'next/link'
 import { formatDate, formatDateTime, STATUS_LABELS, STATUS_COLORS } from '@/lib/utils'
 import { ArrowLeft, Pencil, TestTube2, User, Phone, Mail, MapPin, Calendar } from 'lucide-react'
@@ -23,6 +24,9 @@ export default async function ClientDetailPage({
   const { bewerken } = await searchParams
   const supabase = await createClient()
 
+  // Medewerker ophalen voor auditlog
+  const { data: { user } } = await supabase.auth.getUser()
+
   const { data: client } = await supabase
     .from('vh_client')
     .select('id, first_name, last_name, email, phone, birth_date, address, city, postal_code, created_at, enrollment_status')
@@ -30,6 +34,19 @@ export default async function ClientDetailPage({
     .single()
 
   if (!client) notFound()
+
+  // Auditlog: inzage cliëntdossier (fire-and-forget — blokkeert pagina niet)
+  if (user) {
+    logAuditEvent({
+      actorUserId:      user.id,
+      actorRole:        'medewerker_regulier',
+      subjectClientId:  client.id,
+      resourceType:     'client',
+      resourceId:       client.id,
+      action:           'view',
+      outcome:          'success',
+    }).catch(() => {}) // stil falen
+  }
 
   const [
     { data: testkits },
