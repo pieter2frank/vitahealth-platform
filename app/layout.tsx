@@ -8,6 +8,10 @@ const geistMono = Geist_Mono({ variable: '--font-geist-mono', subsets: ['latin']
 export const metadata: Metadata = {
   title: 'Vita Health Platform',
   description: 'Biomarker testkit logistiek',
+  robots: {
+    index:  false,
+    follow: false,
+  },
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
