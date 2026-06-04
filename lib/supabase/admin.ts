@@ -5,6 +5,8 @@ import type { SupabaseClient } from '@supabase/supabase-js'
  * Supabase admin client (service role) — bypast RLS.
  * Alleen gebruiken in server-side code (API routes, server actions).
  * Nooit exporteren naar client-side code.
+ *
+ * Return type is explicit voor TypeScript strict mode compliance.
  */
 export function createAdminClient(): SupabaseClient {
   return createClient(
