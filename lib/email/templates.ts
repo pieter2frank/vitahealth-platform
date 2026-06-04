@@ -74,13 +74,41 @@ function greeting(firstName: string): string {
 export function uitnodigingEmail(opts: {
   firstName: string
   intakeUrl: string
+  appUrl: string
 }): { subject: string; html: string } {
+  const deelnemersinfoUrl  = `${opts.appUrl}/deelnemersinformatie-vita-health.pdf`
+  const privacyverklaringUrl = `${opts.appUrl}/privacyverklaring-vita-health.pdf`
+
   const body = `
     ${greeting(opts.firstName)}
-    ${p('Je bent uitgenodigd om de intake te starten voor de <strong style="color:#1e293b;">Vita Health biomarkertest</strong>. Dit duurt ongeveer 10 minuten.')}
+    ${p('Je bent uitgenodigd om deel te nemen aan de <strong style="color:#1e293b;">Vita Health biomarkertest</strong>. Lees voor aanvang de onderstaande documenten zorgvuldig door.')}
 
+    <!-- Documenten -->
+    <div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:10px;padding:18px 22px;margin:0 0 20px;">
+      <p style="margin:0 0 12px;font-size:13px;font-weight:700;color:#0369a1;">📄 &nbsp;Lees voor aanvang</p>
+      <table style="width:100%;border-collapse:collapse;">
+        <tr>
+          <td style="padding-bottom:8px;">
+            <a href="${esc(deelnemersinfoUrl)}" style="display:inline-block;color:#1f1683;font-size:13px;font-weight:600;text-decoration:underline;">
+              Deelnemersinformatie biomarkertest →
+            </a><br>
+            <span style="font-size:12px;color:#64748b;">Wat houdt deelname in, hoe werkt de test en wat zijn uw rechten.</span>
+          </td>
+        </tr>
+        <tr>
+          <td>
+            <a href="${esc(privacyverklaringUrl)}" style="display:inline-block;color:#1f1683;font-size:13px;font-weight:600;text-decoration:underline;">
+              Privacyverklaring Vita Health →
+            </a><br>
+            <span style="font-size:12px;color:#64748b;">Hoe wij omgaan met uw persoonsgegevens en gezondheidsgegevens.</span>
+          </td>
+        </tr>
+      </table>
+    </div>
+
+    <!-- Stappen -->
     <div style="background:#f8fafc;border-radius:10px;padding:20px 22px;margin:0 0 24px;">
-      <p style="margin:0 0 12px;font-size:13px;font-weight:700;color:#1e293b;">Wat ga je invullen?</p>
+      <p style="margin:0 0 12px;font-size:13px;font-weight:700;color:#1e293b;">Wat ga je invullen? (±10 minuten)</p>
       <table style="width:100%;border-collapse:collapse;">
         <tr>
           <td style="width:22px;vertical-align:top;padding-bottom:10px;">

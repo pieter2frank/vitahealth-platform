@@ -35,9 +35,10 @@ export async function POST(req: Request) {
   if (!token) return NextResponse.json({ error: 'Token aanmaken mislukt.' }, { status: 500 })
 
   const portalUrl = process.env.NEXT_PUBLIC_PORTAL_URL ?? ''
-  const intakeUrl = `${portalUrl}/aanmelden?token=${token}`
+  const appUrl    = process.env.NEXT_PUBLIC_APP_URL ?? ''
+  const intakeUrl = `${portalUrl}/portal/aanmelden?token=${token}`
 
-  const { subject, html } = uitnodigingEmail({ firstName: client.first_name, intakeUrl })
+  const { subject, html } = uitnodigingEmail({ firstName: client.first_name, intakeUrl, appUrl })
 
   const { error } = await resend.emails.send({
     from: `Vita Health <${process.env.FROM_EMAIL ?? 'noreply@helpdesk.vita-health.nl'}>`,
