@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
 import { formatDate } from '@/lib/utils'
-import { UserPlus, Search, X } from 'lucide-react'
+import { UserPlus, Search, X, Send } from 'lucide-react'
 import { ClickableRow } from '@/components/ui/ClickableRow'
 import { ENROLLMENT_LABELS, ENROLLMENT_COLORS, type EnrollmentStatus } from '@/lib/enrollment'
 
@@ -38,13 +38,22 @@ export default async function ClientenPage({
             {clients?.length ?? 0} cliënt{(clients?.length ?? 0) !== 1 ? 'en' : ''} gevonden.
           </p>
         </div>
-        <Link
-          href="/clienten/nieuw"
-          className="inline-flex items-center gap-2 rounded-lg bg-[#1f1683] px-4 py-2 text-sm font-medium text-white hover:bg-[#1a1270] transition-colors"
-        >
-          <UserPlus size={16} />
-          Nieuwe cliënt
-        </Link>
+        <div className="flex items-center gap-2">
+          <Link
+            href="/uitnodigen"
+            className="inline-flex items-center gap-2 rounded-lg border border-[#1f1683] bg-white px-4 py-2 text-sm font-medium text-[#1f1683] hover:bg-[#eef4ff] transition-colors"
+          >
+            <Send size={15} />
+            Uitnodiging sturen
+          </Link>
+          <Link
+            href="/clienten/nieuw"
+            className="inline-flex items-center gap-2 rounded-lg bg-[#1f1683] px-4 py-2 text-sm font-medium text-white hover:bg-[#1a1270] transition-colors"
+          >
+            <UserPlus size={16} />
+            Nieuwe cliënt
+          </Link>
+        </div>
       </div>
 
       {/* Zoekbalk + actief statusfilter */}
