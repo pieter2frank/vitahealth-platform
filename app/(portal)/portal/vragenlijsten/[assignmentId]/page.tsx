@@ -27,6 +27,18 @@ export default async function PubliekeVragenlijstPage({
 
   const def = q.json_content
 
+  // Status-URL ophalen via intake-token
+  const { data: tokenRow } = await supabase
+    .from('vh_intake_token')
+    .select('token')
+    .eq('client_id', assignment.client_id)
+    .maybeSingle()
+
+  const portalUrl = process.env.NEXT_PUBLIC_PORTAL_URL ?? ''
+  const statusUrl = tokenRow?.token
+    ? `${portalUrl}/portal/status/${tokenRow.token}`
+    : null
+
   return (
     <main className="py-10 px-6">
       <div className="mx-auto max-w-2xl">
@@ -61,6 +73,7 @@ export default async function PubliekeVragenlijstPage({
             assignmentId={assignmentId}
             questionnaireId={assignment.questionnaire_id}
             clientId={assignment.client_id}
+            statusUrl={statusUrl}
           />
         )}
       </div>

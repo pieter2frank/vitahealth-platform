@@ -1,7 +1,7 @@
 'use client'
 import { useState, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { CheckCircle2, AlertTriangle } from 'lucide-react'
+import { CheckCircle2, AlertTriangle, ExternalLink } from 'lucide-react'
 import type { QuestionnaireQuestion } from '@/types'
 
 interface Props {
@@ -9,12 +9,13 @@ interface Props {
   assignmentId: string
   questionnaireId: string
   clientId: string
+  statusUrl: string | null
 }
 
 type ResponseValue = string | string[] | number | boolean | null
 type Responses = Record<string, ResponseValue>
 
-export function PublicQuestionnairePlayer({ questions, assignmentId, questionnaireId, clientId }: Props) {
+export function PublicQuestionnairePlayer({ questions, assignmentId, questionnaireId, clientId, statusUrl }: Props) {
   const topRef = useRef<HTMLFormElement>(null)
   const [responses, setResponses] = useState<Responses>({})
   const [errors, setErrors] = useState<Set<string>>(new Set())
@@ -86,14 +87,25 @@ export function PublicQuestionnairePlayer({ questions, assignmentId, questionnai
 
   if (done) {
     return (
-      <div className="rounded-2xl border border-green-200 bg-green-50 p-10 text-center shadow-sm">
-        <div className="inline-flex h-14 w-14 items-center justify-center rounded-full bg-green-100 mb-4">
+      <div className="rounded-2xl border border-green-200 bg-green-50 p-10 text-center shadow-sm space-y-4">
+        <div className="inline-flex h-14 w-14 items-center justify-center rounded-full bg-green-100">
           <CheckCircle2 size={28} className="text-green-600" />
         </div>
-        <h2 className="text-xl font-bold text-green-800 mb-2">Bedankt!</h2>
-        <p className="text-sm text-green-700 leading-relaxed">
-          Je antwoorden zijn opgeslagen. Je kunt dit venster sluiten.
-        </p>
+        <div>
+          <h2 className="text-xl font-bold text-green-800 mb-2">Bedankt!</h2>
+          <p className="text-sm text-green-700 leading-relaxed">
+            Je antwoorden zijn opgeslagen. Een medisch deskundige beoordeelt je gegevens.
+          </p>
+        </div>
+        {statusUrl && (
+          <a
+            href={statusUrl}
+            className="inline-flex items-center gap-2 rounded-lg bg-white border border-green-300 px-4 py-2.5 text-sm font-medium text-green-800 hover:bg-green-100 transition-colors"
+          >
+            <ExternalLink size={15} />
+            Mijn status volgen
+          </a>
+        )}
       </div>
     )
   }
@@ -183,35 +195,33 @@ export function PublicQuestionnairePlayer({ questions, assignmentId, questionnai
                   {/* RATING 1–10 */}
                   {q.type === 'rating_10' && (
                     <div className="mt-1">
-                      <div className="flex flex-wrap items-center gap-2">
-                        {q.leftLabel && (
-                          <span className="text-xs text-[#94a3b8] shrink-0">{q.leftLabel}</span>
-                        )}
-                        <div className="flex gap-1.5 flex-wrap">
-                          {[1,2,3,4,5,6,7,8,9,10].map(n => {
-                            const selected = responses[q.id] === n
-                            return (
-                              <button
-                                key={n}
-                                type="button"
-                                onClick={() => set(q.id, n)}
-                                className={`h-10 w-10 rounded-xl border text-sm font-medium transition-all ${
-                                  selected
-                                    ? 'bg-[#1f1683] text-white border-[#1f1683] scale-110'
-                                    : hasError
-                                      ? 'border-red-200 bg-red-50 text-red-600 hover:border-[#1f1683] hover:bg-[#eef4ff] hover:text-[#1f1683]'
-                                      : 'border-[#e2e8f0] bg-white text-[#64748b] hover:border-[#1f1683] hover:bg-[#eef4ff] hover:text-[#1f1683]'
-                                }`}
-                              >
-                                {n}
-                              </button>
-                            )
-                          })}
-                        </div>
-                        {q.rightLabel && (
-                          <span className="text-xs text-[#94a3b8] shrink-0">{q.rightLabel}</span>
-                        )}
+                      <div className="flex gap-1.5 flex-wrap">
+                        {[1,2,3,4,5,6,7,8,9,10].map(n => {
+                          const selected = responses[q.id] === n
+                          return (
+                            <button
+                              key={n}
+                              type="button"
+                              onClick={() => set(q.id, n)}
+                              className={`h-10 w-10 rounded-xl border text-sm font-medium transition-all ${
+                                selected
+                                  ? 'bg-[#1f1683] text-white border-[#1f1683] scale-110'
+                                  : hasError
+                                    ? 'border-red-200 bg-red-50 text-red-600 hover:border-[#1f1683] hover:bg-[#eef4ff] hover:text-[#1f1683]'
+                                    : 'border-[#e2e8f0] bg-white text-[#64748b] hover:border-[#1f1683] hover:bg-[#eef4ff] hover:text-[#1f1683]'
+                              }`}
+                            >
+                              {n}
+                            </button>
+                          )
+                        })}
                       </div>
+                      {(q.leftLabel || q.rightLabel) && (
+                        <div className="flex justify-between mt-1.5 px-0.5">
+                          <span className="text-xs text-[#94a3b8]">{q.leftLabel ?? ''}</span>
+                          <span className="text-xs text-[#94a3b8]">{q.rightLabel ?? ''}</span>
+                        </div>
+                      )}
                     </div>
                   )}
 
@@ -261,31 +271,33 @@ export function PublicQuestionnairePlayer({ questions, assignmentId, questionnai
                     const steps = Array.from({ length: scaleMax - scaleMin + 1 }, (_, i) => scaleMin + i)
                     return (
                       <div className="mt-1">
-                        <div className="flex flex-wrap items-center gap-2">
-                          {q.leftLabel && <span className="text-xs text-[#94a3b8] shrink-0">{q.leftLabel}</span>}
-                          <div className="flex gap-1.5 flex-wrap">
-                            {steps.map(n => {
-                              const selected = responses[q.id] === n
-                              return (
-                                <button
-                                  key={n}
-                                  type="button"
-                                  onClick={() => set(q.id, n)}
-                                  className={`h-10 w-10 rounded-xl border text-sm font-medium transition-all ${
-                                    selected
-                                      ? 'bg-[#1f1683] text-white border-[#1f1683] scale-110'
-                                      : hasError
-                                        ? 'border-red-200 bg-red-50 text-red-600 hover:border-[#1f1683] hover:bg-[#eef4ff] hover:text-[#1f1683]'
-                                        : 'border-[#e2e8f0] bg-white text-[#64748b] hover:border-[#1f1683] hover:bg-[#eef4ff] hover:text-[#1f1683]'
-                                  }`}
-                                >
-                                  {n}
-                                </button>
-                              )
-                            })}
-                          </div>
-                          {q.rightLabel && <span className="text-xs text-[#94a3b8] shrink-0">{q.rightLabel}</span>}
+                        <div className="flex gap-1.5 flex-wrap">
+                          {steps.map(n => {
+                            const selected = responses[q.id] === n
+                            return (
+                              <button
+                                key={n}
+                                type="button"
+                                onClick={() => set(q.id, n)}
+                                className={`h-10 w-10 rounded-xl border text-sm font-medium transition-all ${
+                                  selected
+                                    ? 'bg-[#1f1683] text-white border-[#1f1683] scale-110'
+                                    : hasError
+                                      ? 'border-red-200 bg-red-50 text-red-600 hover:border-[#1f1683] hover:bg-[#eef4ff] hover:text-[#1f1683]'
+                                      : 'border-[#e2e8f0] bg-white text-[#64748b] hover:border-[#1f1683] hover:bg-[#eef4ff] hover:text-[#1f1683]'
+                                }`}
+                              >
+                                {n}
+                              </button>
+                            )
+                          })}
                         </div>
+                        {(q.leftLabel || q.rightLabel) && (
+                          <div className="flex justify-between mt-1.5 px-0.5">
+                            <span className="text-xs text-[#94a3b8]">{q.leftLabel ?? ''}</span>
+                            <span className="text-xs text-[#94a3b8]">{q.rightLabel ?? ''}</span>
+                          </div>
+                        )}
                       </div>
                     )
                   })()}
