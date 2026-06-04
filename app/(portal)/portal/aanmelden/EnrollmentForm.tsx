@@ -198,7 +198,7 @@ export function EnrollmentForm({ intakeQuestionnaire, initialEmail, initialResum
       // Toestemmingen opslaan
       const { error: consentErr } = await supabase
         .from('vh_consent')
-        .insert({ client_id: clientId, required, optional })
+        .insert({ client_id: clientId, required, optional, consent_version: 2 })
 
       if (consentErr) {
         setSaving(false)
