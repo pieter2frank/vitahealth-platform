@@ -153,7 +153,61 @@ export function bevestigingEmail(opts: {
   }
 }
 
-// ─── 3. Reminder ──────────────────────────────────────────────────────────────
+// ─── 3. Intake goedgekeurd ────────────────────────────────────────────────────
+
+export function intakeGoedgekeurdEmail(opts: {
+  firstName: string
+  statusUrl: string
+}): { subject: string; html: string } {
+  const body = `
+    ${greeting(opts.firstName)}
+    ${p('Goed nieuws! Een medisch deskundige heeft jouw intake beoordeeld en <strong style="color:#1e293b;">goedgekeurd</strong>. Jouw testkit wordt zo spoedig mogelijk naar jouw adres verstuurd.')}
+
+    <!-- Goedkeuring -->
+    <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:20px 22px;margin-bottom:20px;">
+      <p style="margin:0 0 6px;font-size:13px;font-weight:700;color:#166534;">✓ &nbsp;Intake goedgekeurd</p>
+      <p style="margin:0;font-size:13px;color:#475569;line-height:1.6;">De testkit wordt verstuurd. Je ontvangt bericht zodra de kit onderweg is.</p>
+    </div>
+
+    <!-- Voorbereiding -->
+    <div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:10px;padding:20px 22px;margin-bottom:20px;">
+      <p style="margin:0 0 12px;font-size:13px;font-weight:700;color:#0369a1;">Voorbereiding voor optimale resultaten</p>
+      <p style="margin:0 0 10px;font-size:13px;color:#475569;line-height:1.6;">Houd rekening met het volgende in de <strong>3 uur vóór de bloedafname</strong>:</p>
+      <table style="width:100%;border-collapse:collapse;">
+        <tr>
+          <td style="width:22px;vertical-align:top;padding-bottom:8px;color:#ef4444;font-size:14px;">✕</td>
+          <td style="padding-bottom:8px;padding-left:8px;font-size:13px;color:#475569;line-height:1.5;">Niet eten</td>
+        </tr>
+        <tr>
+          <td style="width:22px;vertical-align:top;color:#ef4444;font-size:14px;">✕</td>
+          <td style="padding-left:8px;font-size:13px;color:#475569;line-height:1.5;">Geen cafeïnehoudende dranken (koffie, thee, energiedrank)</td>
+        </tr>
+      </table>
+    </div>
+
+    <!-- Video -->
+    <div style="background:#fafafa;border:1px solid #e2e8f0;border-radius:10px;padding:20px 22px;margin-bottom:28px;">
+      <p style="margin:0 0 10px;font-size:13px;font-weight:700;color:#1e293b;">🎬 &nbsp;Zo werkt de bloedafname</p>
+      <p style="margin:0 0 14px;font-size:13px;color:#475569;line-height:1.6;">Bekijk alvast het instructiefilmpje zodat je weet hoe de vingerprik werkt wanneer de kit arriveert.</p>
+      <div style="text-align:center;">
+        <a href="https://vimeo.com/1191821447?fl=pl&amp;fe=cm"
+           style="display:inline-block;background:#1e293b;color:white;text-decoration:none;padding:10px 24px;border-radius:7px;font-size:13px;font-weight:600;">
+          ▶ &nbsp;Instructiefilmpje bekijken
+        </a>
+      </div>
+    </div>
+
+    ${p('Wil je de huidige status van jouw aanmelding bekijken? Klik op de knop hieronder.')}
+    ${btn(opts.statusUrl, 'Mijn status bekijken')}
+    ${p('Vragen? Neem contact op via <a href="mailto:info@vita-health.nl" style="color:#1f1683;">info@vita-health.nl</a>.', 'text-align:center;font-size:12px;color:#94a3b8;')}
+  `
+  return {
+    subject: 'Jouw intake is goedgekeurd — testkit wordt verstuurd',
+    html: shell('Intake goedgekeurd!', body),
+  }
+}
+
+// ─── 4. Reminder ──────────────────────────────────────────────────────────────
 
 export function reminderEmail(opts: {
   firstName: string

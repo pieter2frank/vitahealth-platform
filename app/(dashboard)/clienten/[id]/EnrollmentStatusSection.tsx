@@ -84,6 +84,15 @@ export function EnrollmentStatusSection({ clientId, initialStatus, assignedKitId
 
     setSaving(false)
     setStatus(transition.next)
+
+    // E-mail versturen bij goedkeuring intake
+    if (transition.next === 'intake_akkoord') {
+      fetch('/api/email/intake-goedgekeurd', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ clientId }),
+      }).catch(() => { /* stil falen — niet fataal */ })
+    }
   }
 
   // ── Afwijzen ────────────────────────────────────────────────────────────────
