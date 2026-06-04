@@ -260,7 +260,63 @@ export function intakeHervattingEmail(opts: {
   }
 }
 
-// ─── 5. Reminder ──────────────────────────────────────────────────────────────
+// ─── 5. Medewerker uitnodiging ────────────────────────────────────────────────
+
+export function medewerkerUitnodigingEmail(opts: {
+  firstName: string
+  role: string
+  inviteUrl: string
+}): { subject: string; html: string } {
+  const ROLE_LABELS: Record<string, string> = {
+    admin:         'Beheerder',
+    arts:          'Arts',
+    leefstijlarts: 'Leefstijlarts',
+    medewerker:    'Medewerker',
+  }
+  const roleLabel = ROLE_LABELS[opts.role] ?? opts.role
+
+  const body = `
+    ${greeting(opts.firstName)}
+    ${p(`Je bent uitgenodigd om te werken met het <strong>Vita Health Platform</strong> als <strong>${roleLabel}</strong>.`)}
+    ${p('Klik op de knop hieronder om je account in te stellen. Je kiest zelf een wachtwoord en stelt een authenticator-app in voor extra beveiliging.')}
+
+    <div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:10px;padding:16px 22px;margin-bottom:24px;">
+      <p style="margin:0 0 10px;font-size:13px;font-weight:700;color:#0369a1;">Wat je nodig hebt:</p>
+      <table style="width:100%;border-collapse:collapse;">
+        <tr>
+          <td style="width:22px;vertical-align:top;padding-bottom:8px;color:#1f1683;font-size:14px;">1.</td>
+          <td style="padding-bottom:8px;padding-left:6px;font-size:13px;color:#475569;line-height:1.5;">
+            <strong>Wachtwoord instellen</strong> — minimaal 12 tekens, hoofdletter, cijfer en speciaal teken
+          </td>
+        </tr>
+        <tr>
+          <td style="width:22px;vertical-align:top;padding-bottom:8px;color:#1f1683;font-size:14px;">2.</td>
+          <td style="padding-bottom:8px;padding-left:6px;font-size:13px;color:#475569;line-height:1.5;">
+            <strong>Authenticator-app</strong> — installeer Google Authenticator of Microsoft Authenticator
+          </td>
+        </tr>
+        <tr>
+          <td style="width:22px;vertical-align:top;color:#1f1683;font-size:14px;">3.</td>
+          <td style="padding-left:6px;font-size:13px;color:#475569;line-height:1.5;">
+            <strong>QR-code scannen</strong> — je scant een QR-code om 2FA in te stellen
+          </td>
+        </tr>
+      </table>
+    </div>
+
+    ${btn(opts.inviteUrl, 'Account instellen →')}
+    <p style="text-align:center;font-size:11px;color:#94a3b8;margin-top:8px;">
+      Deze link is 24 uur geldig. Lukt het niet? Vraag de beheerder om een nieuwe uitnodiging.
+    </p>
+    ${p('Vragen? Neem contact op via <a href="https://helpdesk.vita-health.nl" style="color:#1f1683;">helpdesk.vita-health.nl</a>.', 'text-align:center;font-size:12px;color:#94a3b8;')}
+  `
+  return {
+    subject: 'Uitnodiging Vita Health Platform',
+    html: shell('Welkom bij Vita Health', body),
+  }
+}
+
+// ─── 6. Reminder ──────────────────────────────────────────────────────────────
 
 export function reminderEmail(opts: {
   firstName: string
