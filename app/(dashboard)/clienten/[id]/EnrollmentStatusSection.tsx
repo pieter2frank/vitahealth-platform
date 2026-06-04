@@ -7,7 +7,7 @@ import {
   ENROLLMENT_STATUSES, ENROLLMENT_LABELS, ENROLLMENT_COLORS,
   enrollmentStatusIndex, type EnrollmentStatus,
 } from '@/lib/enrollment'
-import { CheckCircle2, ChevronRight, Loader2, XCircle, AlertTriangle, Phone } from 'lucide-react'
+import { CheckCircle2, ChevronRight, Loader2, XCircle, AlertTriangle, Phone, ShieldAlert, Ban } from 'lucide-react'
 
 // ─── Volgende status per stap (goedkeuringspad) ────────────────────────────────
 
@@ -183,73 +183,139 @@ export function EnrollmentStatusSection({ clientId, initialStatus, assignedKitId
         {/* ── On-hold banner + acties ──────────────────────────────────────── */}
         {isOnHold && (
           <div className="mt-4 space-y-3">
-            <div className="flex items-start gap-2 rounded-lg border border-orange-200 bg-orange-50 px-3 py-2.5">
-              <Phone size={15} className="text-orange-600 shrink-0 mt-0.5" />
-              <div>
-                <p className="text-sm font-medium text-orange-800">Actie vereist: contact opnemen</p>
-                <p className="text-xs text-orange-700 mt-0.5">
-                  De cliënt heeft aangegeven dat mogelijk een uitsluitingscriterium op hem/haar van toepassing is.
-                  Neem contact op en kies daarna een actie.
-                </p>
+
+            {/* ── Prominente waarschuwing ── */}
+            <div className="rounded-xl border-2 border-red-300 bg-red-50 p-4 space-y-3">
+              {/* Header */}
+              <div className="flex items-start gap-3">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-red-100">
+                  <ShieldAlert size={18} className="text-red-600" />
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-red-800 leading-tight">
+                    Mogelijke contra-indicatie voor bloedafname
+                  </p>
+                  <p className="text-xs text-red-700 mt-0.5 leading-relaxed">
+                    Deze cliënt heeft tijdens de intake aangegeven dat <strong>één of meer van de onderstaande
+                    punten mogelijk op hem/haar van toepassing is</strong>. Neem eerst telefonisch contact op
+                    voordat er een kit wordt verstuurd.
+                  </p>
+                </div>
               </div>
-            </div>
-            {!onHoldAction ? (
-              <div className="flex gap-2 flex-wrap">
-                <button
-                  onClick={() => setOnHoldAction(true)}
-                  className="inline-flex items-center gap-2 rounded-lg bg-[#1f1683] px-4 py-2 text-sm font-medium text-white hover:bg-[#1a1270] transition-colors"
-                >
-                  <ChevronRight size={14} />
-                  Actie kiezen na contact
-                </button>
+
+              {/* Contra-indicatielijst */}
+              <div className="rounded-lg bg-white border border-red-200 px-3 py-2.5">
+                <p className="text-xs font-semibold text-red-800 mb-1.5">Uitsluitingscriteria:</p>
+                <ul className="space-y-0.5">
+                  {[
+                    'Jonger dan 18 jaar',
+                    'Zwanger of borstvoeding',
+                    'Bloedingsstoornis (hemofilie of vergelijkbaar)',
+                    'Bloedverdunners of antistollingsmedicatie',
+                    'Ernstige bloedarmoede',
+                    'Bloedtransfusie in afgelopen 3 maanden',
+                    'Operatie in afgelopen 3 maanden',
+                    'Koorts of actieve infectie op moment van afname',
+                    'Twijfelt of vingerprikafname veilig is',
+                  ].map((item, i) => (
+                    <li key={i} className="flex items-start gap-1.5 text-xs text-red-700">
+                      <span className="shrink-0 mt-0.5 text-red-400">•</span>
+                      {item}
+                    </li>
+                  ))}
+                </ul>
               </div>
-            ) : (
-              <div className="rounded-lg border border-[#e2e8f0] bg-[#f8fafc] p-3 space-y-2">
-                <p className="text-xs font-semibold text-[#475569] uppercase tracking-wide">Kies een actie:</p>
-                <div className="flex gap-2 flex-wrap">
-                  {/* Toch doorgaan */}
+
+              {/* Actieknop of keuze */}
+              {!onHoldAction ? (
+                <div className="flex items-center gap-2 pt-1">
+                  <Phone size={13} className="text-red-600 shrink-0" />
+                  <span className="text-xs text-red-700 flex-1">
+                    Neem contact op met de cliënt en leg de uitkomst daarna vast:
+                  </span>
                   <button
-                    onClick={async () => {
-                      setSaving(true); setError('')
-                      const res = await fetch('/api/email/intake-hervatten', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ clientId }),
-                      })
-                      setSaving(false)
-                      if (res.ok) {
-                        setStatus('toestemming_gegeven')
-                        setOnHoldAction(false)
-                      } else {
-                        const j = await res.json()
-                        setError(j.error ?? 'Versturen mislukt.')
-                      }
-                    }}
-                    disabled={saving}
-                    className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700 transition-colors disabled:opacity-50"
+                    onClick={() => setOnHoldAction(true)}
+                    className="inline-flex items-center gap-1.5 rounded-lg bg-red-600 px-3 py-2 text-xs font-semibold text-white hover:bg-red-700 transition-colors shrink-0"
                   >
-                    {saving ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle2 size={14} />}
-                    Toch doorgaan — mail sturen
+                    <ChevronRight size={13} />
+                    Uitkomst registreren
                   </button>
-                  {/* Intake stoppen */}
-                  <button
-                    onClick={async () => {
-                      setRejecting(true); setError('')
-                      const supabase = (await import('@/lib/supabase/client')).createClient()
-                      const { error: err } = await supabase
-                        .from('vh_client')
-                        .update({ enrollment_status: 'intake_afgewezen' })
-                        .eq('id', clientId)
-                      setRejecting(false)
-                      if (err) { setError(err.message); return }
-                      setStatus('intake_afgewezen')
-                      setOnHoldAction(false)
-                    }}
-                    disabled={rejecting}
-                    className="inline-flex items-center gap-2 rounded-lg border border-red-200 bg-white px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50 transition-colors disabled:opacity-50"
-                  >
-                    {rejecting ? <Loader2 size={14} className="animate-spin" /> : <XCircle size={14} />}
-                    Intake stoppen
+                </div>
+              ) : (
+                <div className="rounded-lg border border-red-200 bg-white p-3 space-y-2.5">
+                  <p className="text-xs font-semibold text-[#475569] uppercase tracking-wide">
+                    Uitkomst na contact:
+                  </p>
+                  <div className="space-y-2">
+                    {/* Blokkade opheffen */}
+                    <button
+                      onClick={async () => {
+                        setSaving(true); setError('')
+                        const res = await fetch('/api/email/intake-hervatten', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ clientId }),
+                        })
+                        setSaving(false)
+                        if (res.ok) {
+                          setStatus('toestemming_gegeven')
+                          setOnHoldAction(false)
+                        } else {
+                          const j = await res.json()
+                          setError(j.error ?? 'Versturen mislukt.')
+                        }
+                      }}
+                      disabled={saving}
+                      className="w-full flex items-start gap-2.5 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2.5 text-left hover:bg-emerald-100 transition-colors disabled:opacity-50"
+                    >
+                      {saving
+                        ? <Loader2 size={15} className="animate-spin text-emerald-600 shrink-0 mt-0.5" />
+                        : <CheckCircle2 size={15} className="text-emerald-600 shrink-0 mt-0.5" />
+                      }
+                      <span>
+                        <span className="block text-sm font-semibold text-emerald-800">
+                          Blokkade opheffen — deelname toegestaan
+                        </span>
+                        <span className="block text-xs text-emerald-700 mt-0.5">
+                          Cliënt ontvangt een e-mail met link om de vragenlijst in te vullen.
+                          Status wordt teruggezet naar &apos;Toestemming gegeven&apos;.
+                        </span>
+                      </span>
+                    </button>
+
+                    {/* Intake stoppen */}
+                    <button
+                      onClick={async () => {
+                        setRejecting(true); setError('')
+                        const supabase = (await import('@/lib/supabase/client')).createClient()
+                        const { error: err } = await supabase
+                          .from('vh_client')
+                          .update({ enrollment_status: 'intake_afgewezen' })
+                          .eq('id', clientId)
+                        setRejecting(false)
+                        if (err) { setError(err.message); return }
+                        setStatus('intake_afgewezen')
+                        setOnHoldAction(false)
+                      }}
+                      disabled={rejecting}
+                      className="w-full flex items-start gap-2.5 rounded-lg border border-red-200 bg-white px-3 py-2.5 text-left hover:bg-red-50 transition-colors disabled:opacity-50"
+                    >
+                      {rejecting
+                        ? <Loader2 size={15} className="animate-spin text-red-500 shrink-0 mt-0.5" />
+                        : <Ban size={15} className="text-red-500 shrink-0 mt-0.5" />
+                      }
+                      <span>
+                        <span className="block text-sm font-semibold text-red-700">
+                          Intake stoppen — deelname niet mogelijk
+                        </span>
+                        <span className="block text-xs text-red-600 mt-0.5">
+                          De contra-indicatie maakt deelname onveilig of onmogelijk.
+                        </span>
+                      </span>
+                    </button>
+                  </div>
+                  <button onClick={() => setOnHoldAction(false)} className="text-xs text-[#94a3b8] hover:text-[#64748b] w-full text-center pt-1">
+                    Annuleren
                   </button>
                   <button onClick={() => setOnHoldAction(false)} className="text-sm text-[#94a3b8] hover:text-[#64748b]">
                     Annuleren
