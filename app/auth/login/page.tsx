@@ -2,32 +2,43 @@
 import { Suspense, useState } from 'react'
 import Image from 'next/image'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
-import { Clock } from 'lucide-react'
+import { Clock, Lock } from 'lucide-react'
 
 function LoginForm() {
   const router = useRouter()
   const params = useSearchParams()
-  const [email, setEmail] = useState('')
+  const [email,    setEmail]    = useState('')
   const [password, setPassword] = useState('')
-  const [error, setError] = useState('')
-  const [loading, setLoading] = useState(false)
+  const [error,    setError]    = useState('')
+  const [loading,  setLoading]  = useState(false)
+  const [blocked,  setBlocked]  = useState(false)
+  const [lockedUntil, setLockedUntil] = useState<string | null>(null)
 
   const inactief = params.get('reden') === 'inactiviteit'
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
+    if (blocked || lockedUntil) return
     setLoading(true)
     setError('')
-    const supabase = createClient()
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
-    if (error) {
-      setError('Onjuist e-mailadres of wachtwoord.')
-      setLoading(false)
-    } else {
+
+    const res  = await fetch('/api/auth/login', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ email, password }),
+    })
+    const json = await res.json()
+
+    if (json.ok) {
       router.push(params.get('redirect') ?? '/dashboard')
+      router.refresh()
+    } else {
+      setError(json.error ?? 'Inloggen mislukt.')
+      if (json.blocked)     setBlocked(true)
+      if (json.lockedUntil) setLockedUntil(json.lockedUntil)
+      setLoading(false)
     }
   }
 
@@ -59,12 +70,30 @@ function LoginForm() {
         required
         autoComplete="current-password"
       />
-      {error && (
+      {blocked && (
+        <div className="flex items-start gap-2 rounded-lg bg-red-50 border border-red-200 px-3 py-2.5">
+          <Lock size={14} className="text-red-600 shrink-0 mt-0.5" />
+          <p className="text-sm text-red-700">{error}</p>
+        </div>
+      )}
+      {!blocked && lockedUntil && (
+        <div className="flex items-start gap-2 rounded-lg bg-orange-50 border border-orange-200 px-3 py-2.5">
+          <Clock size={14} className="text-orange-600 shrink-0 mt-0.5" />
+          <p className="text-sm text-orange-700">{error}</p>
+        </div>
+      )}
+      {!blocked && !lockedUntil && error && (
         <p className="rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-sm text-red-600">
           {error}
         </p>
       )}
-      <Button type="submit" className="w-full" size="lg" loading={loading}>
+      <Button
+        type="submit"
+        className="w-full"
+        size="lg"
+        loading={loading}
+        disabled={blocked || !!lockedUntil}
+      >
         Inloggen
       </Button>
     </form>
