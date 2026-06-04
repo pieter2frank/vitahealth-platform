@@ -15,9 +15,16 @@ const STEPS = [
 // ─── Props ────────────────────────────────────────────────────────────────────
 
 export interface ResumeInfo {
-  clientId: string
-  status: string
-  firstName: string
+  clientId:     string
+  status:       string
+  firstName:    string
+  lastName:     string
+  phone:        string
+  birthDate:    string
+  address:      string
+  postalCode:   string
+  city:         string
+  hasAddress:   boolean
   assignmentId: string | null
 }
 
@@ -77,7 +84,14 @@ export function EnrollmentForm({ intakeQuestionnaire, initialEmail, initialResum
         setResumeInfo({
           clientId:     data.id,
           status:       data.status,
-          firstName:    data.first_name,
+          firstName:    data.first_name   ?? '',
+          lastName:     data.last_name    ?? '',
+          phone:        data.phone        ?? '',
+          birthDate:    data.birth_date   ?? '',
+          address:      data.address      ?? '',
+          postalCode:   data.postal_code  ?? '',
+          city:         data.city         ?? '',
+          hasAddress:   data.has_address  ?? false,
           assignmentId: data.assignment_id ?? null,
         })
       }
@@ -137,7 +151,14 @@ export function EnrollmentForm({ intakeQuestionnaire, initialEmail, initialResum
         setResumeInfo({
           clientId:     checkData.id,
           status:       checkData.status,
-          firstName:    checkData.first_name,
+          firstName:    checkData.first_name   ?? '',
+          lastName:     checkData.last_name    ?? '',
+          phone:        checkData.phone        ?? '',
+          birthDate:    checkData.birth_date   ?? '',
+          address:      checkData.address      ?? '',
+          postalCode:   checkData.postal_code  ?? '',
+          city:         checkData.city         ?? '',
+          hasAddress:   checkData.has_address  ?? false,
           assignmentId: checkData.assignment_id ?? null,
         })
         return
@@ -242,16 +263,28 @@ export function EnrollmentForm({ intakeQuestionnaire, initialEmail, initialResum
 
   function handleResume() {
     if (!resumeInfo) return
+
+    // Altijd bestaande gegevens voorinvullen
     setClientId(resumeInfo.clientId)
     setFirstName(resumeInfo.firstName)
+    setLastName(resumeInfo.lastName)
+    setPhone(resumeInfo.phone)
+    setBirthDate(resumeInfo.birthDate)
+    setAddress(resumeInfo.address)
+    setPostalCode(resumeInfo.postalCode)
+    setCity(resumeInfo.city)
 
     const canGoToStep4 = resumeInfo.status === 'toestemming_gegeven' && resumeInfo.assignmentId !== null
+
+    setResumeInfo(null)
+
     if (canGoToStep4) {
       setAssignmentId(resumeInfo.assignmentId!)
-      setResumeInfo(null)
       setStep(4)
+    } else if (!resumeInfo.hasAddress) {
+      // Adres nog niet ingevuld (uitgenodigde cliënt) → eerst adresgegevens
+      setStep(2)
     } else {
-      setResumeInfo(null)
       setStep(3)
     }
     window.scrollTo({ top: 0, behavior: 'smooth' })
@@ -463,12 +496,18 @@ export function EnrollmentForm({ intakeQuestionnaire, initialEmail, initialResum
         {step === 1 && !checkingInitialEmail && resumeInfo !== null && (() => {
           const isVragenlijstIngevuld = resumeInfo.status === 'vragenlijst_ingevuld'
           const canGoToStep4 = resumeInfo.status === 'toestemming_gegeven' && resumeInfo.assignmentId !== null
-          const resumeLabel = canGoToStep4 ? 'de vragenlijst' : 'de toestemmingen'
+          const resumeLabel = canGoToStep4
+            ? 'de vragenlijst'
+            : !resumeInfo.hasAddress
+              ? 'de adresgegevens'
+              : 'de toestemmingen'
           const resumeDescription = isVragenlijstIngevuld
             ? 'Jouw aanmelding is volledig afgerond.'
             : canGoToStep4
               ? 'Je hebt de toestemmingen al gegeven, maar de vragenlijst is nog niet ingevuld.'
-              : 'Je gegevens zijn geregistreerd, maar je toestemmingen zijn nog niet gegeven.'
+              : !resumeInfo.hasAddress
+                ? 'Je bent al uitgenodigd. Vul je adresgegevens en toestemmingen in om de aanmelding te voltooien.'
+                : 'Je gegevens zijn geregistreerd, maar je toestemmingen zijn nog niet gegeven.'
 
           return (
             <div className="p-6 space-y-5">

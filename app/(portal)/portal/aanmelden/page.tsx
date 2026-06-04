@@ -13,9 +13,7 @@ export default async function AanmeldenPage({ searchParams }: PageProps) {
   const supabase = await createClient()
 
   // Token → direct naar juiste stap sturen (veilig, server-side)
-  let initialResumeInfo: {
-    clientId: string; status: string; firstName: string; assignmentId: string | null
-  } | undefined
+  let initialResumeInfo: import('./EnrollmentForm').ResumeInfo | undefined
 
   if (token) {
     const { data } = await supabase.rpc('resolve_intake_token', { p_token: token })
@@ -23,7 +21,14 @@ export default async function AanmeldenPage({ searchParams }: PageProps) {
       initialResumeInfo = {
         clientId:     data.client_id,
         status:       data.status,
-        firstName:    data.first_name,
+        firstName:    data.first_name    ?? '',
+        lastName:     data.last_name     ?? '',
+        phone:        data.phone         ?? '',
+        birthDate:    data.birth_date    ?? '',
+        address:      data.address       ?? '',
+        postalCode:   data.postal_code   ?? '',
+        city:         data.city          ?? '',
+        hasAddress:   data.has_address   ?? false,
         assignmentId: data.assignment_id ?? null,
       }
     }
