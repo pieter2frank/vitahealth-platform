@@ -82,9 +82,8 @@ export function TestkitLinker({ clientId, clientName }: Props) {
 
     } else if (kit.assigned) {
       // Al gekoppeld aan iemand anders
-      const owner = kit.vh_client
-        ? `${(kit.vh_client as { first_name: string; last_name: string }).first_name} ${(kit.vh_client as { first_name: string; last_name: string }).last_name}`
-        : 'een andere cliënt'
+      const c = kit.vh_client as unknown as { first_name: string; last_name: string } | null
+      const owner = c ? `${c.first_name} ${c.last_name}` : 'een andere cliënt'
       setError(`Kit al gekoppeld aan ${owner}.`)
       setSaving(false)
       return

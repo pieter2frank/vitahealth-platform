@@ -91,10 +91,13 @@ export async function GET(
   const wb = XLSX.utils.book_new()
   XLSX.utils.book_append_sheet(wb, ws, batch.badge_id)
 
-  const buffer = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' }) as Uint8Array
+  const rawData = XLSX.write(wb, { type: 'array', bookType: 'xlsx' }) as number[]
+  const blob = new Blob([new Uint8Array(rawData)], {
+    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  })
   const filename = `batch-${batch.badge_id}.xlsx`
 
-  return new Response(buffer, {
+  return new Response(blob, {
     headers: {
       'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
       'Content-Disposition': `attachment; filename="${filename}"`,

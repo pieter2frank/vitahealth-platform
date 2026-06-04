@@ -62,10 +62,8 @@ export function KitScannerSection({ entityId, entityType }: Props) {
       .maybeSingle()
 
     if (lookupErr) {
-      setScans(prev => [
-        { barcode: trimmed, status: 'error', message: lookupErr.message },
-        ...prev,
-      ].slice(0, 15))
+      const errResult: ScanResult = { barcode: trimmed, status: 'error', message: lookupErr.message }
+      setScans(prev => [errResult, ...prev].slice(0, 15))
       setLoading(false)
       inputRef.current?.focus()
       return
