@@ -15,8 +15,8 @@ export async function POST(
   if (!user) return NextResponse.json({ error: 'Niet geautoriseerd.' }, { status: 401 })
 
   // Controleer admin-rol
-  const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
-  if (profile?.role !== 'admin') return NextResponse.json({ error: 'Geen toegang.' }, { status: 403 })
+  const { data: medewerker } = await supabase.from('vh_medewerker').select('role').eq('user_id', user.id).single()
+  if (medewerker?.role !== 'admin') return NextResponse.json({ error: 'Geen toegang.' }, { status: 403 })
 
   const admin = createAdminClient()
   const { error } = await admin

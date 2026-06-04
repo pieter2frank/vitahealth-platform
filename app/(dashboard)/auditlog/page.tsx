@@ -55,13 +55,13 @@ export default async function AuditlogPage({
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/auth/login')
 
-  const { data: profile } = await supabase
-    .from('profiles')
+  const { data: medewerker } = await supabase
+    .from('vh_medewerker')
     .select('role')
-    .eq('id', user.id)
+    .eq('user_id', user.id)
     .single()
 
-  if (profile?.role !== 'admin') redirect('/dashboard')
+  if (medewerker?.role !== 'admin') redirect('/dashboard')
 
   // ── Filters & paginering ───────────────────────────────────────────────────
   const { action, resource, page: pageParam } = await searchParams
