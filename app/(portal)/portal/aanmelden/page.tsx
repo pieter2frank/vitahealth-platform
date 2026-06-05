@@ -23,6 +23,7 @@ export default async function AanmeldenPage({ searchParams }: PageProps) {
         status:       data.status,
         firstName:    data.first_name    ?? '',
         lastName:     data.last_name     ?? '',
+        email:        data.email         ?? '',
         phone:        data.phone         ?? '',
         birthDate:    data.birth_date    ?? '',
         address:      data.address       ?? '',

@@ -19,6 +19,7 @@ export interface ResumeInfo {
   status:       string
   firstName:    string
   lastName:     string
+  email:        string
   phone:        string
   birthDate:    string
   address:      string
@@ -88,6 +89,7 @@ export function EnrollmentForm({ intakeQuestionnaire, initialEmail, initialResum
           status:       data.status,
           firstName:    data.first_name   ?? '',
           lastName:     data.last_name    ?? '',
+          email:        data.email        ?? initialEmail.trim(),
           phone:        data.phone        ?? '',
           birthDate:    data.birth_date   ?? '',
           address:      data.address      ?? '',
@@ -139,6 +141,14 @@ export function EnrollmentForm({ intakeQuestionnaire, initialEmail, initialResum
       const err = validateStep1()
       if (err) { setError(err); return }
 
+      // Uitgenodigde cliënt (clientId al bekend via hervatten): e-mailcheck
+      // overslaan — anders verschijnt de hervat-banner opnieuw. Direct door.
+      if (clientId) {
+        setStep(2)
+        window.scrollTo({ top: 0, behavior: 'smooth' })
+        return
+      }
+
       setSaving(true)
       const supabase = createClient()
       const { data: checkData, error: checkError } = await supabase
@@ -155,6 +165,7 @@ export function EnrollmentForm({ intakeQuestionnaire, initialEmail, initialResum
           status:       checkData.status,
           firstName:    checkData.first_name   ?? '',
           lastName:     checkData.last_name    ?? '',
+          email:        checkData.email        ?? email.trim(),
           phone:        checkData.phone        ?? '',
           birthDate:    checkData.birth_date   ?? '',
           address:      checkData.address      ?? '',
@@ -285,6 +296,7 @@ export function EnrollmentForm({ intakeQuestionnaire, initialEmail, initialResum
     setClientId(resumeInfo.clientId)
     setFirstName(resumeInfo.firstName)
     setLastName(resumeInfo.lastName)
+    if (resumeInfo.email) setEmail(resumeInfo.email)
     setPhone(resumeInfo.phone)
     setBirthDate(resumeInfo.birthDate)
     setAddress(resumeInfo.address)
@@ -299,8 +311,10 @@ export function EnrollmentForm({ intakeQuestionnaire, initialEmail, initialResum
       setAssignmentId(resumeInfo.assignmentId!)
       setStep(4)
     } else if (!resumeInfo.hasAddress) {
-      // Adres nog niet ingevuld (uitgenodigde cliënt) → eerst adresgegevens
-      setStep(2)
+      // Uitgenodigde cliënt: nog geen adres én mogelijk geen geboortedatum.
+      // Start bij stap 1 (persoonsgegevens) zodat ook geboortedatum ingevuld
+      // kan worden. Naam en e-mail zijn al voorgevuld.
+      setStep(1)
     } else {
       setStep(3)
     }
@@ -516,14 +530,14 @@ export function EnrollmentForm({ intakeQuestionnaire, initialEmail, initialResum
           const resumeLabel = canGoToStep4
             ? 'de vragenlijst'
             : !resumeInfo.hasAddress
-              ? 'de adresgegevens'
+              ? 'je gegevens'
               : 'de toestemmingen'
           const resumeDescription = isVragenlijstIngevuld
             ? 'Jouw aanmelding is volledig afgerond.'
             : canGoToStep4
               ? 'Je hebt de toestemmingen al gegeven, maar de vragenlijst is nog niet ingevuld.'
               : !resumeInfo.hasAddress
-                ? 'Je bent al uitgenodigd. Vul je adresgegevens en toestemmingen in om de aanmelding te voltooien.'
+                ? 'Je bent al uitgenodigd. Vul je gegevens aan om de aanmelding te voltooien.'
                 : 'Je gegevens zijn geregistreerd, maar je toestemmingen zijn nog niet gegeven.'
 
           return (
