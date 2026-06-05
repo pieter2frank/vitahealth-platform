@@ -31,6 +31,7 @@ export default async function AanmeldenPage({ searchParams }: PageProps) {
         city:         data.city          ?? '',
         hasAddress:   data.has_address   ?? false,
         assignmentId: data.assignment_id ?? null,
+        token:        data.token         ?? token ?? null,
       }
     }
   }

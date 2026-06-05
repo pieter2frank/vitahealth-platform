@@ -27,6 +27,7 @@ export interface ResumeInfo {
   city:         string
   hasAddress:   boolean
   assignmentId: string | null
+  token:        string | null
 }
 
 interface Props {
@@ -97,6 +98,7 @@ export function EnrollmentForm({ intakeQuestionnaire, initialEmail, initialResum
           city:         data.city         ?? '',
           hasAddress:   data.has_address  ?? false,
           assignmentId: data.assignment_id ?? null,
+          token:        data.token        ?? null,
         })
       }
       setCheckingInitialEmail(false)
@@ -173,6 +175,7 @@ export function EnrollmentForm({ intakeQuestionnaire, initialEmail, initialResum
           city:         checkData.city         ?? '',
           hasAddress:   checkData.has_address  ?? false,
           assignmentId: checkData.assignment_id ?? null,
+          token:        checkData.token        ?? null,
         })
         return
       }
@@ -525,74 +528,126 @@ export function EnrollmentForm({ intakeQuestionnaire, initialEmail, initialResum
 
         {/* ── Stap 1: Hervatten-banner (e-mailadres al bekend) ─────────────────── */}
         {step === 1 && !checkingInitialEmail && resumeInfo !== null && (() => {
-          const isVragenlijstIngevuld = resumeInfo.status === 'vragenlijst_ingevuld'
-          const canGoToStep4 = resumeInfo.status === 'toestemming_gegeven' && resumeInfo.assignmentId !== null
+          const status = resumeInfo.status
+
+          // Statussen waarbij de aanmelding (stap 1–4) volledig is doorlopen
+          const COMPLETED = [
+            'vragenlijst_ingevuld', 'intake_akkoord',
+            'kit_opgestuurd', 'kit_retour', 'uitslag_bekend', 'uitslag_besproken',
+          ]
+          const isCompleted = COMPLETED.includes(status)
+          const isRejected  = status === 'intake_afgewezen'
+          const isOnHold    = status === 'intake_on_hold'
+
+          const statusUrl = resumeInfo.token ? `/portal/status/${resumeInfo.token}` : null
+
+          const canGoToStep4 = status === 'toestemming_gegeven' && resumeInfo.assignmentId !== null
           const resumeLabel = canGoToStep4
             ? 'de vragenlijst'
             : !resumeInfo.hasAddress
               ? 'je gegevens'
               : 'de toestemmingen'
-          const resumeDescription = isVragenlijstIngevuld
-            ? 'Jouw aanmelding is volledig afgerond.'
-            : canGoToStep4
-              ? 'Je hebt de toestemmingen al gegeven, maar de vragenlijst is nog niet ingevuld.'
-              : !resumeInfo.hasAddress
-                ? 'Je bent al uitgenodigd. Vul je gegevens aan om de aanmelding te voltooien.'
-                : 'Je gegevens zijn geregistreerd, maar je toestemmingen zijn nog niet gegeven.'
+          const resumeDescription = canGoToStep4
+            ? 'Je hebt de toestemmingen al gegeven, maar de vragenlijst is nog niet ingevuld.'
+            : !resumeInfo.hasAddress
+              ? 'Je bent al uitgenodigd. Vul je gegevens aan om de aanmelding te voltooien.'
+              : 'Je gegevens zijn geregistreerd, maar je toestemmingen zijn nog niet gegeven.'
+
+          // Knop naar statuspagina (hergebruikt in meerdere takken)
+          const statusButton = statusUrl ? (
+            <a
+              href={statusUrl}
+              className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-[#1f1683] px-4 py-2.5 text-sm font-medium text-white hover:bg-[#1a1270] transition-colors"
+            >
+              <ExternalLink size={15} />
+              Mijn status bekijken
+            </a>
+          ) : null
 
           return (
             <div className="p-6 space-y-5">
-              {/* Info-banner */}
-              <div className="flex items-start gap-3 rounded-xl bg-blue-50 border border-blue-200 p-4">
-                <Info size={18} className="text-blue-600 shrink-0 mt-0.5" />
-                <div className="space-y-0.5">
-                  <p className="text-sm font-semibold text-blue-800">
-                    E-mailadres al bekend
-                  </p>
-                  <p className="text-sm text-blue-700">
-                    Het adres <strong>{email}</strong> is al bekend in ons systeem
-                    {resumeInfo.firstName ? ` (${resumeInfo.firstName})` : ''}.{' '}
-                    {resumeDescription}
-                  </p>
-                </div>
-              </div>
 
-              {isVragenlijstIngevuld ? (
-                /* Aanmelding al voltooid */
-                <div className="rounded-xl border border-green-200 bg-green-50 p-4 text-center space-y-1">
-                  <CheckCircle2 size={20} className="text-green-600 mx-auto" />
-                  <p className="text-sm font-semibold text-green-800">Aanmelding al voltooid</p>
-                  <p className="text-xs text-green-700">
-                    Je hebt de volledige aanmelding al afgerond. Een Vita Health medewerker neemt contact met je op.
-                  </p>
-                </div>
+              {/* ── Volledig afgerond ── */}
+              {isCompleted ? (
+                <>
+                  <div className="rounded-xl border border-green-200 bg-green-50 p-5 text-center space-y-2">
+                    <div className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-green-100">
+                      <CheckCircle2 size={24} className="text-green-600" />
+                    </div>
+                    <p className="text-base font-bold text-green-800">Aanmelding al voltooid</p>
+                    <p className="text-sm text-green-700 leading-relaxed max-w-sm mx-auto">
+                      {resumeInfo.firstName ? `${resumeInfo.firstName}, je` : 'Je'} hebt de volledige aanmelding
+                      al afgerond. Je hoeft niets meer te doen — een medewerker van Vita Health begeleidt je
+                      verder in het proces.
+                    </p>
+                  </div>
+                  {statusButton}
+                </>
+
+              /* ── Afgewezen ── */
+              ) : isRejected ? (
+                <>
+                  <div className="rounded-xl border border-red-200 bg-red-50 p-5 text-center space-y-2">
+                    <div className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-red-100">
+                      <AlertTriangle size={24} className="text-red-600" />
+                    </div>
+                    <p className="text-base font-bold text-red-800">Aanmelding afgerond</p>
+                    <p className="text-sm text-red-700 leading-relaxed max-w-sm mx-auto">
+                      Op basis van je intake is besloten dat de biomarkertest op dit moment niet voor jou
+                      geschikt is. Je aanmelding is hiermee afgerond. Heb je vragen? Neem contact op met
+                      Vita Health.
+                    </p>
+                  </div>
+                  {statusButton}
+                </>
+
+              /* ── On hold (mogelijke contra-indicatie) ── */
+              ) : isOnHold ? (
+                <>
+                  <div className="rounded-xl border border-orange-200 bg-orange-50 p-5 text-center space-y-2">
+                    <div className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-orange-100">
+                      <AlertTriangle size={24} className="text-orange-600" />
+                    </div>
+                    <p className="text-base font-bold text-orange-800">We nemen contact met je op</p>
+                    <p className="text-sm text-orange-700 leading-relaxed max-w-sm mx-auto">
+                      Je hebt aangegeven dat mogelijk een van de aandachtspunten op jou van toepassing is.
+                      Een medewerker van Vita Health neemt contact met je op om te bespreken of deelname
+                      veilig en mogelijk is.
+                    </p>
+                  </div>
+                  {statusButton}
+                </>
+
+              /* ── Nog bezig: doorgaan of opnieuw ── */
               ) : (
-                /* Doorgaan of opnieuw */
-                <div className="space-y-2.5">
-                  <button
-                    onClick={handleResume}
-                    className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-[#1f1683] px-4 py-2.5 text-sm font-medium text-white hover:bg-[#1a1270] transition-colors"
-                  >
-                    Doorgaan bij {resumeLabel}
-                    <ChevronRight size={16} />
-                  </button>
-                  <button
-                    onClick={handleStartFresh}
-                    className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-[#e2e8f0] bg-white px-4 py-2.5 text-sm font-medium text-[#64748b] hover:bg-[#f8fafc] transition-colors"
-                  >
-                    Toch opnieuw aanmelden
-                  </button>
-                </div>
-              )}
-
-              {/* Altijd optie om opnieuw in te vullen tonen */}
-              {isVragenlijstIngevuld && (
-                <button
-                  onClick={handleStartFresh}
-                  className="text-xs text-[#94a3b8] hover:text-[#64748b] transition-colors mx-auto block"
-                >
-                  Toch opnieuw aanmelden
-                </button>
+                <>
+                  <div className="flex items-start gap-3 rounded-xl bg-blue-50 border border-blue-200 p-4">
+                    <Info size={18} className="text-blue-600 shrink-0 mt-0.5" />
+                    <div className="space-y-0.5">
+                      <p className="text-sm font-semibold text-blue-800">E-mailadres al bekend</p>
+                      <p className="text-sm text-blue-700">
+                        Het adres <strong>{email}</strong> is al bekend in ons systeem
+                        {resumeInfo.firstName ? ` (${resumeInfo.firstName})` : ''}.{' '}
+                        {resumeDescription}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="space-y-2.5">
+                    <button
+                      onClick={handleResume}
+                      className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-[#1f1683] px-4 py-2.5 text-sm font-medium text-white hover:bg-[#1a1270] transition-colors"
+                    >
+                      Doorgaan bij {resumeLabel}
+                      <ChevronRight size={16} />
+                    </button>
+                    <button
+                      onClick={handleStartFresh}
+                      className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-[#e2e8f0] bg-white px-4 py-2.5 text-sm font-medium text-[#64748b] hover:bg-[#f8fafc] transition-colors"
+                    >
+                      Toch opnieuw aanmelden
+                    </button>
+                  </div>
+                </>
               )}
             </div>
           )
