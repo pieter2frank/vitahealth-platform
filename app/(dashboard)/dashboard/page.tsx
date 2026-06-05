@@ -1,11 +1,10 @@
-import { createClient } from '@/lib/supabase/server'
+﻿import { createClient } from '@/lib/supabase/server'
 import {
-  TestTube2, Users, Building2, Package,
-  ClipboardCheck, Clock, ChevronRight, ShieldAlert, Send, FileText,
+  TestTube2, Users, Building2, Package, ChevronRight,
 } from 'lucide-react'
 import Link from 'next/link'
-import { formatDistanceToNow } from 'date-fns'
-import { nl } from 'date-fns/locale'
+import { ActionsTable } from './ActionsTable'
+import type { ActionType } from '@/lib/actions'
 
 // ─── Data ophalen ─────────────────────────────────────────────────────────────
 
@@ -87,26 +86,100 @@ async function getData(supabase: Awaited<ReturnType<typeof createClient>>) {
       .limit(8),
   ])
 
-  // Retour-kits platmaken
-  const retourKits = (retourRaw ?? []).map((kit) => {
-    const c = kit.vh_client as unknown as { first_name: string; last_name: string } | null
-    return {
-      id: kit.id,
-      barcode: kit.barcode as string,
-      retour_date: (kit.retour_date as string | null) ?? new Date().toISOString(),
-      clientName: c ? `${c.first_name} ${c.last_name}` : 'Niet toegewezen',
+  // ── Acties platmaken naar één lijst ───────────────────────────────────────
+  type ActionRow = {
+    key: string
+    actionType: ActionType
+    subjectId: string
+    subjectLabel: string
+    subjectSub: string | null
+    href: string
+    date: string
+  }
+  const actions: ActionRow[] = []
+  const pushClient = (
+    type: ActionType,
+    rows: { id: string; first_name: string; last_name: string; email: string | null; created_at: string }[],
+    subFn: (c: { email: string | null }) => string | null,
+  ) => {
+    for (const c of rows) {
+      actions.push({
+        key: `${type}:${c.id}`,
+        actionType: type,
+        subjectId: c.id,
+        subjectLabel: `${c.first_name} ${c.last_name}`,
+        subjectSub: subFn(c),
+        href: `/clienten/${c.id}`,
+        date: c.created_at,
+      })
     }
-  })
+  }
+
+  pushClient('intake_review',  (toReview  ?? []) as never, c => c.email ?? null)
+  pushClient('intake_blocked', (onHold    ?? []) as never, () => 'Mogelijke contra-indicatie')
+  pushClient('kit_send',       (toSendKit ?? []) as never, c => c.email ?? null)
+  pushClient('result_process', (resultsIn ?? []) as never, c => c.email ?? null)
+
+  for (const kit of retourRaw ?? []) {
+    const c = kit.vh_client as unknown as { first_name: string; last_name: string } | null
+    actions.push({
+      key: `kit_batch:${kit.id}`,
+      actionType: 'kit_batch',
+      subjectId: kit.id as string,
+      subjectLabel: kit.barcode as string,
+      subjectSub: c ? `${c.first_name} ${c.last_name}` : 'Niet toegewezen',
+      href: `/testkits/${kit.id}`,
+      date: (kit.retour_date as string | null) ?? new Date().toISOString(),
+    })
+  }
+
+  for (const c of incomplete ?? []) {
+    actions.push({
+      key: `enrollment_incomplete:${c.id}`,
+      actionType: 'enrollment_incomplete',
+      subjectId: c.id,
+      subjectLabel: `${c.first_name} ${c.last_name}`,
+      subjectSub: c.enrollment_status === 'toestemming_gegeven' ? 'Gestopt na toestemmingen' : 'Gestopt na adresgegevens',
+      href: `/clienten/${c.id}`,
+      date: c.created_at,
+    })
+  }
+
+  // ── Toewijzingen, medewerkers en huidige medewerker ───────────────────────
+  const subjectIds = actions.map(a => a.subjectId)
+  const [{ data: assignRaw }, { data: members }, { data: { user } }] = await Promise.all([
+    subjectIds.length
+      ? supabase.from('vh_action_assignment')
+          .select('action_type, subject_id, assigned_to, vh_medewerker(name)')
+          .in('subject_id', subjectIds)
+      : Promise.resolve({ data: [] as never[] }),
+    supabase.from('vh_medewerker').select('id, name, role').order('name'),
+    supabase.auth.getUser(),
+  ])
+
+  const assignments: Record<string, { memberId: string; memberName: string }> = {}
+  for (const a of assignRaw ?? []) {
+    const m = a.vh_medewerker as unknown as { name: string } | null
+    assignments[`${a.action_type}:${a.subject_id}`] = {
+      memberId: a.assigned_to as string,
+      memberName: m?.name ?? '—',
+    }
+  }
+
+  let currentMemberId: string | null = null
+  if (user) {
+    const { data: meRow } = await supabase
+      .from('vh_medewerker').select('id').eq('user_id', user.id).maybeSingle()
+    currentMemberId = meRow?.id ?? null
+  }
 
   return {
     testkit: { total: tkTotal ?? 0, received: tkReceived ?? 0, assigned: tkAssigned ?? 0, retour: tkRetour ?? 0, sent: tkSent ?? 0, results: tkResults ?? 0 },
     clientCounts,
-    toReview:   toReview   ?? [],
-    onHold:     onHold     ?? [],
-    toSendKit:  toSendKit  ?? [],
-    retourKits,
-    resultsIn:  resultsIn  ?? [],
-    incomplete: incomplete ?? [],
+    actions,
+    assignments,
+    members: (members ?? []) as { id: string; name: string; role: string }[],
+    currentMemberId,
   }
 }
 
@@ -114,7 +187,7 @@ async function getData(supabase: Awaited<ReturnType<typeof createClient>>) {
 
 export default async function DashboardPage() {
   const supabase = await createClient()
-  const { testkit, clientCounts, toReview, onHold, toSendKit, retourKits, resultsIn, incomplete } = await getData(supabase)
+  const { testkit, clientCounts, actions, assignments, members, currentMemberId } = await getData(supabase)
 
   const tkCards = [
     { label: 'Totaal testkits', value: testkit.total,    icon: TestTube2,  color: 'text-[#1f1683]', bg: 'bg-[#eef4ff]' },
@@ -203,117 +276,12 @@ export default async function DashboardPage() {
       {/* ── Rij 3: Actiepunten ─────────────────────────────────────────────────── */}
       <section>
         <SectionLabel>Actiepunten</SectionLabel>
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-
-          {/* Arts: intake beoordelen */}
-          <ActionCard
-            icon={<ClipboardCheck size={16} className="text-violet-600" />}
-            iconBg="bg-violet-50"
-            title="Intake beoordelen"
-            badge="Arts"
-            badgeColor="bg-violet-100 text-violet-700"
-            count={toReview.length}
-            href="/clienten?status=vragenlijst_ingevuld"
-            emptyText="Geen intakes wachten op beoordeling."
-          >
-            {toReview.map(c => (
-              <ClientRow key={c.id} id={c.id} name={`${c.first_name} ${c.last_name}`} sub={c.email ?? undefined} date={c.created_at} />
-            ))}
-          </ActionCard>
-
-          {/* Arts: intake geblokkeerd (contra-indicatie) */}
-          <ActionCard
-            icon={<ShieldAlert size={16} className="text-red-600" />}
-            iconBg="bg-red-50"
-            title="Intake geblokkeerd — contact opnemen"
-            badge="Arts"
-            badgeColor="bg-red-100 text-red-700"
-            count={onHold.length}
-            href="/clienten?status=intake_on_hold"
-            emptyText="Geen geblokkeerde intakes."
-          >
-            {onHold.map(c => (
-              <ClientRow key={c.id} id={c.id} name={`${c.first_name} ${c.last_name}`} sub="Mogelijke contra-indicatie" date={c.created_at} />
-            ))}
-          </ActionCard>
-
-          {/* Medewerker: kit versturen */}
-          <ActionCard
-            icon={<Package size={16} className="text-amber-600" />}
-            iconBg="bg-amber-50"
-            title="Kit versturen naar cliënt"
-            badge="Medewerker"
-            badgeColor="bg-amber-100 text-amber-700"
-            count={toSendKit.length}
-            href="/clienten?status=intake_akkoord"
-            emptyText="Geen kits klaarstaan voor verzending."
-          >
-            {toSendKit.map(c => (
-              <ClientRow key={c.id} id={c.id} name={`${c.first_name} ${c.last_name}`} sub={c.email ?? undefined} date={c.created_at} />
-            ))}
-          </ActionCard>
-
-          {/* Medewerker: retour-kits naar Nightingale */}
-          <ActionCard
-            icon={<Send size={16} className="text-cyan-600" />}
-            iconBg="bg-cyan-50"
-            title="Retour-kits naar Nightingale"
-            badge="Medewerker"
-            badgeColor="bg-cyan-100 text-cyan-700"
-            count={retourKits.length}
-            href="/batches/nieuw"
-            footerLabel="Batch aanmaken →"
-            emptyText="Geen retour-kits klaar voor verzending."
-          >
-            {retourKits.map(k => (
-              <KitRow key={k.id} id={k.id} barcode={k.barcode} clientName={k.clientName} date={k.retour_date} />
-            ))}
-          </ActionCard>
-
-          {/* Medewerker: uitslag binnen */}
-          <ActionCard
-            icon={<FileText size={16} className="text-teal-600" />}
-            iconBg="bg-teal-50"
-            title="Uitslag binnen — verwerken"
-            badge="Medewerker"
-            badgeColor="bg-teal-100 text-teal-700"
-            count={resultsIn.length}
-            href="/clienten?status=uitslag_bekend"
-            emptyText="Geen nieuwe uitslagen om te verwerken."
-          >
-            {resultsIn.map(c => (
-              <ClientRow key={c.id} id={c.id} name={`${c.first_name} ${c.last_name}`} sub={c.email ?? undefined} date={c.created_at} />
-            ))}
-          </ActionCard>
-
-          {/* Medewerker: aanmelding niet afgerond */}
-          <ActionCard
-            icon={<Clock size={16} className="text-slate-500" />}
-            iconBg="bg-slate-50"
-            title="Aanmelding niet afgerond"
-            badge="Medewerker"
-            badgeColor="bg-slate-100 text-slate-600"
-            count={incomplete.length}
-            href={null}
-            emptyText="Alle aanmeldingen zijn volledig afgerond."
-          >
-            {incomplete.map(c => (
-              <ClientRow
-                key={c.id}
-                id={c.id}
-                name={`${c.first_name} ${c.last_name}`}
-                sub={
-                  c.enrollment_status === 'toestemming_gegeven'
-                    ? 'Gestopt na toestemmingen'
-                    : 'Gestopt na adresgegevens'
-                }
-                date={c.created_at}
-                resumeEmail={c.email ?? undefined}
-              />
-            ))}
-          </ActionCard>
-
-        </div>
+        <ActionsTable
+          actions={actions}
+          members={members}
+          assignments={assignments}
+          currentMemberId={currentMemberId}
+        />
       </section>
     </div>
   )
@@ -324,117 +292,5 @@ export default async function DashboardPage() {
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
     <p className="text-xs font-semibold uppercase tracking-widest text-[#94a3b8] mb-3">{children}</p>
-  )
-}
-
-function ActionCard({
-  icon, iconBg, title, badge, badgeColor,
-  count, href, footerLabel, emptyText, children,
-}: {
-  icon: React.ReactNode
-  iconBg: string
-  title: string
-  badge: string
-  badgeColor: string
-  count: number
-  href: string | null
-  footerLabel?: string
-  emptyText: string
-  children: React.ReactNode
-}) {
-  const hasItems = count > 0
-  return (
-    <div className="rounded-xl border border-[#e2e8f0] bg-white shadow-sm flex flex-col overflow-hidden">
-      {/* Header */}
-      <div className="flex items-center gap-3 border-b border-[#f1f5f9] px-4 py-3">
-        <div className={`rounded-lg p-1.5 ${iconBg} shrink-0`}>{icon}</div>
-        <div className="flex-1 min-w-0">
-          <p className="text-sm font-semibold text-[#1e293b] truncate">{title}</p>
-        </div>
-        <div className="flex items-center gap-2 shrink-0">
-          <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${badgeColor}`}>{badge}</span>
-          {hasItems && (
-            <span className="rounded-full bg-red-100 text-red-600 px-2 py-0.5 text-xs font-bold">{count}</span>
-          )}
-        </div>
-      </div>
-
-      {/* Lijst */}
-      <div className="flex-1 divide-y divide-[#f8fafc]">
-        {!hasItems ? (
-          <p className="px-4 py-6 text-center text-sm text-[#94a3b8]">{emptyText}</p>
-        ) : (
-          children
-        )}
-      </div>
-
-      {/* Footer met link naar volledige lijst of vervolgactie */}
-      {hasItems && href && (
-        <div className="border-t border-[#f1f5f9] px-4 py-2.5">
-          <Link
-            href={href}
-            className="text-xs text-[#1f1683] hover:underline"
-          >
-            {footerLabel ?? `Alle ${count} bekijken →`}
-          </Link>
-        </div>
-      )}
-    </div>
-  )
-}
-
-function ClientRow({
-  id, name, sub, date, resumeEmail,
-}: {
-  id: string
-  name: string
-  sub?: string
-  date: string
-  resumeEmail?: string
-}) {
-  const ago = formatDistanceToNow(new Date(date), { locale: nl, addSuffix: true })
-  return (
-    <div className="flex items-center justify-between gap-3 px-4 py-2.5 hover:bg-[#f8fafc] transition-colors">
-      <div className="min-w-0 flex-1">
-        <Link href={`/clienten/${id}`} className="text-sm font-medium text-[#1e293b] hover:text-[#1f1683] truncate block">
-          {name}
-        </Link>
-        {sub && <p className="text-xs text-[#94a3b8] truncate">{sub}</p>}
-      </div>
-      <div className="flex items-center gap-2 shrink-0">
-        <span className="text-xs text-[#cbd5e1]">{ago}</span>
-        {resumeEmail && (
-          <Link
-            href={`/portal/aanmelden?email=${encodeURIComponent(resumeEmail)}`}
-            className="rounded border border-[#e2e8f0] px-2 py-0.5 text-xs text-[#64748b] hover:border-[#1f1683] hover:text-[#1f1683] transition-colors"
-            title="Stuur hervatlink"
-          >
-            Hervatten
-          </Link>
-        )}
-      </div>
-    </div>
-  )
-}
-
-function KitRow({
-  id, barcode, clientName, date,
-}: {
-  id: string
-  barcode: string
-  clientName: string
-  date: string
-}) {
-  const ago = formatDistanceToNow(new Date(date), { locale: nl, addSuffix: true })
-  return (
-    <div className="flex items-center justify-between gap-3 px-4 py-2.5 hover:bg-[#f8fafc] transition-colors">
-      <div className="min-w-0 flex-1">
-        <Link href={`/testkits/${id}`} className="text-sm font-mono font-medium text-[#1e293b] hover:text-[#1f1683] truncate block">
-          {barcode}
-        </Link>
-        <p className="text-xs text-[#94a3b8] truncate">{clientName}</p>
-      </div>
-      <span className="text-xs text-[#cbd5e1] shrink-0">{ago}</span>
-    </div>
   )
 }
