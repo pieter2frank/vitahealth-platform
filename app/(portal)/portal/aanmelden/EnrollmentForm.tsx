@@ -521,7 +521,7 @@ export function EnrollmentForm({ intakeQuestionnaire, initialEmail, initialResum
             </Field>
 
             <Field label="Geboortedatum">
-              <input type="date" value={birthDate} onChange={e => setBirthDate(e.target.value)} className={INPUT} />
+              <input type="date" lang="nl-NL" value={birthDate} onChange={e => setBirthDate(e.target.value)} className={INPUT} />
             </Field>
           </div>
         )}

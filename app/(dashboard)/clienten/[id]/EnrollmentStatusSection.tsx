@@ -65,6 +65,13 @@ export function EnrollmentStatusSection({ clientId, initialStatus, assignedKitId
   // ── Goedkeuren ──────────────────────────────────────────────────────────────
   async function advance() {
     if (!transition) return
+
+    // Controle: 'Kit opgestuurd' mag alleen als er een testkit gekoppeld is
+    if (transition.next === 'kit_opgestuurd' && !assignedKitId) {
+      setError('Koppel eerst een testkit aan deze cliënt voordat je de kit als opgestuurd markeert. Gebruik het veld "Testkits" hierboven om een kit te scannen of te koppelen.')
+      return
+    }
+
     setSaving(true)
     setError('')
     const supabase = createClient()
@@ -342,18 +349,30 @@ export function EnrollmentStatusSection({ clientId, initialStatus, assignedKitId
           <div className="mt-4 flex items-center gap-3 flex-wrap">
 
             {/* Goedkeuren-knop */}
-            {canTransition && !confirmReject && (
-              <button
-                onClick={advance}
-                disabled={saving}
-                className="inline-flex items-center gap-2 rounded-lg bg-[#1f1683] px-4 py-2 text-sm font-medium text-white hover:bg-[#1a1270] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {saving
-                  ? <><Loader2 size={14} className="animate-spin" /> Bezig…</>
-                  : <><ChevronRight size={14} /> {transition!.label}</>
-                }
-              </button>
-            )}
+            {canTransition && !confirmReject && (() => {
+              const kitOntbreekt = transition!.next === 'kit_opgestuurd' && !assignedKitId
+              return (
+                <div className="flex flex-col gap-1.5">
+                  <button
+                    onClick={advance}
+                    disabled={saving || kitOntbreekt}
+                    title={kitOntbreekt ? 'Koppel eerst een testkit' : undefined}
+                    className="inline-flex items-center gap-2 rounded-lg bg-[#1f1683] px-4 py-2 text-sm font-medium text-white hover:bg-[#1a1270] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {saving
+                      ? <><Loader2 size={14} className="animate-spin" /> Bezig…</>
+                      : <><ChevronRight size={14} /> {transition!.label}</>
+                    }
+                  </button>
+                  {kitOntbreekt && (
+                    <span className="inline-flex items-center gap-1 text-xs text-amber-700">
+                      <AlertTriangle size={12} className="shrink-0" />
+                      Koppel eerst een testkit hierboven
+                    </span>
+                  )}
+                </div>
+              )
+            })()}
 
             {/* Afwijzen-sectie (alleen bij vragenlijst_ingevuld + arts) */}
             {canReject && !confirmReject && (
