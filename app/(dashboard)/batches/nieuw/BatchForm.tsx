@@ -1,11 +1,16 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { TestTube2, Package, AlertTriangle, CheckSquare2, Square } from 'lucide-react'
 import { formatDate } from '@/lib/utils'
+
+// Batchcode opbouwen: NL-NH-yyyy-00001/010
+function buildBadgeId(year: number, seq: number, kitCount: number): string {
+  return `NL-NH-${year}-${String(seq).padStart(5, '0')}/${String(kitCount).padStart(3, '0')}`
+}
 
 interface RetourKit {
   id: string
@@ -21,14 +26,30 @@ interface Props {
 export function BatchForm({ retourKits }: Props) {
   const router = useRouter()
 
-  const [badgeId, setBadgeId] = useState('')
   const [sentDate, setSentDate] = useState(() => new Date().toISOString().split('T')[0])
   const [notes, setNotes] = useState('')
   const [selected, setSelected] = useState<Set<string>>(
     () => new Set(retourKits.map(k => k.id))
   )
+  const [previewSeq, setPreviewSeq] = useState<number | null>(null)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
+
+  // Jaar uit verzenddatum (fallback: huidig jaar)
+  const year = sentDate ? new Date(sentDate).getFullYear() : new Date().getFullYear()
+
+  // Volgnummer ophalen voor live preview (zonder te reserveren)
+  useEffect(() => {
+    const supabase = createClient()
+    supabase.rpc('peek_batch_seq', { p_year: year }).then(({ data }) => {
+      if (typeof data === 'number') setPreviewSeq(data)
+    })
+  }, [year])
+
+  // Live preview van de batchcode
+  const badgePreview = previewSeq !== null
+    ? buildBadgeId(year, previewSeq, selected.size || 0)
+    : null
 
   const allSelected = selected.size === retourKits.length && retourKits.length > 0
   const noneSelected = selected.size === 0
@@ -49,18 +70,26 @@ export function BatchForm({ retourKits }: Props) {
     e.preventDefault()
     setError('')
 
-    if (!badgeId.trim()) { setError('Badge ID is verplicht.'); return }
     if (noneSelected) { setError('Selecteer minimaal één testkit.'); return }
 
     setSaving(true)
     const supabase = createClient()
     const ids = Array.from(selected)
 
-    // 1. Batch aanmaken
+    // 1. Volgnummer reserveren (atomair) en batchcode opbouwen
+    const { data: seq, error: seqErr } = await supabase.rpc('next_batch_seq', { p_year: year })
+    if (seqErr || typeof seq !== 'number') {
+      setError(seqErr?.message ?? 'Batchnummer genereren mislukt.')
+      setSaving(false)
+      return
+    }
+    const badgeId = buildBadgeId(year, seq, ids.length)
+
+    // 2. Batch aanmaken
     const { data: batch, error: batchErr } = await supabase
       .from('vh_batch')
       .insert({
-        badge_id: badgeId.trim(),
+        badge_id: badgeId,
         sent_date: sentDate,
         notes: notes.trim() || null,
         status: 'sent',
@@ -74,12 +103,12 @@ export function BatchForm({ retourKits }: Props) {
       return
     }
 
-    // 2. Geselecteerde testkits bijwerken
+    // 3. Geselecteerde testkits bijwerken
     const { error: updateErr } = await supabase
       .from('vh_testkit')
       .update({
         batch_id: batch.id,
-        badge_id: badgeId.trim(),
+        badge_id: badgeId,
         badge_datesent: sentDate,
         status: 'sent_nightingale',
       })
@@ -115,14 +144,21 @@ export function BatchForm({ retourKits }: Props) {
         <div className="rounded-xl border border-[#e2e8f0] bg-white p-5 shadow-sm space-y-4">
           <h2 className="text-sm font-semibold text-[#1e293b]">Batchgegevens</h2>
 
-          <Input
-            label="NH Badge ID"
-            value={badgeId}
-            onChange={e => { setBadgeId(e.target.value); setError('') }}
-            placeholder="Bijv. NHG-2026-001"
-            required
-            autoFocus
-          />
+          {/* Automatisch gegenereerde batchcode */}
+          <div className="space-y-1.5">
+            <label className="block text-sm font-medium text-[#1e293b]">
+              Batchcode <span className="text-[#94a3b8] font-normal">(automatisch)</span>
+            </label>
+            <div className="rounded-lg border border-[#e2e8f0] bg-[#f8fafc] px-3 py-2.5">
+              <span className="font-mono text-sm font-semibold text-[#1f1683]">
+                {badgePreview ?? `NL-NH-${year}-…/${String(selected.size || 0).padStart(3, '0')}`}
+              </span>
+            </div>
+            <p className="text-xs text-[#94a3b8]">
+              Het volgnummer ({previewSeq !== null ? String(previewSeq).padStart(5, '0') : '…'})
+              wordt definitief toegekend bij aanmaken. De laatste 3 cijfers zijn het aantal kits.
+            </p>
+          </div>
 
           <Input
             label="Verzenddatum"
