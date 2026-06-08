@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { EnrollmentForm } from './EnrollmentForm'
 import type { QuestionnaireDefinition, QuestionnaireQuestion } from '@/types'
+import { REQUIRED_CONSENTS, OPTIONAL_CONSENTS } from '@/lib/consents'
 
 export const metadata = { title: 'Aanmelden — Vita Health' }
 
@@ -36,10 +37,13 @@ export default async function AanmeldenPage({ searchParams }: PageProps) {
     }
   }
 
-  // Actieve toestemmingsteksten ophalen (DB-versie)
+  // Actieve toestemmingsteksten ophalen (DB-versie). Vangnet: als de database
+  // (nog) geen versie heeft, val terug op de teksten in de code (versie 2).
   const { data: consentData } = await supabase.rpc('get_active_consents')
-  const requiredConsents = (consentData?.required as string[] | undefined) ?? []
-  const optionalConsents = (consentData?.optional as string[] | undefined) ?? []
+  const dbRequired = (consentData?.required as string[] | undefined) ?? []
+  const dbOptional = (consentData?.optional as string[] | undefined) ?? []
+  const requiredConsents = dbRequired.length > 0 ? dbRequired : [...REQUIRED_CONSENTS]
+  const optionalConsents = dbRequired.length > 0 ? dbOptional : [...OPTIONAL_CONSENTS]
   const consentVersion   = (consentData?.version as number | undefined) ?? 2
 
   // Intake vragenlijst ophalen uit instellingen

@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/client'
 import { CheckCircle2, AlertTriangle, ChevronRight, ChevronLeft, Info, ExternalLink } from 'lucide-react'
 import type { QuestionnaireQuestion } from '@/types'
 import { SCREENER_INTRO, SCREENER_CRITERIA } from '@/lib/screener'
+import { DateFieldNL } from '@/components/ui/DateFieldNL'
 
 const STEPS = [
   { label: 'Persoonsgegevens' },
@@ -109,6 +110,16 @@ export function EnrollmentForm({
       }
       setCheckingInitialEmail(false)
     })
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // ─── Uitgenodigde cliënt (token): direct naar stap 1 met voorgevulde data ───
+  // Een net uitgenodigde cliënt (status 'aangemeld') hoeft geen hervat-banner te
+  // zien — hij start meteen op stap 1 met naam en e-mail al ingevuld.
+  useEffect(() => {
+    if (initialResumeInfo && initialResumeInfo.status === 'aangemeld') {
+      handleResume()
+    }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -527,7 +538,7 @@ export function EnrollmentForm({
             </Field>
 
             <Field label="Geboortedatum">
-              <input type="date" lang="nl-NL" value={birthDate} onChange={e => setBirthDate(e.target.value)} className={INPUT} />
+              <DateFieldNL value={birthDate} onChange={setBirthDate} className={INPUT} />
             </Field>
           </div>
         )}
