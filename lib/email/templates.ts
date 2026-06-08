@@ -81,7 +81,41 @@ export function uitnodigingEmail(opts: {
 
   const body = `
     ${greeting(opts.firstName)}
-    ${p('Je bent uitgenodigd om deel te nemen aan de <strong style="color:#1e293b;">Vita Health biomarkertest</strong>. Lees voor aanvang de onderstaande documenten zorgvuldig door.')}
+    ${p('Je bent uitgenodigd om deel te nemen aan de <strong style="color:#1e293b;">Vita Health Check</strong>. Hieronder lees je kort hoe het proces verloopt. Lees voor aanvang de onderstaande documenten zorgvuldig door.')}
+
+    <!-- Procesoverzicht -->
+    <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:20px 22px;margin:0 0 20px;">
+      <p style="margin:0 0 14px;font-size:13px;font-weight:700;color:#1e293b;">Zo werkt de Vita Health Check</p>
+      <table style="width:100%;border-collapse:collapse;">
+        <tr>
+          <td style="width:30px;vertical-align:top;padding-bottom:14px;">
+            <div style="width:24px;height:24px;background:#1f1683;border-radius:6px;text-align:center;line-height:24px;font-size:12px;font-weight:700;color:#ffffff;">1</div>
+          </td>
+          <td style="padding-bottom:14px;padding-left:12px;">
+            <p style="margin:0 0 2px;font-size:13px;font-weight:600;color:#1e293b;">Aanmelden &amp; intake</p>
+            <p style="margin:0;font-size:12px;color:#64748b;line-height:1.5;">Je vult je gegevens, toestemmingen en de gezondheidsvragenlijst in. Vita Health beoordeelt vervolgens of de test geschikt voor je is.</p>
+          </td>
+        </tr>
+        <tr>
+          <td style="width:30px;vertical-align:top;padding-bottom:14px;">
+            <div style="width:24px;height:24px;background:#1f1683;border-radius:6px;text-align:center;line-height:24px;font-size:12px;font-weight:700;color:#ffffff;">2</div>
+          </td>
+          <td style="padding-bottom:14px;padding-left:12px;">
+            <p style="margin:0 0 2px;font-size:13px;font-weight:600;color:#1e293b;">Test &amp; afname</p>
+            <p style="margin:0;font-size:12px;color:#64748b;line-height:1.5;">Je ontvangt de test thuis. Met een eenvoudige vingerprik neem je zelf wat bloed af en stuurt dit terug naar Vita Health. Een gespecialiseerd laboratorium analyseert je monster.</p>
+          </td>
+        </tr>
+        <tr>
+          <td style="width:30px;vertical-align:top;">
+            <div style="width:24px;height:24px;background:#1f1683;border-radius:6px;text-align:center;line-height:24px;font-size:12px;font-weight:700;color:#ffffff;">3</div>
+          </td>
+          <td style="padding-left:12px;">
+            <p style="margin:0 0 2px;font-size:13px;font-weight:600;color:#1e293b;">Resultaten bespreken</p>
+            <p style="margin:0;font-size:12px;color:#64748b;line-height:1.5;">Na ongeveer 2 tot 3 weken bespreken we jouw resultaten met je.</p>
+          </td>
+        </tr>
+      </table>
+    </div>
 
     <!-- Documenten -->
     <div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:10px;padding:18px 22px;margin:0 0 20px;">
@@ -90,7 +124,7 @@ export function uitnodigingEmail(opts: {
         <tr>
           <td style="padding-bottom:8px;">
             <a href="${esc(deelnemersinfoUrl)}" style="display:inline-block;color:#1f1683;font-size:13px;font-weight:600;text-decoration:underline;">
-              Deelnemersinformatie biomarkertest →
+              Deelnemersinformatie Vita Health Check →
             </a><br>
             <span style="font-size:12px;color:#64748b;">Wat houdt deelname in, hoe werkt de test en wat zijn uw rechten.</span>
           </td>
