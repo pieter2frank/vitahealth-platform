@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { reminderEmail } from '@/lib/email/templates'
 import { isUuid } from '@/lib/validation'
+import { logAuditEvent } from '@/lib/audit'
 
 const resend = new Resend(process.env.RESEND_API_KEY)
 
@@ -56,6 +57,17 @@ export async function POST(req: Request) {
     console.error('[email/reminder] Resend error:', error)
     return NextResponse.json({ error: 'E-mail kon niet worden verzonden.' }, { status: 500 })
   }
+
+  logAuditEvent({
+    actorUserId:     user.id,
+    actorRole:       'medewerker_regulier',
+    subjectClientId: clientId,
+    resourceType:    'client',
+    resourceId:      clientId,
+    action:          'email_sent',
+    outcome:         'success',
+    reason:          'Herinnering verstuurd',
+  }).catch(() => {})
 
   return NextResponse.json({ ok: true })
 }

@@ -33,6 +33,7 @@ export type AuditResourceType =
   | 'consent'
   | 'enrollment_status'
   | 'kit_status'
+  | 'medewerker'
 
 export type AuditAccessBasis =
   | 'medewerker_regulier'

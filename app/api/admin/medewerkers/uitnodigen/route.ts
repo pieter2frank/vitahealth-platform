@@ -3,6 +3,7 @@ import { Resend } from 'resend'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { medewerkerUitnodigingEmail } from '@/lib/email/templates'
+import { logAuditEvent } from '@/lib/audit'
 import { z } from 'zod'
 
 const resend = new Resend(process.env.RESEND_API_KEY)
@@ -92,6 +93,17 @@ export async function POST(req: Request) {
     subject,
     html,
   })
+
+  logAuditEvent({
+    actorUserId:  user.id,
+    actorRole:    'admin',
+    resourceType: 'medewerker',
+    resourceId:   invite.user.id,
+    action:       'email_sent',
+    outcome:      'success',
+    reason:       `Medewerker uitgenodigd als ${role}: ${firstName} ${lastName}`,
+    metadata:     { role },
+  }).catch(() => {})
 
   return NextResponse.json({ ok: true, userId: invite.user.id })
 }

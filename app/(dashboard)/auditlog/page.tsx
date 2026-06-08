@@ -27,10 +27,22 @@ const RESOURCE_LABELS: Record<string, string> = {
   questionnaire_response:    'Vragenlijstresultaten',
   questionnaire_assignment:  'Vragenlijstopdracht',
   testkit:                   'Testkit',
+  batch:                     'Batch',
   batch_export:              'Batch export',
   consent:                   'Toestemming',
+  consent_version:           'Toestemmingsversie',
   enrollment_status:         'Aanmeldstatus',
   kit_status:                'Kitstatus',
+  client_note:               'Cliëntnotitie',
+  client_document:           'Cliëntdocument',
+  intake_token:              'Intake-uitnodiging',
+  medewerker:                'Medewerker',
+  action_assignment:         'Actie-toewijzing',
+  alert:                     'Beveiligingsalert',
+  order:                     'Aanvraag',
+  company:                   'Bedrijf',
+  arbo:                      'Arbodienst',
+  screener:                  'Geschiktheidscheck',
 }
 
 const OUTCOME_ICON = {
