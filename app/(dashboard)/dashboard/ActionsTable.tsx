@@ -1,6 +1,6 @@
 'use client'
 import { useState, useMemo } from 'react'
-import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { formatDistanceToNow } from 'date-fns'
 import { nl } from 'date-fns/locale'
 import { Loader2, Filter } from 'lucide-react'
@@ -29,6 +29,7 @@ interface Props {
 }
 
 export function ActionsTable({ actions, members, assignments: initialAssignments, currentMemberId }: Props) {
+  const router = useRouter()
   const [assignments, setAssignments] = useState(initialAssignments)
   const [savingKey, setSavingKey] = useState<string | null>(null)
   const [error, setError] = useState('')
@@ -134,12 +135,16 @@ export function ActionsTable({ actions, members, assignments: initialAssignments
                 const ago = formatDistanceToNow(new Date(row.date), { locale: nl, addSuffix: true })
 
                 return (
-                  <tr key={row.key} className="hover:bg-[#f8fafc]">
+                  <tr
+                    key={row.key}
+                    onClick={() => router.push(row.href)}
+                    className="hover:bg-[#f8fafc] cursor-pointer"
+                  >
                     <td className="px-4 py-3 font-medium text-[#1e293b] whitespace-nowrap">{meta.label}</td>
                     <td className="px-4 py-3">
-                      <Link href={row.href} className={`font-medium text-[#1e293b] hover:text-[#1f1683] ${meta.subject === 'kit' ? 'font-mono' : ''}`}>
+                      <span className={`font-medium text-[#1e293b] ${meta.subject === 'kit' ? 'font-mono' : ''}`}>
                         {row.subjectLabel}
-                      </Link>
+                      </span>
                       {row.subjectSub && <p className="text-xs text-[#94a3b8]">{row.subjectSub}</p>}
                     </td>
                     <td className="px-4 py-3">
@@ -148,7 +153,8 @@ export function ActionsTable({ actions, members, assignments: initialAssignments
                       </span>
                     </td>
                     <td className="px-4 py-3 text-xs text-[#94a3b8] whitespace-nowrap">{ago}</td>
-                    <td className="px-4 py-3">
+                    {/* Toewijzen — klik hier navigeert niet naar de pagina */}
+                    <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
                       <div className="flex items-center gap-2">
                         <select
                           value={assigned?.memberId ?? ''}
