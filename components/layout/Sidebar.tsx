@@ -10,6 +10,7 @@ import {
   Package, LogOut, CircleUserRound, ClipboardList, ScrollText, Dumbbell, Settings, ShieldCheck, UserCog, FileCheck,
 } from 'lucide-react'
 import { isAdmin } from '@/lib/auth/roles'
+import { APP_VERSION } from '@/lib/version'
 import { createClient } from '@/lib/supabase/client'
 import { useUser } from '@/components/providers/UserProvider'
 
@@ -184,6 +185,7 @@ export function Sidebar({ newOrderCount = 0 }: SidebarProps) {
           <LogOut size={17} />
           Uitloggen
         </button>
+        <p className="px-3 pt-1 text-[10px] text-[#cbd5e1] text-center">Vita Health Platform v{APP_VERSION}</p>
       </div>
     </aside>
   )
