@@ -11,11 +11,11 @@ export const REQUIRED_CONSENTS = [
   'Ik verklaar de gezondheidsvragenlijst volledig en naar waarheid in te vullen en stem in dat Vita Health contact met mij opneemt over mijn deelname, de sample-afname, mijn uitslag en eventuele vervolgstappen.',
 
   // 4. Medische disclaimer (aansprakelijkheidsbeperking)
-  'Ik begrijp dat de biomarkertest geen medische diagnose stelt en geen vervanging is van reguliere medische zorg. Bij gezondheidsklachten raadpleeg ik altijd mijn huisarts of, bij spoed, de huisartsenpost of 112.',
+  'Ik begrijp dat de Vita Health Check geen medische diagnose stelt en geen vervanging is van reguliere medische zorg. Bij gezondheidsklachten raadpleeg ik altijd mijn huisarts of, bij spoed, de huisartsenpost of 112.',
 ] as const
 
 export const OPTIONAL_CONSENTS = [
   'Ik geef toestemming dat mijn niet-herleidbare feedback en procesgegevens worden gebruikt om het proces te verbeteren voor een grotere pilot.',
-  'Ik geef toestemming dat Vita Health mij na afloop benadert voor feedback over mijn ervaring met de biomarkertest.',
+  'Ik geef toestemming dat Vita Health mij na afloop benadert voor feedback over mijn ervaring met de Vita Health Check.',
   'Ik geef toestemming dat mijn gegevens, uitsluitend in gepseudonimiseerde of geaggregeerde vorm, worden gebruikt voor evaluatie van de dry-run.',
 ] as const

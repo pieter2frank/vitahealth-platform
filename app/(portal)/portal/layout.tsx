@@ -2,8 +2,8 @@ import type { Metadata } from 'next'
 import { PortalHeader } from './PortalHeader'
 
 export const metadata: Metadata = {
-  title: 'Vita Health — Biomarker bloedtest aanvragen',
-  description: 'Ontdek wat er in jouw bloed zit. Bestel een biomarker testkit en ontvang inzicht in jouw gezondheid.',
+  title: 'Vita Health Check — gezondheidstest aanvragen',
+  description: 'Ontdek wat er in jouw bloed zit. Doe de Vita Health Check en ontvang inzicht in jouw gezondheid.',
 }
 
 export default function PortalLayout({ children }: { children: React.ReactNode }) {

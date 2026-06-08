@@ -67,7 +67,7 @@ export default async function AanmeldenPage({ searchParams }: PageProps) {
       <div className="mx-auto max-w-2xl">
         {/* Paginakop */}
         <div className="mb-8 text-center">
-          <h1 className="text-2xl font-bold text-[#1e293b]">Aanmelden voor de biomarkertest</h1>
+          <h1 className="text-2xl font-bold text-[#1e293b]">Aanmelden voor de Vita Health Check</h1>
           <p className="text-sm text-[#64748b] mt-1.5 leading-relaxed">
             Vul onderstaand formulier in om je aan te melden voor de Vita Health dry-run.
           </p>

@@ -13,7 +13,7 @@ export async function POST(req: Request) {
   const { error } = await resend.emails.send({
     from: `Vita Health <${process.env.FROM_EMAIL ?? 'noreply@vita-health.nl'}>`,
     to: email,
-    subject: 'Bevestiging: jouw biomarker test aanvraag',
+    subject: 'Bevestiging: jouw Vita Health Check aanvraag',
     html: generateEmailHtml(first_name, last_name),
   })
 

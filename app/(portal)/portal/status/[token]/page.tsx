@@ -73,7 +73,7 @@ const STEPS: Step[] = [
   {
     key: 'uitslag_bekend',
     label: 'Uitslag beschikbaar',
-    description: 'De resultaten van jouw biomarkertest zijn ontvangen.',
+    description: 'De resultaten van jouw Vita Health Check zijn ontvangen.',
     actie: 'Een arts bekijkt jouw uitslag en neemt contact met je op.',
     getDate: d => d.kit_results_date,
   },
@@ -128,7 +128,7 @@ export default async function StatusPage({
             <span className="font-semibold text-[#1e293b]">Vita Health</span>
           </div>
           <h1 className="text-xl font-bold text-[#1e293b]">Status van jouw aanmelding</h1>
-          <p className="text-sm text-[#64748b] mt-1">Hallo {d.first_name}, hier zie je hoe het staat met jouw biomarkertest.</p>
+          <p className="text-sm text-[#64748b] mt-1">Hallo {d.first_name}, hier zie je hoe het staat met jouw Vita Health Check.</p>
         </div>
 
         {/* Intake afgewezen */}

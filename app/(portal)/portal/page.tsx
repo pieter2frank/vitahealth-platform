@@ -42,7 +42,7 @@ export default function PortalHomePage() {
             Ontdek wat er in<br className="hidden sm:block" /> jouw bloed zit
           </h1>
           <p className="text-lg text-[#64748b] mb-8 max-w-xl mx-auto">
-            Met de Vita Health biomarker test krijg je inzicht in meer dan 250 gezondheidswaarden.
+            Met de Vita Health Check krijg je inzicht in meer dan 250 gezondheidswaarden.
             Thuis afnemen, snel resultaat.
           </p>
           <Link

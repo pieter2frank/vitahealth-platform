@@ -277,7 +277,7 @@ export function intakeHervattingEmail(opts: {
 }): { subject: string; html: string } {
   const body = `
     ${greeting(opts.firstName)}
-    ${p('Bedankt voor je geduld. Na ons contact is besloten dat je kunt doorgaan met de Vita Health biomarkertest. Klik op onderstaande knop om de gezondheidsvragenlijst in te vullen.')}
+    ${p('Bedankt voor je geduld. Na ons contact is besloten dat je kunt doorgaan met de Vita Health Check. Klik op onderstaande knop om de gezondheidsvragenlijst in te vullen.')}
 
     <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:16px 22px;margin-bottom:28px;">
       <p style="margin:0;font-size:13px;color:#166534;line-height:1.6;">
@@ -363,7 +363,7 @@ export function reminderEmail(opts: {
 
   const body = `
     ${greeting(opts.firstName)}
-    ${p(`Je aanmelding voor de Vita Health biomarkertest is <strong style="color:#1e293b;">nog niet volledig</strong>. ${description}`)}
+    ${p(`Je aanmelding voor de Vita Health Check is <strong style="color:#1e293b;">nog niet volledig</strong>. ${description}`)}
 
     <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:16px 22px;margin-bottom:28px;">
       <p style="margin:0;font-size:13px;color:#92400e;line-height:1.6;">

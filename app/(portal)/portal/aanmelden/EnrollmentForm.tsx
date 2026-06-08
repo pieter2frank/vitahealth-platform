@@ -593,7 +593,7 @@ export function EnrollmentForm({ intakeQuestionnaire, initialEmail, initialResum
                     </div>
                     <p className="text-base font-bold text-red-800">Aanmelding afgerond</p>
                     <p className="text-sm text-red-700 leading-relaxed max-w-sm mx-auto">
-                      Op basis van je intake is besloten dat de biomarkertest op dit moment niet voor jou
+                      Op basis van je intake is besloten dat de Vita Health Check op dit moment niet voor jou
                       geschikt is. Je aanmelding is hiermee afgerond. Heb je vragen? Neem contact op met
                       Vita Health.
                     </p>
