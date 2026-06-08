@@ -3,6 +3,7 @@ import { useState, useEffect, Fragment } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { CheckCircle2, AlertTriangle, ChevronRight, ChevronLeft, Info, ExternalLink } from 'lucide-react'
 import type { QuestionnaireQuestion } from '@/types'
+import { SCREENER_INTRO, SCREENER_CRITERIA } from '@/lib/screener'
 
 const STEPS = [
   { label: 'Persoonsgegevens' },
@@ -771,20 +772,10 @@ export function EnrollmentForm({
             {/* Waarschuwingsblok */}
             <div className="rounded-lg border border-orange-200 bg-orange-50 p-4">
               <p className="text-sm font-semibold text-orange-800 mb-2">
-                De bloedafnamekit is niet voor iedereen geschikt. U kunt mogelijk niet deelnemen als u:
+                {SCREENER_INTRO}
               </p>
               <ul className="space-y-1 text-sm text-orange-700">
-                {[
-                  'jonger bent dan 18 jaar;',
-                  'zwanger bent of borstvoeding geeft;',
-                  'een bloedingsstoornis heeft (zoals hemofilie of een vergelijkbare aandoening);',
-                  'bloedverdunners of antistollingsmedicatie gebruikt;',
-                  'bekend bent met ernstige bloedarmoede;',
-                  'in de afgelopen drie maanden een bloedtransfusie heeft gehad;',
-                  'in de afgelopen drie maanden een operatie heeft ondergaan;',
-                  'op het moment van afname koorts of een actieve infectie heeft;',
-                  'twijfelt of vingerprikafname voor u veilig is.',
-                ].map((item, i) => (
+                {SCREENER_CRITERIA.map((item, i) => (
                   <li key={i} className="flex gap-2">
                     <span className="shrink-0">•</span>
                     <span>{item}</span>
@@ -798,7 +789,18 @@ export function EnrollmentForm({
             <div className="space-y-3">
               <button
                 type="button"
-                onClick={() => setScreeningChoice('ok')}
+                onClick={async () => {
+                  // Verklaring 'niet van toepassing' vastleggen (best-effort);
+                  // de deelnemer gaat hoe dan ook door naar de vragenlijst.
+                  if (clientId) {
+                    await fetch('/api/portal/intake-screener', {
+                      method:  'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body:    JSON.stringify({ clientId, choice: 'ok' }),
+                    }).catch(() => {})
+                  }
+                  setScreeningChoice('ok')
+                }}
                 className="w-full flex items-start gap-3 rounded-lg border border-[#e2e8f0] bg-white p-4 text-left hover:border-[#1f1683] hover:bg-[#eef4ff] transition-colors group"
               >
                 <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 border-[#e2e8f0] group-hover:border-[#1f1683]">

@@ -3,7 +3,8 @@ import { notFound } from 'next/navigation'
 import { logAuditEvent } from '@/lib/audit'
 import Link from 'next/link'
 import { formatDate, formatDateTime, STATUS_LABELS, STATUS_COLORS } from '@/lib/utils'
-import { ArrowLeft, Pencil, TestTube2, User, Phone, Mail, MapPin, Calendar } from 'lucide-react'
+import { ArrowLeft, Pencil, TestTube2, User, Phone, Mail, MapPin, Calendar, ShieldAlert, ShieldCheck } from 'lucide-react'
+import { SCREENER_DECLARATION_LABEL } from '@/lib/screener'
 import { EditClientForm } from './EditClientForm'
 import { TestkitLinker } from '@/components/testkits/TestkitLinker'
 import { DeleteButton } from '@/components/ui/DeleteButton'
@@ -54,6 +55,7 @@ export default async function ClientDetailPage({
     { data: allQuestionnaires },
     { data: clientNote },
     { data: clientDocuments },
+    { data: screenerResp },
   ] = await Promise.all([
     supabase
       .from('vh_testkit')
@@ -80,6 +82,13 @@ export default async function ClientDetailPage({
       .select('id, client_id, filename, storage_path, file_size, uploaded_by, created_at')
       .eq('client_id', id)
       .order('created_at', { ascending: false }),
+    supabase
+      .from('vh_screener_response')
+      .select('declaration, criteria_text, criteria_version, created_at')
+      .eq('client_id', id)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle(),
   ])
 
   const questionnaireAssignments = (qaRaw ?? []).map(a => ({
@@ -146,6 +155,38 @@ export default async function ClientDetailPage({
         initialStatus={client.enrollment_status ?? 'aangemeld'}
         assignedKitId={testkits?.[0]?.id ?? null}
       />
+
+      {/* ── Geschiktheidsverklaring (stap 4) ───────────────────────────────── */}
+      {screenerResp && (() => {
+        const mogelijk = screenerResp.declaration === 'mogelijk_van_toepassing'
+        const criteria = (screenerResp.criteria_text as string[] | null) ?? []
+        return (
+          <div className={`mb-5 rounded-xl border shadow-sm overflow-hidden ${mogelijk ? 'border-orange-200' : 'border-[#e2e8f0]'}`}>
+            <div className={`flex items-center gap-2 border-b px-5 py-3 ${mogelijk ? 'border-orange-100 bg-orange-50' : 'border-[#f1f5f9] bg-[#f8fafc]'}`}>
+              {mogelijk
+                ? <ShieldAlert size={15} className="text-orange-600" />
+                : <ShieldCheck size={15} className="text-emerald-600" />}
+              <h2 className="text-sm font-semibold text-[#1e293b]">Geschiktheidsverklaring deelnemer</h2>
+            </div>
+            <div className="px-5 py-4 space-y-2">
+              <p className={`text-sm font-medium ${mogelijk ? 'text-orange-800' : 'text-emerald-700'}`}>
+                {SCREENER_DECLARATION_LABEL[screenerResp.declaration as keyof typeof SCREENER_DECLARATION_LABEL]}
+              </p>
+              <p className="text-xs text-[#94a3b8]">
+                Verklaard op {formatDateTime(screenerResp.created_at)} · criterialijst v{screenerResp.criteria_version}
+              </p>
+              <details className="mt-1">
+                <summary className="text-xs text-[#1f1683] cursor-pointer hover:underline">Getoonde uitsluitingscriteria bekijken</summary>
+                <ul className="mt-2 space-y-1 text-xs text-[#64748b]">
+                  {criteria.map((c, i) => (
+                    <li key={i} className="flex gap-2"><span className="shrink-0">•</span><span>{c}</span></li>
+                  ))}
+                </ul>
+              </details>
+            </div>
+          </div>
+        )
+      })()}
 
       {/* ── Bovenste rij: 3 blokken ────────────────────────────────────────── */}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
