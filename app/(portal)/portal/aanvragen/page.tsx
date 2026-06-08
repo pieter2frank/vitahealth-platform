@@ -7,6 +7,12 @@ export const metadata = { title: 'Aanmelden — Vita Health' }
 export default async function AanvragenPage() {
   const supabase = await createClient()
 
+  // Actieve toestemmingsteksten ophalen (DB-versie)
+  const { data: consentData } = await supabase.rpc('get_active_consents')
+  const requiredConsents = (consentData?.required as string[] | undefined) ?? []
+  const optionalConsents = (consentData?.optional as string[] | undefined) ?? []
+  const consentVersion   = (consentData?.version as number | undefined) ?? 2
+
   // Intake vragenlijst ophalen uit instellingen
   const { data: setting } = await supabase
     .from('vh_setting')
@@ -43,7 +49,12 @@ export default async function AanvragenPage() {
           </p>
         </div>
 
-        <EnrollmentForm intakeQuestionnaire={intakeQuestionnaire} />
+        <EnrollmentForm
+          intakeQuestionnaire={intakeQuestionnaire}
+          requiredConsents={requiredConsents}
+          optionalConsents={optionalConsents}
+          consentVersion={consentVersion}
+        />
       </div>
     </main>
   )
