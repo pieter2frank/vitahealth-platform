@@ -3,7 +3,6 @@ import { useState, useEffect, Fragment } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { CheckCircle2, AlertTriangle, ChevronRight, ChevronLeft, Info, ExternalLink } from 'lucide-react'
 import type { QuestionnaireQuestion } from '@/types'
-import { REQUIRED_CONSENTS, OPTIONAL_CONSENTS } from '@/lib/consents'
 
 const STEPS = [
   { label: 'Persoonsgegevens' },
@@ -34,11 +33,17 @@ interface Props {
   intakeQuestionnaire: { id: string; title: string; questions: QuestionnaireQuestion[] } | null
   initialEmail?: string
   initialResumeInfo?: ResumeInfo   // server-side opgelost via ?token=
+  requiredConsents: string[]       // actieve toestemmingsteksten (DB-versie)
+  optionalConsents: string[]
+  consentVersion: number
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export function EnrollmentForm({ intakeQuestionnaire, initialEmail, initialResumeInfo }: Props) {
+export function EnrollmentForm({
+  intakeQuestionnaire, initialEmail, initialResumeInfo,
+  requiredConsents, optionalConsents, consentVersion,
+}: Props) {
   const totalSteps = intakeQuestionnaire ? 4 : 3
   const [step, setStep]         = useState(1)
   const [saving, setSaving]     = useState(false)
@@ -63,8 +68,8 @@ export function EnrollmentForm({ intakeQuestionnaire, initialEmail, initialResum
   const [city,       setCity]       = useState('')
 
   // Toestemmingen
-  const [required, setRequired] = useState<boolean[]>(Array(REQUIRED_CONSENTS.length).fill(false))
-  const [optional, setOptional] = useState<boolean[]>(Array(OPTIONAL_CONSENTS.length).fill(false))
+  const [required, setRequired] = useState<boolean[]>(Array(requiredConsents.length).fill(false))
+  const [optional, setOptional] = useState<boolean[]>(Array(optionalConsents.length).fill(false))
 
   // Vragenlijst
   const [responses, setResponses] = useState<Record<string, string | string[] | number | boolean | null>>({})
@@ -250,7 +255,7 @@ export function EnrollmentForm({ intakeQuestionnaire, initialEmail, initialResum
       // Toestemmingen opslaan
       const { error: consentErr } = await supabase
         .from('vh_consent')
-        .insert({ client_id: clientId, required, optional, consent_version: 2 })
+        .insert({ client_id: clientId, required, optional, consent_version: consentVersion })
 
       if (consentErr) {
         setSaving(false)
@@ -711,11 +716,11 @@ export function EnrollmentForm({ intakeQuestionnaire, initialEmail, initialResum
                 Verplichte toestemmingen — alle vinkjes zijn nodig om deel te nemen
               </p>
               <div className="space-y-2.5">
-                {REQUIRED_CONSENTS.map((text, i) => (
+                {requiredConsents.map((text, i) => (
                   <label key={i} className="flex items-start gap-3 cursor-pointer group">
                     <input
                       type="checkbox"
-                      checked={required[i]}
+                      checked={required[i] ?? false}
                       onChange={e => {
                         const next = [...required]
                         next[i] = e.target.checked
@@ -731,16 +736,17 @@ export function EnrollmentForm({ intakeQuestionnaire, initialEmail, initialResum
             </div>
 
             {/* Optionele toestemmingen */}
+            {optionalConsents.length > 0 && (
             <div className="border-t border-[#f1f5f9] pt-4">
               <p className="text-xs font-semibold text-[#64748b] uppercase tracking-wide mb-3">
                 Optionele toestemmingen
               </p>
               <div className="space-y-2.5">
-                {OPTIONAL_CONSENTS.map((text, i) => (
+                {optionalConsents.map((text, i) => (
                   <label key={i} className="flex items-start gap-3 cursor-pointer group">
                     <input
                       type="checkbox"
-                      checked={optional[i]}
+                      checked={optional[i] ?? false}
                       onChange={e => {
                         const next = [...optional]
                         next[i] = e.target.checked
@@ -753,6 +759,7 @@ export function EnrollmentForm({ intakeQuestionnaire, initialEmail, initialResum
                 ))}
               </div>
             </div>
+            )}
           </div>
         )}
 

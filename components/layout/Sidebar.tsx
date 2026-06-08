@@ -7,7 +7,7 @@ import { cn } from '@/lib/utils'
 import type { LucideIcon } from 'lucide-react'
 import {
   LayoutDashboard, TestTube2, Users, Building2, Stethoscope,
-  Package, LogOut, CircleUserRound, ClipboardList, ScrollText, Dumbbell, Settings, ShieldCheck, UserCog,
+  Package, LogOut, CircleUserRound, ClipboardList, ScrollText, Dumbbell, Settings, ShieldCheck, UserCog, FileCheck,
 } from 'lucide-react'
 import { isAdmin } from '@/lib/auth/roles'
 import { createClient } from '@/lib/supabase/client'
@@ -124,6 +124,19 @@ export function Sidebar({ newOrderCount = 0 }: SidebarProps) {
           >
             <UserCog size={17} className={pathname.startsWith('/medewerkers') ? 'text-[#1f1683]' : 'text-[#94a3b8]'} />
             <span className="flex-1">Medewerkers</span>
+            <span className="text-[9px] font-semibold uppercase tracking-wide text-[#94a3b8] border border-[#e2e8f0] rounded px-1">Admin</span>
+          </Link>
+          <Link
+            href="/toestemmingen"
+            className={cn(
+              'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+              pathname.startsWith('/toestemmingen')
+                ? 'bg-[#eef4ff] text-[#1f1683]'
+                : 'text-[#94a3b8] hover:bg-[#f8fafc] hover:text-[#1e293b]'
+            )}
+          >
+            <FileCheck size={17} className={pathname.startsWith('/toestemmingen') ? 'text-[#1f1683]' : 'text-[#94a3b8]'} />
+            <span className="flex-1">Toestemmingen</span>
             <span className="text-[9px] font-semibold uppercase tracking-wide text-[#94a3b8] border border-[#e2e8f0] rounded px-1">Admin</span>
           </Link>
           <Link

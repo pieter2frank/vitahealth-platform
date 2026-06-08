@@ -2,7 +2,6 @@ import { Resend } from 'resend'
 import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { bevestigingEmail } from '@/lib/email/templates'
-import { REQUIRED_CONSENTS } from '@/lib/consents'
 import { isUuid } from '@/lib/validation'
 
 const resend = new Resend(process.env.RESEND_API_KEY)
@@ -49,10 +48,38 @@ export async function POST(req: Request) {
   const portalUrl = process.env.NEXT_PUBLIC_PORTAL_URL ?? ''
   const statusUrl = `${portalUrl}/portal/status/${token}`
 
+  // Toestemmingsteksten van de versie waarmee deze cliënt akkoord ging
+  const { data: consentRow } = await admin
+    .from('vh_consent')
+    .select('consent_version')
+    .eq('client_id', clientId)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+
+  let consents: string[] = []
+  if (consentRow?.consent_version) {
+    const { data: ver } = await admin
+      .from('vh_consent_version')
+      .select('required_texts')
+      .eq('version', consentRow.consent_version)
+      .maybeSingle()
+    consents = (ver?.required_texts as string[] | undefined) ?? []
+  }
+  // Fallback: actieve versie
+  if (consents.length === 0) {
+    const { data: active } = await admin
+      .from('vh_consent_version')
+      .select('required_texts')
+      .eq('is_active', true)
+      .maybeSingle()
+    consents = (active?.required_texts as string[] | undefined) ?? []
+  }
+
   const { subject, html } = bevestigingEmail({
     firstName: client.first_name,
     statusUrl,
-    consents: REQUIRED_CONSENTS,
+    consents,
   })
 
   const { error } = await resend.emails.send({

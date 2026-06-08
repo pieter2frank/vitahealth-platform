@@ -36,6 +36,12 @@ export default async function AanmeldenPage({ searchParams }: PageProps) {
     }
   }
 
+  // Actieve toestemmingsteksten ophalen (DB-versie)
+  const { data: consentData } = await supabase.rpc('get_active_consents')
+  const requiredConsents = (consentData?.required as string[] | undefined) ?? []
+  const optionalConsents = (consentData?.optional as string[] | undefined) ?? []
+  const consentVersion   = (consentData?.version as number | undefined) ?? 2
+
   // Intake vragenlijst ophalen uit instellingen
   const { data: setting } = await supabase
     .from('vh_setting')
@@ -77,6 +83,9 @@ export default async function AanmeldenPage({ searchParams }: PageProps) {
           intakeQuestionnaire={intakeQuestionnaire}
           initialEmail={initialEmail}
           initialResumeInfo={initialResumeInfo}
+          requiredConsents={requiredConsents}
+          optionalConsents={optionalConsents}
+          consentVersion={consentVersion}
         />
       </div>
     </main>
