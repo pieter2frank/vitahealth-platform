@@ -129,19 +129,12 @@ export function ClientDocumentsSection({ clientId, initialDocuments }: Props) {
     }
   }
 
-  // ─── Download (signed URL, 1 uur geldig) ───────────────────────────────────
+  // ─── Download via backend-proxy (rolcontrole + auditlogging) ────────────────
 
-  async function handleDownload(doc: Document) {
-    const supabase = createClient()
-    const { data, error } = await supabase.storage
-      .from('client-documents')
-      .createSignedUrl(doc.storage_path, 3600)
-
-    if (error || !data?.signedUrl) {
-      setGlobalError('Kon downloadlink niet aanmaken: ' + (error?.message ?? 'onbekende fout'))
-      return
-    }
-    window.open(data.signedUrl, '_blank')
+  function handleDownload(doc: Document) {
+    // De route controleert rol, logt de download en streamt het bestand.
+    // Geen signed URL meer in de browser.
+    window.open(`/api/documenten/${doc.id}/download`, '_blank')
   }
 
   // ─── Verwijderen ───────────────────────────────────────────────────────────

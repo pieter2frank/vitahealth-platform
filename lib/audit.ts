@@ -34,6 +34,7 @@ export type AuditResourceType =
   | 'enrollment_status'
   | 'kit_status'
   | 'medewerker'
+  | 'client_document'
 
 export type AuditAccessBasis =
   | 'medewerker_regulier'
