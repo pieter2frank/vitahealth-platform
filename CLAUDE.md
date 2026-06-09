@@ -30,3 +30,11 @@ npm run dev   # http://localhost:3000
 
 ## Database migraties
 Staan in supabase/migrations/. Uitvoeren via Supabase SQL Editor.
+
+## Documentversiebeheer (docs/)
+Beleidsdocumenten in `docs/` dragen een versienummer in de bestandsnaam,
+bijv. `beveiligingsmaatregelen-vita-health-v1.0.docx`. Bij elke inhoudelijke
+wijziging: een NIEUW bestand met opgehoogd versienummer aanmaken (oude versies
+laten staan als historie) en het versienummer ook op de cover bijwerken.
+Patch/kleine wijziging → minor ophogen (v1.0 → v1.1); grote herziening → major
+(v1.x → v2.0).
