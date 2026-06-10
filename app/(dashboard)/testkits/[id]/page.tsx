@@ -220,6 +220,8 @@ export default async function TestkitDetailPage({
               badge_id:         kit.badge_id,
               assigned:         kit.assigned,
               assignedClientId: client?.id ?? null,
+              trackingCode:     kit.tracking_code ?? null,
+              trackingUrl:      kit.tracking_url ?? null,
             }}
             clientAddress={client ? {
               firstName:  client.first_name,

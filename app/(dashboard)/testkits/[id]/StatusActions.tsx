@@ -96,6 +96,8 @@ interface Props {
     badge_id:         string | null
     assigned:         boolean
     assignedClientId: string | null
+    trackingCode:     string | null
+    trackingUrl:      string | null
   }
   clientAddress?: ClientAddress
 }
@@ -134,6 +136,35 @@ export function StatusActions({ kit, clientAddress }: Props) {
     setSaving(false)
   }
 
+  // ── PostNL: label + track&trace aanmaken, cliënt mailen, kit op verzonden ──
+  const [postnlLoading, setPostnlLoading] = useState(false)
+
+  async function createPostNLLabel() {
+    setPostnlLoading(true)
+    setError('')
+    try {
+      const res = await fetch('/api/postnl/label', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ kitId: kit.id }),
+      })
+      const json = await res.json()
+      if (!res.ok) { setError(json.error ?? 'PostNL-label aanmaken mislukt.'); return }
+
+      // Label-PDF openen om te printen
+      if (json.labelPdf) {
+        const bytes = Uint8Array.from(atob(json.labelPdf), c => c.charCodeAt(0))
+        const url = URL.createObjectURL(new Blob([bytes], { type: 'application/pdf' }))
+        window.open(url, '_blank')
+      }
+      router.refresh()
+    } catch {
+      setError('Er ging iets mis bij het aanmaken van het PostNL-label.')
+    } finally {
+      setPostnlLoading(false)
+    }
+  }
+
   if (kit.status === 'results_available') {
     return (
       <div className="rounded-xl border border-green-200 bg-green-50 p-5">
@@ -153,11 +184,44 @@ export function StatusActions({ kit, clientAddress }: Props) {
         <p className="rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-sm text-red-600">{error}</p>
       )}
 
+      {/* PostNL track & trace (indien aangemaakt) */}
+      {kit.trackingCode && (
+        <div className="rounded-lg border border-[#e2e8f0] bg-[#f8fafc] px-3 py-2.5 text-sm">
+          <span className="text-[#64748b]">Track &amp; trace: </span>
+          <span className="font-mono font-medium text-[#1e293b]">{kit.trackingCode}</span>
+          {kit.trackingUrl && (
+            <a href={kit.trackingUrl} target="_blank" rel="noopener noreferrer"
+               className="ml-2 text-xs text-[#1f1683] hover:underline">volgen bij PostNL →</a>
+          )}
+        </div>
+      )}
+
       {/* assigned → kit_verstuurd */}
       {kit.status === 'assigned' && (
         <div className="space-y-3">
-          <p className="text-sm text-[#64748b]">
-            Is de testkit verstuurd naar de cliënt?
+
+          {/* PostNL: aanbevolen flow — label + track&trace + mail in één keer */}
+          {clientAddress && (
+            <div className="rounded-lg border border-[#c7d7fd] bg-[#eef4ff] p-3 space-y-2">
+              <p className="text-sm font-medium text-[#1f1683]">Versturen via PostNL</p>
+              <p className="text-xs text-[#64748b]">
+                Maakt een verzendlabel + track &amp; trace aan, mailt de cliënt de trackingcode
+                en zet de kit op &ldquo;verstuurd&rdquo;. Het label opent om te printen.
+              </p>
+              <button
+                type="button"
+                onClick={createPostNLLabel}
+                disabled={postnlLoading}
+                className="inline-flex items-center gap-2 rounded-lg bg-[#1f1683] px-4 py-2 text-sm font-medium text-white hover:bg-[#1a1270] transition-colors disabled:opacity-50"
+              >
+                {postnlLoading ? <RotateCcw size={14} className="animate-spin" /> : <Truck size={14} />}
+                Verzendlabel aanmaken (PostNL)
+              </button>
+            </div>
+          )}
+
+          <p className="text-sm text-[#64748b] pt-1">
+            Of registreer handmatig dat de testkit is verstuurd:
           </p>
           <div className="flex items-end gap-3 flex-wrap">
             <div className="flex-1 min-w-[160px]">

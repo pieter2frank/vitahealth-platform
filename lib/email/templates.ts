@@ -378,6 +378,42 @@ export function wachtwoordResetEmail(opts: {
   }
 }
 
+// ─── Kit verzonden (PostNL) ───────────────────────────────────────────────────
+
+export function kitVerzondenEmail(opts: {
+  firstName: string
+  trackingCode: string
+  trackingUrl: string
+}): { subject: string; html: string } {
+  const body = `
+    ${greeting(opts.firstName)}
+    ${p('Goed nieuws! Je Vita Health Check is onderweg. De testkit wordt via <strong style="color:#1e293b;">PostNL als brievenbuspakket</strong> bezorgd — je hoeft er dus niet voor thuis te blijven.')}
+
+    <!-- Tracking -->
+    <div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:10px;padding:18px 22px;margin:0 0 20px;">
+      <p style="margin:0 0 6px;font-size:12px;font-weight:700;color:#0369a1;text-transform:uppercase;letter-spacing:.5px;">Track &amp; Trace</p>
+      <p style="margin:0 0 12px;font-size:13px;color:#475569;">Volg je pakket met code <strong style="color:#1e293b;">${esc(opts.trackingCode)}</strong>.</p>
+      <a href="${esc(opts.trackingUrl)}" style="display:inline-block;color:#1f1683;font-size:13px;font-weight:600;text-decoration:underline;">Pakket volgen bij PostNL →</a>
+    </div>
+
+    <!-- Retourinstructie -->
+    <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:18px 22px;margin:0 0 24px;">
+      <p style="margin:0 0 8px;font-size:13px;font-weight:700;color:#166534;">Terugsturen is heel eenvoudig</p>
+      <p style="margin:0;font-size:13px;color:#475569;line-height:1.6;">
+        Op de doos zit al een <strong>retouretiket met antwoordnummer</strong>. Na de afname doe je
+        <strong>de doos zelf (zonder envelop) gewoon in de brievenbus</strong> — een postzegel is niet nodig.
+        Vita Health ontvangt je monster dan automatisch retour.
+      </p>
+    </div>
+
+    ${p('Volg de instructies in de kit voor de vingerprik. Vragen? Bezoek onze <a href="https://helpdesk.vita-health.nl" style="color:#1f1683;">helpdesk</a>.', 'font-size:12px;color:#94a3b8;')}
+  `
+  return {
+    subject: 'Je Vita Health Check is onderweg',
+    html: shell('Je testkit is verzonden', body),
+  }
+}
+
 // ─── 6. Reminder ──────────────────────────────────────────────────────────────
 
 export function reminderEmail(opts: {
