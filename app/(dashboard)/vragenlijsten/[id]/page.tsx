@@ -2,7 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { formatDate, formatDateTime } from '@/lib/utils'
-import { ArrowLeft, ScrollText, Users, CheckCircle2, Clock, ChevronRight } from 'lucide-react'
+import { ArrowLeft, ScrollText, Users, CheckCircle2, Clock, ChevronRight, Pencil } from 'lucide-react'
 import { AssignQuestionnaireForm } from './AssignQuestionnaireForm'
 import { DeleteButton } from '@/components/ui/DeleteButton'
 import type { QuestionnaireDefinition, QuestionnaireQuestion } from '@/types'
@@ -66,7 +66,7 @@ export default async function VragenlijstDetailPage({
             </div>
             <div>
               <h1 className="text-2xl font-bold text-[#1e293b]">{q.title}</h1>
-              <p className="text-sm text-[#64748b] mt-0.5 font-mono">{q.slug} · {questions.length} vragen</p>
+              <p className="text-sm text-[#64748b] mt-0.5 font-mono">{q.slug} · {questions.length} vragen · v{q.version ?? 1}</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -77,6 +77,13 @@ export default async function VragenlijstDetailPage({
             }`}>
               {q.status === 'active' ? 'Actief' : 'Concept'}
             </span>
+            <Link
+              href={`/vragenlijsten/${q.id}/bewerken`}
+              className="inline-flex items-center gap-1.5 rounded-lg bg-[#1f1683] px-3 py-1.5 text-sm font-medium text-white hover:bg-[#1a1270] transition-colors"
+            >
+              <Pencil size={14} />
+              Bewerken
+            </Link>
             <DeleteButton
               table="vh_questionnaire"
               id={q.id}

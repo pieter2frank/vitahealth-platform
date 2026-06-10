@@ -115,6 +115,31 @@ interface Record_ {
   id: string
   completed_at: string
   responses: Record<string, unknown>
+  questionnaire_version: number | null
+}
+
+// Voegt de vragen van alle versie-snapshots samen tot één lijst, zodat antwoorden
+// van oudere versies leesbaar blijven. De nieuwste versie bepaalt label/type en
+// volgorde; opties worden over alle versies samengevoegd (op waarde).
+function mergeVersions(versions: { version: number; def: QuestionnaireDefinition }[]): QuestionnaireQuestion[] {
+  const sorted = [...versions].sort((a, b) => b.version - a.version) // nieuwste eerst
+  const byId = new Map<string, QuestionnaireQuestion>()
+  const order: string[] = []
+  for (const { def } of sorted) {
+    for (const q of def.questions ?? []) {
+      if (!byId.has(q.id)) { byId.set(q.id, { ...q }); order.push(q.id) }
+      else if (q.options) {
+        // opties samenvoegen (waarden die in oudere versies bestonden behouden)
+        const existing = byId.get(q.id)!
+        const seen = new Set((existing.options ?? []).map(o => o.value))
+        existing.options = [
+          ...(existing.options ?? []),
+          ...q.options.filter(o => !seen.has(o.value)),
+        ]
+      }
+    }
+  }
+  return order.map(id => byId.get(id)!)
 }
 
 interface Props {
@@ -149,22 +174,34 @@ export function ResultsModal({ questionnaireId, questionnaireTitle, clientId }: 
       }),
     }).catch(() => {})
 
-    const [{ data: recs }, { data: qDef }] = await Promise.all([
+    const [{ data: recs }, { data: qDef }, { data: vers }] = await Promise.all([
       supabase
         .from('vh_questionnaire_response')
-        .select('id, completed_at, responses')
+        .select('id, completed_at, responses, questionnaire_version')
         .eq('client_id', clientId)
         .eq('questionnaire_id', questionnaireId)
         .order('completed_at', { ascending: true }),
       supabase
         .from('vh_questionnaire')
-        .select('json_content')
+        .select('json_content, version')
         .eq('id', questionnaireId)
         .single(),
+      supabase
+        .from('vh_questionnaire_version')
+        .select('version, json_content')
+        .eq('questionnaire_id', questionnaireId),
     ])
 
-    const def = qDef?.json_content as QuestionnaireDefinition | null
-    setQuestions(def?.questions ?? [])
+    // Versie-snapshots samenvoegen; valt terug op de actieve definitie als er
+    // (nog) geen snapshots zijn.
+    const versionList = (vers ?? []).map(v => ({
+      version: v.version as number,
+      def: v.json_content as QuestionnaireDefinition,
+    }))
+    if (versionList.length === 0 && qDef?.json_content) {
+      versionList.push({ version: (qDef.version as number) ?? 1, def: qDef.json_content as QuestionnaireDefinition })
+    }
+    setQuestions(mergeVersions(versionList))
     setRecords((recs ?? []) as Record_[])
     setLoading(false)
   }
@@ -174,6 +211,8 @@ export function ResultsModal({ questionnaireId, questionnaireTitle, clientId }: 
   const groups = groupByCategory(questions)
   const hasCategories = groups.some(g => g.cat !== null)
   const isMultiple = records.length > 1
+  // Tonen we versielabels? Alleen als de invulmomenten over meerdere versies lopen.
+  const multiVersion = new Set(records.map(r => r.questionnaire_version ?? 1)).size > 1
 
   // BMI — bereken per invulmoment als lengte + gewicht beschikbaar zijn
   const heightQ = questions.find(q => q.role === 'height_cm')
@@ -243,6 +282,9 @@ export function ResultsModal({ questionnaireId, questionnaireTitle, clientId }: 
                             <span className="block text-[10px] text-[#94a3b8] font-normal">#{i + 1}</span>
                           )}
                           <span className="block text-xs">{formatDate(r.completed_at)}</span>
+                          {multiVersion && (
+                            <span className="block text-[9px] text-[#94a3b8] font-normal">v{r.questionnaire_version ?? 1}</span>
+                          )}
                         </th>
                       ))}
                       {isMultiple && (

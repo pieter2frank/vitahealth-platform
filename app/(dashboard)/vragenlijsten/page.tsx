@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
 import { formatDate } from '@/lib/utils'
-import { ScrollText, Plus, Users } from 'lucide-react'
+import { ScrollText, Plus, Users, FileJson } from 'lucide-react'
 import { ClickableRow } from '@/components/ui/ClickableRow'
 
 export default async function VragenlijstenPage() {
@@ -30,16 +30,25 @@ export default async function VragenlijstenPage() {
         <div>
           <h1 className="text-2xl font-bold text-[#1e293b]">Vragenlijsten</h1>
           <p className="text-sm text-[#64748b] mt-0.5">
-            Definieer en beheer vragenlijsten via JSON-import
+            Maak en beheer vragenlijsten online
           </p>
         </div>
-        <Link
-          href="/vragenlijsten/importeer"
-          className="inline-flex items-center gap-2 rounded-lg bg-[#1f1683] px-4 py-2 text-sm font-medium text-white hover:bg-[#1a1270] transition-colors"
-        >
-          <Plus size={15} />
-          Vragenlijst importeren
-        </Link>
+        <div className="flex items-center gap-2">
+          <Link
+            href="/vragenlijsten/importeer"
+            className="inline-flex items-center gap-2 rounded-lg border border-[#e2e8f0] px-4 py-2 text-sm font-medium text-[#64748b] hover:bg-[#f8fafc] transition-colors"
+          >
+            <FileJson size={15} />
+            Importeren
+          </Link>
+          <Link
+            href="/vragenlijsten/nieuw"
+            className="inline-flex items-center gap-2 rounded-lg bg-[#1f1683] px-4 py-2 text-sm font-medium text-white hover:bg-[#1a1270] transition-colors"
+          >
+            <Plus size={15} />
+            Nieuwe vragenlijst
+          </Link>
+        </div>
       </div>
 
       <div className="rounded-xl border border-[#e2e8f0] bg-white shadow-sm overflow-hidden">
@@ -47,13 +56,13 @@ export default async function VragenlijstenPage() {
           <div className="px-5 py-16 text-center">
             <ScrollText size={32} className="text-[#cbd5e1] mx-auto mb-3" />
             <p className="text-sm font-medium text-[#94a3b8]">Nog geen vragenlijsten</p>
-            <p className="text-xs text-[#94a3b8] mt-1">Importeer een JSON-bestand om te beginnen.</p>
+            <p className="text-xs text-[#94a3b8] mt-1">Maak online je eerste vragenlijst aan.</p>
             <Link
-              href="/vragenlijsten/importeer"
+              href="/vragenlijsten/nieuw"
               className="inline-flex items-center gap-2 rounded-lg bg-[#1f1683] px-4 py-2 text-sm font-medium text-white hover:bg-[#1a1270] transition-colors mt-4"
             >
               <Plus size={15} />
-              Importeer eerste vragenlijst
+              Eerste vragenlijst maken
             </Link>
           </div>
         ) : (

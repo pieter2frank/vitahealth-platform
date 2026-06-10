@@ -95,13 +95,15 @@ export interface QuestionnaireQuestion {
   // omgekeerd scoren: hoge waarde = ongunstig (kleuren worden gespiegeld)
   reversed?: boolean
   // semantische rol voor afgeleide metrics (bijv. BMI) of auto-berekende waarden
-  role?: 'height_cm' | 'weight_kg' | 'age_years'
+  role?: 'height_cm' | 'weight_kg' | 'age_years' | 'gender'
 }
 
 export interface QuestionnaireDefinition {
   id: string
   title: string
   status?: string
+  version?: number
+  description?: string
   questions: QuestionnaireQuestion[]
 }
 
