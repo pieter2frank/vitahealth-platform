@@ -1,6 +1,6 @@
 ﻿import { createClient } from '@/lib/supabase/server'
 import {
-  TestTube2, Users, Building2, Package, ChevronRight,
+  TestTube2, Users, Building2, Package,
 } from 'lucide-react'
 import Link from 'next/link'
 import { ActionsTable } from './ActionsTable'
@@ -198,15 +198,15 @@ export default async function DashboardPage() {
     { label: 'Resultaten',      value: testkit.results,  icon: TestTube2,  color: 'text-green-600',  bg: 'bg-green-50' },
   ]
 
-  const pipeline: { key: keyof typeof clientCounts; label: string; color: string; dot: string }[] = [
-    { key: 'aangemeld',           label: 'Aangemeld',         color: 'text-slate-600',  dot: 'bg-slate-400' },
-    { key: 'toestemming_gegeven', label: 'Toestemming',       color: 'text-blue-600',   dot: 'bg-blue-400' },
-    { key: 'vragenlijst_ingevuld',label: 'Vragenlijst',       color: 'text-violet-600', dot: 'bg-violet-500' },
-    { key: 'intake_akkoord',      label: 'Intake akkoord',    color: 'text-amber-600',  dot: 'bg-amber-400' },
-    { key: 'kit_opgestuurd',      label: 'Kit verstuurd',     color: 'text-orange-600', dot: 'bg-orange-400' },
-    { key: 'kit_retour',          label: 'Kit retour',        color: 'text-purple-600', dot: 'bg-purple-400' },
-    { key: 'uitslag_bekend',      label: 'Uitslag bekend',    color: 'text-teal-600',   dot: 'bg-teal-400' },
-    { key: 'uitslag_besproken',   label: 'Uitslag besproken', color: 'text-green-600',  dot: 'bg-green-500' },
+  const pipeline: { key: keyof typeof clientCounts; label: string }[] = [
+    { key: 'aangemeld',           label: 'Aangemeld' },
+    { key: 'toestemming_gegeven', label: 'Toestemming' },
+    { key: 'vragenlijst_ingevuld',label: 'Vragenlijst' },
+    { key: 'intake_akkoord',      label: 'Intake akkoord' },
+    { key: 'kit_opgestuurd',      label: 'Kit verstuurd' },
+    { key: 'kit_retour',          label: 'Kit retour' },
+    { key: 'uitslag_bekend',      label: 'Uitslag bekend' },
+    { key: 'uitslag_besproken',   label: 'Uitslag besproken' },
   ]
 
   return (
@@ -243,30 +243,22 @@ export default async function DashboardPage() {
           </Link>
         </div>
         <div className="rounded-xl border border-[#e2e8f0] bg-white shadow-sm overflow-hidden">
-          <div className="flex items-stretch overflow-x-auto">
-            {pipeline.map(({ key, label, color, dot }, i) => {
+          <div className="grid grid-cols-2 divide-x divide-y divide-[#f1f5f9] sm:grid-cols-4 sm:divide-y-0 lg:grid-cols-8">
+            {pipeline.map(({ key, label }) => {
               const count = clientCounts[key]
-              const isLast = i === pipeline.length - 1
               return (
-                <div key={key} className="flex items-stretch shrink-0">
-                  <Link
-                    href={`/clienten?status=${key}`}
-                    className="flex flex-col items-center justify-center px-5 py-4 min-w-[110px] hover:bg-[#f8fafc] transition-colors group"
-                  >
-                    <div className={`flex items-center gap-1.5 mb-2`}>
-                      <span className={`h-2 w-2 rounded-full ${dot}`} />
-                      <span className={`text-[11px] font-medium uppercase tracking-wide ${color}`}>{label}</span>
-                    </div>
-                    <span className={`text-2xl font-bold ${count > 0 ? 'text-[#1e293b]' : 'text-[#cbd5e1]'}`}>
-                      {count}
-                    </span>
-                  </Link>
-                  {!isLast && (
-                    <div className="flex items-center self-center text-[#e2e8f0]">
-                      <ChevronRight size={16} />
-                    </div>
-                  )}
-                </div>
+                <Link
+                  key={key}
+                  href={`/clienten?status=${key}`}
+                  className="flex flex-col items-center justify-center gap-1 px-3 py-5 text-center hover:bg-[#f8fafc] transition-colors"
+                >
+                  <span className={`text-2xl font-semibold tabular-nums ${count > 0 ? 'text-[#1f1683]' : 'text-[#cbd5e1]'}`}>
+                    {count}
+                  </span>
+                  <span className="text-[11px] font-medium uppercase tracking-wide text-[#94a3b8] leading-tight">
+                    {label}
+                  </span>
+                </Link>
               )
             })}
           </div>
