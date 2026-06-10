@@ -290,11 +290,19 @@ export function StatusActions({ kit, clientAddress }: Props) {
           </div>
 
           {/* Label nogmaals printen als de kit al verstuurd is */}
-          {clientAddress && (
+          {(kit.trackingCode || clientAddress) && (
             <div className="pt-1 border-t border-[#f1f5f9]">
               <button
                 type="button"
-                onClick={() => printLabel(clientAddress, kit.barcode)}
+                onClick={() => {
+                  if (kit.trackingCode) {
+                    // Specifieke PostNL-label van deze kit openen
+                    window.open(`/api/postnl/label/${kit.id}`, '_blank')
+                  } else if (clientAddress) {
+                    // Fallback: oude HTML-label (kit zonder PostNL-label)
+                    printLabel(clientAddress, kit.barcode)
+                  }
+                }}
                 className="inline-flex items-center gap-2 rounded-lg border border-[#e2e8f0] bg-white px-3 py-2 text-sm font-medium text-[#64748b] hover:bg-[#f8fafc] transition-colors"
               >
                 <Printer size={14} />

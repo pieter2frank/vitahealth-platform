@@ -77,6 +77,7 @@ export async function POST(req: Request) {
     .update({
       tracking_code:    shipment.barcode,
       tracking_url:     shipment.trackingUrl,
+      label_pdf:        shipment.labelPdfBase64,
       label_created_at: nowIso,
       status:           'kit_verstuurd',
       kit_sent_date:    nowIso,
