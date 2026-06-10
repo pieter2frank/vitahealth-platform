@@ -34,6 +34,7 @@ export interface Client {
   email: string | null
   phone: string | null
   birth_date: string | null
+  gender: string | null
   address: string | null
   city: string | null
   postal_code: string | null

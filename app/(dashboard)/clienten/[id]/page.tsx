@@ -14,6 +14,13 @@ import { ClientDocumentsSection } from './ClientDocumentsSection'
 import { EnrollmentStatusSection } from './EnrollmentStatusSection'
 import { ReminderButton } from './ReminderButton'
 
+const GENDER_LABELS: Record<string, string> = {
+  man:             'Man',
+  vrouw:           'Vrouw',
+  anders:          'Anders',
+  zeg_liever_niet: 'Zeg ik liever niet',
+}
+
 export default async function ClientDetailPage({
   params,
   searchParams,
@@ -30,7 +37,7 @@ export default async function ClientDetailPage({
 
   const { data: client } = await supabase
     .from('vh_client')
-    .select('id, first_name, last_name, email, phone, birth_date, address, city, postal_code, created_at, enrollment_status')
+    .select('id, first_name, last_name, email, phone, birth_date, gender, address, city, postal_code, created_at, enrollment_status')
     .eq('id', id)
     .single()
 
@@ -206,6 +213,12 @@ export default async function ClientDetailPage({
               <div className="flex justify-between gap-4">
                 <dt className="text-[#64748b] flex items-center gap-1.5 shrink-0"><Calendar size={13} />Geboortedatum</dt>
                 <dd className="font-medium text-[#1e293b]">{formatDate(client.birth_date)}</dd>
+              </div>
+            )}
+            {client.gender && (
+              <div className="flex justify-between gap-4">
+                <dt className="text-[#64748b] shrink-0">Geslacht</dt>
+                <dd className="font-medium text-[#1e293b]">{GENDER_LABELS[client.gender] ?? client.gender}</dd>
               </div>
             )}
           </dl>

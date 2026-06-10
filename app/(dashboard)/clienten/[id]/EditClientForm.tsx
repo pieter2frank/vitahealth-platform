@@ -4,9 +4,18 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
+import { DateFieldNL } from '@/components/ui/DateFieldNL'
 import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
 import type { Client } from '@/types'
+
+const GENDER_OPTIONS = [
+  { value: '',                label: '— Niet opgegeven' },
+  { value: 'man',             label: 'Man' },
+  { value: 'vrouw',           label: 'Vrouw' },
+  { value: 'anders',          label: 'Anders' },
+  { value: 'zeg_liever_niet', label: 'Zeg ik liever niet' },
+]
 
 export function EditClientForm({ client }: { client: Client }) {
   const router = useRouter()
@@ -19,6 +28,7 @@ export function EditClientForm({ client }: { client: Client }) {
     email: client.email ?? '',
     phone: client.phone ?? '',
     birth_date: client.birth_date ?? '',
+    gender: client.gender ?? '',
     address: client.address ?? '',
     city: client.city ?? '',
     postal_code: client.postal_code ?? '',
@@ -42,6 +52,7 @@ export function EditClientForm({ client }: { client: Client }) {
         email: form.email.trim() || null,
         phone: form.phone.trim() || null,
         birth_date: form.birth_date || null,
+        gender: form.gender || null,
         address: form.address.trim() || null,
         city: form.city.trim() || null,
         postal_code: form.postal_code.trim() || null,
@@ -77,8 +88,27 @@ export function EditClientForm({ client }: { client: Client }) {
             <Input label="Voornaam" value={form.first_name} onChange={e => set('first_name', e.target.value)} required />
             <Input label="Achternaam" value={form.last_name} onChange={e => set('last_name', e.target.value)} required />
           </div>
-          <div className="mt-4">
-            <Input label="Geboortedatum" type="date" value={form.birth_date} onChange={e => set('birth_date', e.target.value)} />
+          <div className="mt-4 grid grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <label className="block text-sm font-medium text-[#1e293b]">Geboortedatum</label>
+              <DateFieldNL
+                value={form.birth_date}
+                onChange={v => set('birth_date', v)}
+                className="w-full rounded-lg border border-[#e2e8f0] px-3 py-2 text-sm text-[#1e293b] placeholder:text-[#94a3b8] focus:outline-none focus:ring-2 focus:ring-[#1f1683]/30 focus:border-[#1f1683]"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <label className="block text-sm font-medium text-[#1e293b]">Geslacht</label>
+              <select
+                value={form.gender}
+                onChange={e => set('gender', e.target.value)}
+                className="w-full rounded-lg border border-[#e2e8f0] px-3 py-2 text-sm text-[#1e293b] focus:outline-none focus:ring-2 focus:ring-[#1f1683]/30 focus:border-[#1f1683]"
+              >
+                {GENDER_OPTIONS.map(o => (
+                  <option key={o.value} value={o.value}>{o.label}</option>
+                ))}
+              </select>
+            </div>
           </div>
         </div>
 
