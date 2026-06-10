@@ -35,6 +35,16 @@ export async function POST(req: Request) {
   }
   const { firstName, lastName, email, role } = parsed.data
 
+  // ── Extra waarborg: de rol 'admin' kan UITSLUITEND door een admin worden
+  //    toegekend. Defense in depth — blijft gelden ook als de toegang tot dit
+  //    endpoint ooit voor andere rollen wordt opengesteld.
+  if (role === 'admin' && self.role !== 'admin') {
+    return NextResponse.json(
+      { error: 'Alleen een beheerder mag de admin-rol toekennen.' },
+      { status: 403 },
+    )
+  }
+
   const admin = createAdminClient()
 
   // ── Controleer of e-mail al bestaat ───────────────────────────────────────
