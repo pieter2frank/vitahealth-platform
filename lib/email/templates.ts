@@ -20,6 +20,8 @@ function shell(title: string, body: string): string {
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <meta name="supported-color-schemes" content="light dark">
   <title>${title}</title>
 </head>
 <body style="margin:0;padding:0;background:#f8fafc;font-family:Arial,Helvetica,sans-serif;">
@@ -54,11 +56,18 @@ function btn(href: string, label: string): string {
   const safeHref = href.startsWith('https://') || href.startsWith('http://')
     ? esc(href)
     : '#'
-  return `<div style="text-align:center;margin:28px 0 24px;">
-    <a href="${safeHref}" style="display:inline-block;background:linear-gradient(135deg,#1f1683,#3b55c8);color:white;text-decoration:none;padding:14px 36px;border-radius:8px;font-size:14px;font-weight:700;letter-spacing:.3px;">
-      ${label} →
-    </a>
-  </div>`
+  // "Bulletproof" knop: tabel met vaste achtergrondkleur (bgcolor + background-color)
+  // i.p.v. een CSS-gradient. Een gradient op een <a> wordt door Apple Mail
+  // (vooral in dark mode) niet gerenderd, waardoor je witte tekst op wit kreeg.
+  return `<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:28px auto 24px;">
+    <tr>
+      <td align="center" bgcolor="#1f1683" style="background-color:#1f1683;border-radius:8px;">
+        <a href="${safeHref}" style="display:inline-block;background-color:#1f1683;color:#ffffff;text-decoration:none;padding:14px 36px;border-radius:8px;font-size:14px;font-weight:700;letter-spacing:.3px;font-family:Arial,Helvetica,sans-serif;">
+          ${label} &rarr;
+        </a>
+      </td>
+    </tr>
+  </table>`
 }
 
 function p(text: string, style = ''): string {

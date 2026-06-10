@@ -44,47 +44,43 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Dit e-mailadres is al in gebruik.' }, { status: 409 })
   }
 
-  // ── Supabase invite aanmaken ───────────────────────────────────────────────
+  // ── Invite-link genereren (maakt de gebruiker aan, verstuurt GEEN mail) ─────
+  // Belangrijk: gebruik generateLink i.p.v. inviteUserByEmail, anders stuurt
+  // Supabase zelf óók een (Engelse) mail met een localhost-link. Wij sturen
+  // uitsluitend onze eigen Nederlandse mail via Resend.
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? ''
   const redirectTo = `${appUrl}/auth/invite/accept`
 
-  const { data: invite, error: inviteErr } = await admin.auth.admin.inviteUserByEmail(email, {
-    redirectTo,
-    data: { first_name: firstName, last_name: lastName },
+  const { data: linkData, error: linkErr } = await admin.auth.admin.generateLink({
+    type:    'invite',
+    email,
+    options: { redirectTo, data: { first_name: firstName, last_name: lastName } },
   })
 
-  if (inviteErr || !invite?.user) {
-    console.error('[uitnodigen] invite error:', inviteErr)
+  if (linkErr || !linkData?.user) {
+    console.error('[uitnodigen] generateLink error:', linkErr)
     return NextResponse.json({ error: 'Uitnodiging aanmaken mislukt.' }, { status: 500 })
   }
+
+  const newUserId = linkData.user.id
+  const inviteUrl = linkData.properties?.action_link ?? redirectTo
 
   // ── vh_medewerker record aanmaken ──────────────────────────────────────────
   const { error: mwErr } = await admin
     .from('vh_medewerker')
     .insert({
-      user_id: invite.user.id,
+      user_id: newUserId,
       name:    `${firstName} ${lastName}`,
       role,
     })
 
   if (mwErr) {
     console.error('[uitnodigen] vh_medewerker insert error:', mwErr)
-    // Rol niet aangemaakt — verwijder de invite user weer
-    await admin.auth.admin.deleteUser(invite.user.id)
+    await admin.auth.admin.deleteUser(newUserId)
     return NextResponse.json({ error: 'Medewerker opslaan mislukt.' }, { status: 500 })
   }
 
   // ── Eigen uitnodigingsmail sturen via Resend ───────────────────────────────
-  // Supabase stuurt zelf ook een mail; wij overschrijven die met onze eigen
-  // Nederlandse template. De invite-link halen we op via generateLink.
-  const { data: linkData } = await admin.auth.admin.generateLink({
-    type:       'invite',
-    email,
-    options:    { redirectTo },
-  })
-
-  const inviteUrl = linkData?.properties?.action_link ?? redirectTo
-
   const { subject, html } = medewerkerUitnodigingEmail({ firstName, role, inviteUrl })
 
   await resend.emails.send({
@@ -98,12 +94,12 @@ export async function POST(req: Request) {
     actorUserId:  user.id,
     actorRole:    'admin',
     resourceType: 'medewerker',
-    resourceId:   invite.user.id,
+    resourceId:   newUserId,
     action:       'email_sent',
     outcome:      'success',
     reason:       `Medewerker uitgenodigd als ${role}: ${firstName} ${lastName}`,
     metadata:     { role },
   }).catch(() => {})
 
-  return NextResponse.json({ ok: true, userId: invite.user.id })
+  return NextResponse.json({ ok: true, userId: newUserId })
 }
