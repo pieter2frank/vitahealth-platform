@@ -63,7 +63,12 @@ export async function POST(req: Request) {
   }
 
   const newUserId = linkData.user.id
-  const inviteUrl = linkData.properties?.action_link ?? redirectTo
+  // Bouw de link naar onze eigen confirm-route (server-side verifyOtp) i.p.v.
+  // de Supabase action_link, zodat de sessie betrouwbaar wordt opgezet.
+  const tokenHash = linkData.properties?.hashed_token
+  const inviteUrl = tokenHash
+    ? `${appUrl}/auth/confirm?token_hash=${tokenHash}&type=invite&next=${encodeURIComponent('/auth/invite/accept')}`
+    : (linkData.properties?.action_link ?? redirectTo)
 
   // ── vh_medewerker record aanmaken ──────────────────────────────────────────
   const { error: mwErr } = await admin

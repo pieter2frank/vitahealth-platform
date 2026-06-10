@@ -22,16 +22,23 @@ export default function InviteAcceptPage() {
   const [saving,    setSaving]    = useState(false)
   const [error,     setError]     = useState('')
   const [sessionOk, setSessionOk] = useState(false)
+  const [linkError, setLinkError] = useState(false)
 
-  // Supabase verwerkt de hash-tokens automatisch wanneer de pagina laadt
+  // De sessie wordt server-side gezet via /auth/confirm (verifyOtp) en is hier
+  // als cookie beschikbaar. We controleren dat en tonen anders een duidelijke
+  // foutmelding.
   useEffect(() => {
+    // Ongeldige/verlopen link gemarkeerd door de confirm-route
+    if (new URLSearchParams(window.location.search).get('error') === 'invalid_link') {
+      setLinkError(true)
+      return
+    }
     const supabase = createClient()
     supabase.auth.onAuthStateChange((event) => {
       if (event === 'SIGNED_IN' || event === 'USER_UPDATED') {
         setSessionOk(true)
       }
     })
-    // Trigger sessie-check
     supabase.auth.getSession().then(({ data }) => {
       if (data.session) setSessionOk(true)
     })
@@ -74,7 +81,11 @@ export default function InviteAcceptPage() {
             Kies een sterk wachtwoord. Daarna stel je de authenticator-app in voor 2FA.
           </p>
 
-          {!sessionOk && (
+          {linkError ? (
+            <div className="rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700 mb-4">
+              Deze uitnodigingslink is ongeldig of verlopen. Vraag de beheerder om een nieuwe uitnodiging.
+            </div>
+          ) : !sessionOk && (
             <div className="rounded-lg bg-amber-50 border border-amber-200 px-4 py-3 text-sm text-amber-800 mb-4">
               Sessie laden… Klik de link in je e-mail opnieuw als dit niet verdwijnt.
             </div>
