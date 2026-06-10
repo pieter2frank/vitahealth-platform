@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
 import { Plus, ScanLine } from 'lucide-react'
 import { TestkitsTable, type KitRow } from './TestkitsTable'
+import { KitScanSearch } from './KitScanSearch'
 
 export default async function TestkitsPage({
   searchParams,
@@ -58,6 +59,9 @@ export default async function TestkitsPage({
           Testkit inscannen
         </Link>
       </div>
+
+      {/* Scan-zoekveld: barcode inscannen → direct naar de juiste kit */}
+      <KitScanSearch />
 
       {/* Filters */}
       <div className="mb-4 flex flex-wrap gap-2">
