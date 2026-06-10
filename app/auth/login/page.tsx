@@ -115,7 +115,7 @@ export default function LoginPage() {
           </Suspense>
         </div>
         <p className="mt-4 text-center text-xs text-[#94a3b8]">
-          Wachtwoord vergeten? Neem contact op met de beheerder.
+          <a href="/auth/wachtwoord-vergeten" className="text-[#1f1683] hover:underline">Wachtwoord vergeten?</a>
         </p>
       </div>
     </div>

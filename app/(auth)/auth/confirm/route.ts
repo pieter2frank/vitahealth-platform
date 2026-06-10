@@ -29,6 +29,8 @@ export async function GET(req: Request) {
     console.error('[auth/confirm] verifyOtp fout:', error.message)
   }
 
-  // Token ontbreekt of is ongeldig/verlopen
-  return NextResponse.redirect(new URL('/auth/invite/accept?error=invalid_link', base))
+  // Token ontbreekt of is ongeldig/verlopen → terug naar de juiste pagina
+  const errTarget = new URL(next, base)
+  errTarget.searchParams.set('error', 'invalid_link')
+  return NextResponse.redirect(errTarget)
 }

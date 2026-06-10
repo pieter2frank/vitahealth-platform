@@ -359,6 +359,25 @@ export function medewerkerUitnodigingEmail(opts: {
   }
 }
 
+// ─── Wachtwoord herstellen (medewerker) ──────────────────────────────────────
+
+export function wachtwoordResetEmail(opts: {
+  firstName: string
+  resetUrl: string
+}): { subject: string; html: string } {
+  const body = `
+    ${greeting(opts.firstName)}
+    ${p('Je hebt aangevraagd om je wachtwoord voor het Vita Health Platform opnieuw in te stellen. Klik op onderstaande knop om een nieuw wachtwoord te kiezen.')}
+    ${btn(opts.resetUrl, 'Nieuw wachtwoord instellen')}
+    ${p('Heb je dit niet aangevraagd? Dan kun je deze e-mail negeren; er verandert niets aan je account.', 'font-size:12px;color:#94a3b8;')}
+    ${p('Deze link is beperkt geldig.', 'text-align:center;font-size:11px;color:#94a3b8;')}
+  `
+  return {
+    subject: 'Wachtwoord opnieuw instellen — Vita Health',
+    html: shell('Wachtwoord opnieuw instellen', body),
+  }
+}
+
 // ─── 6. Reminder ──────────────────────────────────────────────────────────────
 
 export function reminderEmail(opts: {
