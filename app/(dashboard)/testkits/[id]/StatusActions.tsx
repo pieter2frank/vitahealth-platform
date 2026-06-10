@@ -96,6 +96,7 @@ interface Props {
     badge_id:         string | null
     assigned:         boolean
     assignedClientId: string | null
+    clientStatus:     string | null
     trackingCode:     string | null
     trackingUrl:      string | null
   }
@@ -197,7 +198,29 @@ export function StatusActions({ kit, clientAddress }: Props) {
       )}
 
       {/* assigned → kit_verstuurd */}
-      {kit.status === 'assigned' && (
+      {kit.status === 'assigned' && (() => {
+        // Versturen mag pas nadat de arts de intake heeft goedgekeurd.
+        // (Geldt voor cliënten; kits voor bedrijf/arbo hebben geen intake.)
+        const needsApproval = !!kit.assignedClientId
+        const approved = kit.clientStatus === 'intake_akkoord'
+
+        if (needsApproval && !approved) {
+          return (
+            <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 flex items-start gap-3">
+              <AlertTriangle size={16} className="text-amber-600 shrink-0 mt-0.5" />
+              <div>
+                <p className="text-sm font-medium text-amber-800">Nog niet klaar om te versturen</p>
+                <p className="text-xs text-amber-700 mt-0.5">
+                  De intake moet eerst door een arts worden goedgekeurd voordat er een
+                  verzendlabel kan worden aangemaakt. Huidige status:{' '}
+                  <span className="font-medium">{kit.clientStatus ?? 'onbekend'}</span>.
+                </p>
+              </div>
+            </div>
+          )
+        }
+
+        return (
         <div className="space-y-3">
 
           {/* PostNL: aanbevolen flow — label + track&trace + mail in één keer */}
@@ -259,7 +282,8 @@ export function StatusActions({ kit, clientAddress }: Props) {
             </div>
           )}
         </div>
-      )}
+        )
+      })()}
 
       {/* kit_verstuurd → retour */}
       {kit.status === 'kit_verstuurd' && (
