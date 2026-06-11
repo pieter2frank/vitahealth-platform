@@ -23,17 +23,19 @@ export async function GET(
   const admin = createAdminClient()
   const { data: kit } = await admin
     .from('vh_testkit')
-    .select('label_pdf')
+    .select('label_pdf, label_content_type')
     .eq('id', kitId)
     .single()
 
   if (!kit?.label_pdf) return new Response('Geen label gevonden voor deze kit', { status: 404 })
 
+  const mime = kit.label_content_type ?? 'application/pdf'
+  const ext = mime === 'image/gif' ? 'gif' : mime === 'image/jpeg' ? 'jpg' : 'pdf'
   const bytes = Uint8Array.from(atob(kit.label_pdf), c => c.charCodeAt(0))
   return new Response(bytes, {
     headers: {
-      'Content-Type':        'application/pdf',
-      'Content-Disposition': `inline; filename="verzendlabel-${kitId}.pdf"`,
+      'Content-Type':        mime,
+      'Content-Disposition': `inline; filename="verzendlabel-${kitId}.${ext}"`,
       'Cache-Control':       'private, no-store',
     },
   })

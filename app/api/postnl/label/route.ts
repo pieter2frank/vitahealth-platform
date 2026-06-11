@@ -75,10 +75,11 @@ export async function POST(req: Request) {
   const { error: updErr } = await admin
     .from('vh_testkit')
     .update({
-      tracking_code:    shipment.barcode,
-      tracking_url:     shipment.trackingUrl,
-      label_pdf:        shipment.labelPdfBase64,
-      label_created_at: nowIso,
+      tracking_code:      shipment.barcode,
+      tracking_url:       shipment.trackingUrl,
+      label_pdf:          shipment.labelBase64,
+      label_content_type: shipment.contentType,
+      label_created_at:   nowIso,
       status:           'kit_verstuurd',
       kit_sent_date:    nowIso,
     })
@@ -128,6 +129,7 @@ export async function POST(req: Request) {
     ok:           true,
     trackingCode: shipment.barcode,
     trackingUrl:  shipment.trackingUrl,
-    labelPdf:     shipment.labelPdfBase64,
+    labelPdf:     shipment.labelBase64,
+    contentType:  shipment.contentType,
   })
 }

@@ -29,6 +29,7 @@ export interface PostNLConfig {
   weightGrams:        string
   barcodeType:        string
   barcodeSerie:       string
+  printerType:        string
   sender: {
     company:  string
     street:   string
@@ -55,6 +56,9 @@ export function getPostNLConfig(): PostNLConfig | null {
     weightGrams:        process.env.POSTNL_WEIGHT_GRAMS || '100',
     barcodeType:        process.env.POSTNL_BARCODE_TYPE || '3S',
     barcodeSerie:       process.env.POSTNL_BARCODE_SERIE || '000000000-999999999',
+    // D520BT labelprinter kan max 203 dpi: PostNL adviseert GIF/JPG 200 dpi
+    // i.p.v. PDF (hogere resolutie → printer moet gokken waar de bars komen).
+    printerType:        process.env.POSTNL_PRINTER_TYPE || 'GraphicFile|GIF 200 dpi',
     sender: {
       company:  process.env.POSTNL_SENDER_COMPANY  || 'Vita Health',
       street:   process.env.POSTNL_SENDER_STREET   || '',
@@ -64,6 +68,17 @@ export function getPostNLConfig(): PostNLConfig | null {
       country:  process.env.POSTNL_SENDER_COUNTRY  || 'NL',
     },
   }
+}
+
+/**
+ * Bepaalt MIME-type en bestandsextensie op basis van het PostNL Printertype.
+ * GIF/JPG geven een afbeelding terug, PDF een pdf.
+ */
+export function labelContentType(printerType: string): { mime: string; ext: string } {
+  const t = printerType.toUpperCase()
+  if (t.includes('GIF')) return { mime: 'image/gif', ext: 'gif' }
+  if (t.includes('JPG') || t.includes('JPEG')) return { mime: 'image/jpeg', ext: 'jpg' }
+  return { mime: 'application/pdf', ext: 'pdf' }
 }
 
 /** Splitst "Wallerstraat 29 A" naar { street, houseNr, houseNrExt }. */
@@ -125,7 +140,7 @@ async function createLabel(cfg: PostNLConfig, barcode: string, receiver: PostNLR
     Message: {
       MessageID:        Date.now().toString(),
       MessageTimeStamp: nowStamp(),
-      Printertype:      'GraphicFile|PDF',
+      Printertype:      cfg.printerType,
     },
     Shipments: [{
       Addresses: [{
@@ -176,12 +191,21 @@ export async function createShipment(
 ): Promise<{
   barcode: string
   trackingUrl: string
-  labelPdfBase64: string
+  labelBase64: string
+  contentType: string
+  ext: string
 }> {
   const cfg = getPostNLConfig()
   if (!cfg) throw new Error('PostNL is niet geconfigureerd (ontbrekende environment variables).')
 
   const barcode = await generateBarcode(cfg)
-  const labelPdfBase64 = await createLabel(cfg, barcode, receiver, opts?.reference)
-  return { barcode, trackingUrl: trackingUrl(barcode, receiver.zipcode, receiver.country), labelPdfBase64 }
+  const labelBase64 = await createLabel(cfg, barcode, receiver, opts?.reference)
+  const { mime, ext } = labelContentType(cfg.printerType)
+  return {
+    barcode,
+    trackingUrl: trackingUrl(barcode, receiver.zipcode, receiver.country),
+    labelBase64,
+    contentType: mime,
+    ext,
+  }
 }

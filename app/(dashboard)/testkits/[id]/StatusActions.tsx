@@ -158,7 +158,7 @@ export function StatusActions({ kit, clientAddress, returnAddressConfigured }: P
       // Label-PDF openen om te printen
       if (json.labelPdf) {
         const bytes = Uint8Array.from(atob(json.labelPdf), c => c.charCodeAt(0))
-        const url = URL.createObjectURL(new Blob([bytes], { type: 'application/pdf' }))
+        const url = URL.createObjectURL(new Blob([bytes], { type: json.contentType ?? 'application/pdf' }))
         window.open(url, '_blank')
       }
       router.refresh()
@@ -186,7 +186,7 @@ export function StatusActions({ kit, clientAddress, returnAddressConfigured }: P
 
       if (json.labelPdf) {
         const bytes = Uint8Array.from(atob(json.labelPdf), c => c.charCodeAt(0))
-        const url = URL.createObjectURL(new Blob([bytes], { type: 'application/pdf' }))
+        const url = URL.createObjectURL(new Blob([bytes], { type: json.contentType ?? 'application/pdf' }))
         window.open(url, '_blank')
       }
       router.refresh()

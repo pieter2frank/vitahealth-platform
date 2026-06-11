@@ -22,17 +22,19 @@ export async function GET(
   const admin = createAdminClient()
   const { data: kit } = await admin
     .from('vh_testkit')
-    .select('return_label_pdf')
+    .select('return_label_pdf, return_label_content_type')
     .eq('id', kitId)
     .single()
 
   if (!kit?.return_label_pdf) return new Response('Geen retourlabel gevonden voor deze kit', { status: 404 })
 
+  const mime = kit.return_label_content_type ?? 'application/pdf'
+  const ext = mime === 'image/gif' ? 'gif' : mime === 'image/jpeg' ? 'jpg' : 'pdf'
   const bytes = Uint8Array.from(atob(kit.return_label_pdf), c => c.charCodeAt(0))
   return new Response(bytes, {
     headers: {
-      'Content-Type':        'application/pdf',
-      'Content-Disposition': `inline; filename="retourlabel-${kitId}.pdf"`,
+      'Content-Type':        mime,
+      'Content-Disposition': `inline; filename="retourlabel-${kitId}.${ext}"`,
       'Cache-Control':       'private, no-store',
     },
   })
