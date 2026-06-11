@@ -14,6 +14,16 @@ function calcAge(birthDate: string | null): number | string {
   return age
 }
 
+/**
+ * Maakt een geldige Excel-tabbladnaam: Excel staat de tekens \ / ? * [ ] : niet
+ * toe en beperkt de naam tot 31 tekens. De echte badge_id blijft in de kolom
+ * "Batch ID" staan; dit raakt alleen de naam van het werkblad.
+ */
+function safeSheetName(name: string): string {
+  const cleaned = (name || 'Batch').replace(/[\\/?*[\]:]/g, '-').slice(0, 31).trim()
+  return cleaned || 'Batch'
+}
+
 const GENDER_LABELS: Record<string, string> = {
   man:             'Man',
   vrouw:           'Vrouw',
@@ -94,7 +104,7 @@ export async function GET(
   ]
 
   const wb = XLSX.utils.book_new()
-  XLSX.utils.book_append_sheet(wb, ws, batch.badge_id)
+  XLSX.utils.book_append_sheet(wb, ws, safeSheetName(batch.badge_id))
 
   const rawData = XLSX.write(wb, { type: 'array', bookType: 'xlsx' }) as number[]
   const blob = new Blob([new Uint8Array(rawData)], {
