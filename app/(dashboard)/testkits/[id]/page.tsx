@@ -23,6 +23,17 @@ export default async function TestkitDetailPage({
 
   if (!kit) notFound()
 
+  // Retouradres-instelling: bepaalt of er een retourlabel aangemaakt kan worden
+  const { data: retourSetting } = await supabase
+    .from('vh_setting').select('value').eq('key', 'retour_adres').maybeSingle()
+  let returnAddressConfigured = false
+  if (retourSetting?.value) {
+    try {
+      const a = JSON.parse(retourSetting.value)
+      returnAddressConfigured = !!(a?.street && a?.houseNr && a?.zipcode && a?.city)
+    } catch { /* ongeldige JSON → niet geconfigureerd */ }
+  }
+
   const client = kit.vh_client as Client | null
   const company = kit.vh_company as Company | null
   const arbo = kit.vh_arbo as Arbo | null
@@ -223,6 +234,8 @@ export default async function TestkitDetailPage({
               clientStatus:     client?.enrollment_status ?? null,
               trackingCode:     kit.tracking_code ?? null,
               trackingUrl:      kit.tracking_url ?? null,
+              returnTrackingCode: kit.return_tracking_code ?? null,
+              returnTrackingUrl:  kit.return_tracking_url ?? null,
             }}
             clientAddress={client ? {
               firstName:  client.first_name,
@@ -231,6 +244,7 @@ export default async function TestkitDetailPage({
               postalCode: client.postal_code,
               city:       client.city,
             } : undefined}
+            returnAddressConfigured={returnAddressConfigured}
           />
         </div>
       </div>

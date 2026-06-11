@@ -93,7 +93,7 @@ async function generateBarcode(cfg: PostNLConfig): Promise<string> {
   return json.Barcode as string
 }
 
-async function createLabel(cfg: PostNLConfig, barcode: string, receiver: PostNLReceiver): Promise<string> {
+async function createLabel(cfg: PostNLConfig, barcode: string, receiver: PostNLReceiver, reference?: string): Promise<string> {
   const body = {
     Customer: {
       Address: {
@@ -126,6 +126,7 @@ async function createLabel(cfg: PostNLConfig, barcode: string, receiver: PostNLR
         Countrycode: receiver.country,
       }],
       Barcode:             barcode,
+      ...(reference ? { Reference: reference } : {}),
       Dimension:           { Weight: cfg.weightGrams },
       ProductCodeDelivery: cfg.productCode,
     }],
@@ -150,8 +151,15 @@ export function trackingUrl(barcode: string, zipcode: string, country = 'NL'): s
   return `https://jouw.postnl.nl/track-and-trace/${barcode}-${country}-${zipcode}`
 }
 
-/** Hoofdfunctie: maakt barcode + label aan en geeft alles terug. */
-export async function createShipment(receiver: PostNLReceiver): Promise<{
+/**
+ * Hoofdfunctie: maakt barcode + label aan en geeft alles terug.
+ * Optionele `reference` wordt op het label geprint (bv. de kit-codering),
+ * zodat zichtbaar is om welke zending het gaat.
+ */
+export async function createShipment(
+  receiver: PostNLReceiver,
+  opts?: { reference?: string },
+): Promise<{
   barcode: string
   trackingUrl: string
   labelPdfBase64: string
@@ -160,6 +168,6 @@ export async function createShipment(receiver: PostNLReceiver): Promise<{
   if (!cfg) throw new Error('PostNL is niet geconfigureerd (ontbrekende environment variables).')
 
   const barcode = await generateBarcode(cfg)
-  const labelPdfBase64 = await createLabel(cfg, barcode, receiver)
+  const labelPdfBase64 = await createLabel(cfg, barcode, receiver, opts?.reference)
   return { barcode, trackingUrl: trackingUrl(barcode, receiver.zipcode, receiver.country), labelPdfBase64 }
 }

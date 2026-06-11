@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
-import { PackageCheck, Send, FlaskConical, RotateCcw, Unlink, AlertTriangle, Printer, Truck } from 'lucide-react'
+import { PackageCheck, Send, FlaskConical, RotateCcw, Unlink, AlertTriangle, Printer, Truck, Undo2 } from 'lucide-react'
 import type { TestkitStatus } from '@/types'
 
 // ─── Verzendlabel printen ─────────────────────────────────────────────────────
@@ -99,13 +99,16 @@ interface Props {
     clientStatus:     string | null
     trackingCode:     string | null
     trackingUrl:      string | null
+    returnTrackingCode: string | null
+    returnTrackingUrl:  string | null
   }
   clientAddress?: ClientAddress
+  returnAddressConfigured?: boolean
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export function StatusActions({ kit, clientAddress }: Props) {
+export function StatusActions({ kit, clientAddress, returnAddressConfigured }: Props) {
   const router = useRouter()
   const [saving, setSaving]           = useState(false)
   const [error, setError]             = useState('')
@@ -163,6 +166,34 @@ export function StatusActions({ kit, clientAddress }: Props) {
       setError('Er ging iets mis bij het aanmaken van het PostNL-label.')
     } finally {
       setPostnlLoading(false)
+    }
+  }
+
+  // ── PostNL: retourlabel aanmaken (geadresseerd aan het retouradres) ──────────
+  const [returnLoading, setReturnLoading] = useState(false)
+
+  async function createReturnLabel() {
+    setReturnLoading(true)
+    setError('')
+    try {
+      const res = await fetch('/api/postnl/return-label', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ kitId: kit.id }),
+      })
+      const json = await res.json()
+      if (!res.ok) { setError(json.error ?? 'Retourlabel aanmaken mislukt.'); return }
+
+      if (json.labelPdf) {
+        const bytes = Uint8Array.from(atob(json.labelPdf), c => c.charCodeAt(0))
+        const url = URL.createObjectURL(new Blob([bytes], { type: 'application/pdf' }))
+        window.open(url, '_blank')
+      }
+      router.refresh()
+    } catch {
+      setError('Er ging iets mis bij het aanmaken van het retourlabel.')
+    } finally {
+      setReturnLoading(false)
     }
   }
 
@@ -429,6 +460,58 @@ export function StatusActions({ kit, clientAddress }: Props) {
               Resultaten ontvangen
             </Button>
           </div>
+        </div>
+      )}
+
+      {/* Retourlabel — beschikbaar zodra de kit klaarstaat om te versturen of is verstuurd */}
+      {(kit.status === 'assigned' || kit.status === 'kit_verstuurd') && (
+        <div className="rounded-lg border border-[#e2e8f0] bg-[#f8fafc] p-3 space-y-2">
+          <p className="text-sm font-medium text-[#1e293b] flex items-center gap-2">
+            <Undo2 size={14} className="text-[#64748b]" />
+            Retourlabel
+          </p>
+
+          {kit.returnTrackingCode ? (
+            <>
+              <div className="text-sm">
+                <span className="text-[#64748b]">Retour track &amp; trace: </span>
+                <span className="font-mono font-medium text-[#1e293b]">{kit.returnTrackingCode}</span>
+                {kit.returnTrackingUrl && (
+                  <a href={kit.returnTrackingUrl} target="_blank" rel="noopener noreferrer"
+                     className="ml-2 text-xs text-[#1f1683] hover:underline">volgen bij PostNL →</a>
+                )}
+              </div>
+              <button
+                type="button"
+                onClick={() => window.open(`/api/postnl/return-label/${kit.id}`, '_blank')}
+                className="inline-flex items-center gap-2 rounded-lg border border-[#e2e8f0] bg-white px-3 py-2 text-sm font-medium text-[#64748b] hover:bg-white transition-colors"
+              >
+                <Printer size={14} />
+                Retourlabel opnieuw printen
+              </button>
+            </>
+          ) : returnAddressConfigured ? (
+            <>
+              <p className="text-xs text-[#64748b]">
+                Maakt een retourlabel aan met de kit-codering (<span className="font-mono">{kit.barcode}</span>) erop,
+                geadresseerd aan het ingestelde retouradres. Het label opent om te printen en mee te sturen.
+              </p>
+              <button
+                type="button"
+                onClick={createReturnLabel}
+                disabled={returnLoading}
+                className="inline-flex items-center gap-2 rounded-lg border border-[#1f1683] bg-white px-4 py-2 text-sm font-medium text-[#1f1683] hover:bg-[#eef4ff] transition-colors disabled:opacity-50"
+              >
+                {returnLoading ? <RotateCcw size={14} className="animate-spin" /> : <Undo2 size={14} />}
+                Retourlabel aanmaken (PostNL)
+              </button>
+            </>
+          ) : (
+            <p className="text-xs text-[#64748b]">
+              Stel eerst een <a href="/instellingen" className="text-[#1f1683] hover:underline">retouradres</a> in
+              (Instellingen → Retouradres) om een retourlabel te kunnen aanmaken.
+            </p>
+          )}
         </div>
       )}
 

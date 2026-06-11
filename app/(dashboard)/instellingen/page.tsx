@@ -1,11 +1,12 @@
 import { createClient } from '@/lib/supabase/server'
-import { Settings } from 'lucide-react'
+import { Settings, PackageOpen } from 'lucide-react'
 import { SettingsForm } from './SettingsForm'
+import { RetourAdresForm, type RetourAdres } from './RetourAdresForm'
 
 export default async function InstellingenPage() {
   const supabase = await createClient()
 
-  const [{ data: questionnaires }, { data: setting }] = await Promise.all([
+  const [{ data: questionnaires }, { data: setting }, { data: retourSetting }] = await Promise.all([
     supabase
       .from('vh_questionnaire')
       .select('id, title')
@@ -16,7 +17,17 @@ export default async function InstellingenPage() {
       .select('value')
       .eq('key', 'intake_questionnaire_id')
       .maybeSingle(),
+    supabase
+      .from('vh_setting')
+      .select('value')
+      .eq('key', 'retour_adres')
+      .maybeSingle(),
   ])
+
+  let retourAdres: RetourAdres | null = null
+  if (retourSetting?.value) {
+    try { retourAdres = JSON.parse(retourSetting.value) as RetourAdres } catch { retourAdres = null }
+  }
 
   return (
     <div className="p-8 max-w-3xl">
@@ -38,6 +49,19 @@ export default async function InstellingenPage() {
           questionnaires={questionnaires ?? []}
           currentValue={setting?.value ?? null}
         />
+      </div>
+
+      {/* Retouradres */}
+      <div className="rounded-xl border border-[#e2e8f0] bg-white p-6 shadow-sm mt-6">
+        <h2 className="text-sm font-semibold text-[#1e293b] mb-1 flex items-center gap-2">
+          <PackageOpen size={15} className="text-[#94a3b8]" />
+          Retouradres
+        </h2>
+        <p className="text-xs text-[#94a3b8] mb-5">
+          Dit adres wordt gebruikt voor het PostNL-retourlabel dat met de testkit wordt meegestuurd.
+          De cliënt plakt dit label op de retourzending.
+        </p>
+        <RetourAdresForm current={retourAdres} />
       </div>
     </div>
   )
