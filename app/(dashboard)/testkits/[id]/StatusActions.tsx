@@ -86,6 +86,57 @@ function printLabel(client: ClientAddress, barcode: string) {
   w.document.close()
 }
 
+// ─── Label openen om te printen ───────────────────────────────────────────────
+// PDF → openen in de PDF-viewer (heeft eigen printknop).
+// Afbeelding (GIF/JPG 200 dpi) → in een printpagina zetten die de afbeelding op
+// exacte fysieke maat toont (pixels ÷ 200 dpi → mm), zodat het op één pagina past
+// én op ware grootte print. Anders schaalt de browser het beeld en valt het over
+// meerdere pagina's.
+
+const LABEL_DPI = 200
+
+function openLabelPrint(src: string, contentType: string | null) {
+  const isImage = !!contentType && contentType.startsWith('image/')
+  if (!isImage) { window.open(src, '_blank'); return } // PDF: viewer regelt printen
+
+  const w = window.open('', '_blank', 'width=520,height=720')
+  if (!w) { alert('Pop-up geblokkeerd. Sta pop-ups toe voor dit venster.'); return }
+  w.document.write(`<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8">
+  <title>Label printen</title>
+  <style>
+    html, body { margin: 0; padding: 0; background: #fff; }
+    img { display: block; }
+    @media print { @page { margin: 0; } }
+  </style>
+</head>
+<body>
+  <img id="label" src="${src}" alt="Label">
+  <script>
+    (function () {
+      var img = document.getElementById('label');
+      var DPI = ${LABEL_DPI};
+      function sizeAndPrint() {
+        var wmm = img.naturalWidth  / DPI * 25.4;
+        var hmm = img.naturalHeight / DPI * 25.4;
+        var s = document.createElement('style');
+        s.textContent =
+          '@page{size:' + wmm.toFixed(1) + 'mm ' + hmm.toFixed(1) + 'mm;margin:0}' +
+          'img{width:' + wmm.toFixed(1) + 'mm;height:' + hmm.toFixed(1) + 'mm}';
+        document.head.appendChild(s);
+        setTimeout(function () { window.focus(); window.print(); }, 200);
+      }
+      if (img.complete && img.naturalWidth) sizeAndPrint();
+      else { img.onload = sizeAndPrint; img.onerror = function(){ window.print(); }; }
+    })();
+  <\/script>
+</body>
+</html>`)
+  w.document.close()
+}
+
 // ─── Props ────────────────────────────────────────────────────────────────────
 
 interface Props {
@@ -99,8 +150,10 @@ interface Props {
     clientStatus:     string | null
     trackingCode:     string | null
     trackingUrl:      string | null
+    labelContentType: string | null
     returnTrackingCode: string | null
     returnTrackingUrl:  string | null
+    returnLabelContentType: string | null
   }
   clientAddress?: ClientAddress
   returnAddressConfigured?: boolean
@@ -157,9 +210,8 @@ export function StatusActions({ kit, clientAddress, returnAddressConfigured }: P
 
       // Label-PDF openen om te printen
       if (json.labelPdf) {
-        const bytes = Uint8Array.from(atob(json.labelPdf), c => c.charCodeAt(0))
-        const url = URL.createObjectURL(new Blob([bytes], { type: json.contentType ?? 'application/pdf' }))
-        window.open(url, '_blank')
+        const ct = json.contentType ?? 'application/pdf'
+        openLabelPrint(`data:${ct};base64,${json.labelPdf}`, ct)
       }
       router.refresh()
     } catch {
@@ -185,9 +237,8 @@ export function StatusActions({ kit, clientAddress, returnAddressConfigured }: P
       if (!res.ok) { setError(json.error ?? 'Retourlabel aanmaken mislukt.'); return }
 
       if (json.labelPdf) {
-        const bytes = Uint8Array.from(atob(json.labelPdf), c => c.charCodeAt(0))
-        const url = URL.createObjectURL(new Blob([bytes], { type: json.contentType ?? 'application/pdf' }))
-        window.open(url, '_blank')
+        const ct = json.contentType ?? 'application/pdf'
+        openLabelPrint(`data:${ct};base64,${json.labelPdf}`, ct)
       }
       router.refresh()
     } catch {
@@ -351,8 +402,8 @@ export function StatusActions({ kit, clientAddress, returnAddressConfigured }: P
                 type="button"
                 onClick={() => {
                   if (kit.trackingCode) {
-                    // Specifieke PostNL-label van deze kit openen
-                    window.open(`/api/postnl/label/${kit.id}`, '_blank')
+                    // Specifieke PostNL-label van deze kit openen om te printen
+                    openLabelPrint(`/api/postnl/label/${kit.id}`, kit.labelContentType)
                   } else if (clientAddress) {
                     // Fallback: oude HTML-label (kit zonder PostNL-label)
                     printLabel(clientAddress, kit.barcode)
@@ -483,7 +534,7 @@ export function StatusActions({ kit, clientAddress, returnAddressConfigured }: P
               </div>
               <button
                 type="button"
-                onClick={() => window.open(`/api/postnl/return-label/${kit.id}`, '_blank')}
+                onClick={() => openLabelPrint(`/api/postnl/return-label/${kit.id}`, kit.returnLabelContentType)}
                 className="inline-flex items-center gap-2 rounded-lg border border-[#e2e8f0] bg-white px-3 py-2 text-sm font-medium text-[#64748b] hover:bg-white transition-colors"
               >
                 <Printer size={14} />

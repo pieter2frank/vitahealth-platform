@@ -234,8 +234,10 @@ export default async function TestkitDetailPage({
               clientStatus:     client?.enrollment_status ?? null,
               trackingCode:     kit.tracking_code ?? null,
               trackingUrl:      kit.tracking_url ?? null,
+              labelContentType: kit.label_content_type ?? null,
               returnTrackingCode: kit.return_tracking_code ?? null,
               returnTrackingUrl:  kit.return_tracking_url ?? null,
+              returnLabelContentType: kit.return_label_content_type ?? null,
             }}
             clientAddress={client ? {
               firstName:  client.first_name,
