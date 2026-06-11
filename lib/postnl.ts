@@ -79,6 +79,19 @@ function nowStamp(): string {
   return `${p(d.getDate())}-${p(d.getMonth() + 1)}-${d.getFullYear()} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`
 }
 
+/**
+ * Bezorgdatum voor het Brievenbuspakje-product: PostNL vereist een DeliveryDate
+ * van 1 dag in de toekomst, formaat dd-MM-yyyy HH:mm:ss. Zondag (PostNL bezorgt
+ * dan geen post) wordt doorgeschoven naar maandag.
+ */
+function deliveryDateNextDay(): string {
+  const d = new Date()
+  d.setDate(d.getDate() + 1)
+  if (d.getDay() === 0) d.setDate(d.getDate() + 1) // zondag → maandag
+  const p = (n: number) => String(n).padStart(2, '0')
+  return `${p(d.getDate())}-${p(d.getMonth() + 1)}-${d.getFullYear()} 08:00:00`
+}
+
 async function generateBarcode(cfg: PostNLConfig): Promise<string> {
   const url = `${cfg.baseUrl}/shipment/v1_1/barcode?CustomerCode=${encodeURIComponent(cfg.customerCode)}`
     + `&CustomerNumber=${encodeURIComponent(cfg.customerNumber)}`
@@ -127,6 +140,7 @@ async function createLabel(cfg: PostNLConfig, barcode: string, receiver: PostNLR
       }],
       Barcode:             barcode,
       ...(reference ? { Reference: reference } : {}),
+      DeliveryDate:        deliveryDateNextDay(), // vereist voor Brievenbuspakje (1 dag vooruit)
       Dimension:           { Weight: cfg.weightGrams },
       ProductCodeDelivery: cfg.productCode,
     }],
