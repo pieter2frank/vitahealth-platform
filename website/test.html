@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Ik wil een test — Vita Health</title>
+  <meta name="description" content="Geef je interesse door voor een Vita Health biomarker-test. We nemen contact op over de vervolgstappen." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&display=swap" rel="stylesheet" media="print" onload="this.media='all'" />
+  <noscript><link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&display=swap" rel="stylesheet" /></noscript>
+  <link rel="stylesheet" href="css/styles.css" />
+  <style>
+    .test-grid { display: grid; grid-template-columns: 1fr 1.05fr; gap: 2.5rem; align-items: start; }
+    @media (max-width: 880px) { .test-grid { grid-template-columns: 1fr; } }
+    .steps { display: grid; gap: 1rem; margin-top: 1.5rem; }
+    .stepline { display: flex; gap: 1rem; align-items: flex-start; }
+    .stepline .n { flex-shrink: 0; width: 34px; height: 34px; border-radius: 50%; background: var(--accent); color: #06281f; display: grid; place-items: center; font-weight: 800; font-size: .9rem; }
+    .stepline b { display: block; color: var(--ink); }
+    .stepline p { margin: .1rem 0 0; color: var(--muted); font-size: .95rem; }
+  </style>
+</head>
+<body>
+
+  <header class="site-header">
+    <div class="container nav">
+      <a href="index.html" class="nav__logo" aria-label="Vita Health home"><img src="assets/logo-color.svg" alt="Vita Health" /></a>
+      <button class="nav__toggle" aria-label="Menu openen" aria-expanded="false">
+        <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
+      <nav class="nav__links">
+        <a href="index.html">Home</a>
+        <a href="biomarkers.html">Biomarkers</a>
+        <a href="wetenschap.html">Wetenschap</a>
+        <a href="over-ons.html">Over ons</a>
+        <a href="doelgroepen.html">Doelgroepen</a>
+        <a href="contact.html">Contact</a>
+        <span class="nav__cta"><a href="test.html" class="btn btn-accent active">Ik wil een test</a></span>
+      </nav>
+    </div>
+  </header>
+
+  <section class="page-hero">
+    <div class="container page-hero__inner">
+      <span class="eyebrow" style="background:rgba(255,255,255,.12);color:#fff"><span class="dot"></span> Aan de slag</span>
+      <h1>Ik wil een test</h1>
+      <p>Zet de eerste stap naar inzicht in je biologische gezondheid. Geef hieronder je interesse door — we nemen contact met je op over de vervolgstappen, vrijblijvend.</p>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container">
+      <div class="test-grid">
+        <div>
+          <span class="eyebrow"><span class="dot"></span> Hoe het werkt</span>
+          <h2 style="font-size:1.5rem">Van interesse tot inzicht</h2>
+          <div class="steps">
+            <div class="stepline"><span class="n">1</span><div><b>Je geeft je interesse door</b><p>Vul het formulier in. Je zit nog nergens aan vast.</p></div></div>
+            <div class="stepline"><span class="n">2</span><div><b>We nemen contact op</b><p>We bespreken je situatie, beantwoorden je vragen en lichten de mogelijkheden toe.</p></div></div>
+            <div class="stepline"><span class="n">3</span><div><b>Je ontvangt je thuistestkit</b><p>Eenvoudig zelf af te nemen — geen ziekenhuisbezoek nodig.</p></div></div>
+            <div class="stepline"><span class="n">4</span><div><b>Inzicht &amp; persoonlijk plan</b><p>Je krijgt je MetaboHealth-profiel en concrete stappen om gezonde levensjaren te winnen.</p></div></div>
+          </div>
+          <div class="card card--soft" style="margin-top:1.5rem">
+            <p class="muted mb-0">Liever eerst meer weten? Lees het <a href="biomarkers.html" class="text-link" style="color:var(--brand);font-weight:600">verhaal over biomarkers</a> of de <a href="wetenschap.html" class="text-link" style="color:var(--brand);font-weight:600">wetenschap erachter</a>.</p>
+          </div>
+        </div>
+
+        <div class="form-card">
+          <div class="form-success">Bedankt voor je interesse! We nemen zo snel mogelijk contact met je op over de vervolgstappen.</div>
+          <form data-demo novalidate>
+            <div class="form-row">
+              <div class="field"><label for="t-first">Voornaam</label><input id="t-first" name="voornaam" type="text" required /></div>
+              <div class="field"><label for="t-last">Achternaam</label><input id="t-last" name="achternaam" type="text" required /></div>
+            </div>
+            <div class="form-row">
+              <div class="field"><label for="t-email">E-mailadres</label><input id="t-email" name="email" type="email" required /></div>
+              <div class="field"><label for="t-phone">Telefoonnummer (optioneel)</label><input id="t-phone" name="telefoon" type="tel" /></div>
+            </div>
+            <div class="field">
+              <label for="t-type">Ik vraag aan als…</label>
+              <select id="t-type" name="type">
+                <option>Particulier</option>
+                <option>Werkgever / arbodienst</option>
+                <option>Zorgprofessional</option>
+              </select>
+            </div>
+            <div class="field"><label for="t-msg">Toelichting (optioneel)</label><textarea id="t-msg" name="toelichting" placeholder="Vertel kort waarom je geïnteresseerd bent of stel je vraag."></textarea></div>
+            <label style="display:flex;gap:.6rem;align-items:flex-start;font-size:.88rem;color:var(--muted);margin-bottom:1.1rem">
+              <input type="checkbox" required style="width:auto;margin-top:.2rem" />
+              <span>Ik ga akkoord dat Vita Health contact met me opneemt en mijn gegevens verwerkt conform het privacybeleid (AVG).</span>
+            </label>
+            <button type="submit" class="btn btn-accent" style="width:100%;justify-content:center">Verstuur mijn interesse</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer__grid">
+        <div>
+          <img src="assets/logo-white.svg" alt="Vita Health" />
+          <p>Vita Health maakt het onzichtbare zichtbaar. We vertalen biomarkers naar een persoonlijk, wetenschappelijk onderbouwd plan om gezonde levensjaren te winnen.</p>
+        </div>
+        <div><h4>Navigatie</h4><ul class="footer__links"><li><a href="index.html">Home</a></li><li><a href="biomarkers.html">Biomarkers</a></li><li><a href="wetenschap.html">Wetenschap</a></li><li><a href="doelgroepen.html">Doelgroepen</a></li></ul></div>
+        <div><h4>Organisatie</h4><ul class="footer__links"><li><a href="over-ons.html">Over ons</a></li><li><a href="contact.html">Contact</a></li><li><a href="test.html">Ik wil een test</a></li></ul></div>
+        <div><h4>Juridisch</h4><ul class="footer__links"><li><a href="#">Privacy &amp; AVG</a></li><li><a href="#">Algemene voorwaarden</a></li><li><a href="#">Cookiebeleid</a></li></ul></div>
+      </div>
+      <div class="footer__bottom"><span>© 2026 Vita Health. Alle rechten voorbehouden.</span><span>In samenwerking met het LUMC.</span></div>
+    </div>
+  </footer>
+
+  <script src="js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Biomarkers — Vita Health</title>
+  <meta name="description" content="Wat biomarkers vertellen over je veroudering, veerkracht en risico's. Van NMR-metabolomics tot de MetaboHealth-score: het verhaal achter de meting." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&display=swap" rel="stylesheet" media="print" onload="this.media='all'" />
+  <noscript><link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&display=swap" rel="stylesheet" /></noscript>
+  <link rel="stylesheet" href="css/styles.css" />
+  <style>
+    /* artistieke bloedcel-laag in de hero: doorschijnend, oplichtend tegen het
+       indigo, en van links (kop) naar rechts ingefade zodat tekst leesbaar blijft */
+    .page-hero--bio::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: url("assets/bloodcells.jpg") center/cover no-repeat;
+      opacity: .42;
+      mix-blend-mode: screen;
+      -webkit-mask-image: linear-gradient(100deg, transparent 0%, rgba(0,0,0,.12) 42%, #000 100%);
+              mask-image: linear-gradient(100deg, transparent 0%, rgba(0,0,0,.12) 42%, #000 100%);
+      pointer-events: none;
+    }
+
+    /* pagina-specifiek: studiekaarten, silhouetten, citaten */
+    .study-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1.5rem; margin-top: 1.8rem; }
+    .study-card { position: relative; background: #fff; border: 1px solid var(--line); border-radius: var(--radius-lg); padding: 1.6rem; box-shadow: var(--shadow-sm); }
+    .study-card .badge { position: absolute; top: 1.2rem; right: 1.2rem; width: 30px; height: 30px; border-radius: 50%; background: var(--brand-50); color: var(--brand); display: grid; place-items: center; font-weight: 800; font-size: .85rem; }
+    .study-card .src { font-size: .72rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--muted-light); }
+    .study-card h3 { margin: .2rem 0 .6rem; }
+    .study-card ul { margin: .6rem 0 0 1.1rem; color: var(--muted); }
+    .study-card li { margin-bottom: .3rem; }
+    .text-link { color: var(--brand); font-weight: 600; }
+    .text-link:hover { text-decoration: underline; }
+
+    .ages { display: grid; grid-template-columns: repeat(3,1fr); gap: 1rem; margin-top: 1.5rem; }
+    .age-card { text-align: center; background: var(--bg-soft); border: 1px solid var(--line); border-radius: var(--radius); padding: 1.4rem 1rem; }
+    .age-card .fig { width: 56px; height: 56px; margin: 0 auto .6rem; border-radius: 50%; display: grid; place-items: center; background: var(--brand-50); color: var(--brand); }
+    .age-card .big { font-size: 1.9rem; font-weight: 800; color: var(--ink); }
+    .age-card .lbl { font-size: .78rem; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; }
+    .age-card.is-bio .fig { background: var(--accent-50); color: var(--accent-600); }
+
+    .quote-box { margin-top: 2.5rem; padding: 2rem 2.2rem; background: #fff; border-left: 4px solid var(--accent); border-radius: 0 var(--radius) var(--radius) 0; box-shadow: var(--shadow-sm); }
+    .quote-box .q { font-size: 1.2rem; font-style: italic; color: var(--ink-soft); margin-bottom: .8rem; }
+    .quote-box .a { font-weight: 700; color: var(--ink); font-size: .92rem; }
+
+    .reasons { display: grid; gap: 1rem; margin-top: 1.8rem; }
+    @media (min-width: 760px) { .reasons { grid-template-columns: 1fr 1fr; } }
+    .reason { display: flex; gap: 1rem; align-items: flex-start; background: #fff; border: 1px solid var(--line); border-radius: var(--radius); padding: 1.2rem; box-shadow: var(--shadow-sm); }
+    .reason .n { flex-shrink: 0; width: 32px; height: 32px; border-radius: 50%; background: var(--brand); color: #fff; display: grid; place-items: center; font-weight: 700; font-size: .9rem; }
+    .reason b { display: block; color: var(--ink); margin-bottom: .15rem; }
+    .reason p { margin: 0; color: var(--muted); font-size: .94rem; }
+  </style>
+</head>
+<body>
+
+  <header class="site-header">
+    <div class="container nav">
+      <a href="index.html" class="nav__logo" aria-label="Vita Health home"><img src="assets/logo-color.svg" alt="Vita Health" /></a>
+      <button class="nav__toggle" aria-label="Menu openen" aria-expanded="false">
+        <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
+      <nav class="nav__links">
+        <a href="index.html">Home</a>
+        <a href="biomarkers.html" class="active">Biomarkers</a>
+        <a href="wetenschap.html">Wetenschap</a>
+        <a href="over-ons.html">Over ons</a>
+        <a href="doelgroepen.html">Doelgroepen</a>
+        <a href="contact.html">Contact</a>
+        <span class="nav__cta"><a href="test.html" class="btn btn-accent">Ik wil een test</a></span>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Page hero -->
+  <section class="page-hero page-hero--bio">
+    <div class="container page-hero__inner">
+      <span class="eyebrow" style="background:rgba(255,255,255,.12);color:#fff"><span class="dot"></span> Het verhaal van biomarkers</span>
+      <h1>Het onzichtbare wordt zichtbaar</h1>
+      <p>Tot voor kort moesten we gezondheid afleiden uit symptomen, risicofactoren en losse bloedwaarden. Maar je lichaam zélf geeft voortdurend signalen af — en die kunnen we steeds beter lezen.</p>
+    </div>
+  </section>
+
+  <!-- Context + biologische leeftijd -->
+  <section class="section">
+    <div class="container">
+      <div class="grid-2" style="align-items:center">
+        <div>
+          <h2>Signalen die een verhaal vormen</h2>
+          <p class="muted">In elke cel, in je bloedbaan, geeft je lichaam voortdurend signalen af. Signalen die samen een verhaal vormen over jouw veroudering, jouw veerkracht, jouw risico's. Dankzij moderne moleculaire biomarkers kunnen we dat verhaal lezen.</p>
+          <p class="muted">Deze biomarkers meten de onderliggende fysiologische staat van je lichaam — de mate van algemene gezondheid, soms ook <strong>"biologische leeftijd"</strong> genoemd. En die zegt veel meer dan je kalenderleeftijd.</p>
+          <p style="font-weight:700;color:var(--ink);font-size:1.1rem;margin-top:1rem">Kalenderleeftijd is te grof — biologische leeftijd is onderscheidend.</p>
+        </div>
+        <div class="card card--soft">
+          <p class="muted mb-0">Dezelfde leeftijd op papier kan iets heel anders betekenen in het lichaam:</p>
+          <div class="ages">
+            <div class="age-card is-bio">
+              <div class="fig"><svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="7" r="4"/><path d="M5.5 21a6.5 6.5 0 0 1 13 0"/></svg></div>
+              <div class="big">45</div><div class="lbl">Biologisch</div>
+            </div>
+            <div class="age-card">
+              <div class="fig"><svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
+              <div class="big">60</div><div class="lbl">Kalender</div>
+            </div>
+            <div class="age-card is-bio">
+              <div class="fig"><svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="7" r="4"/><path d="M5.5 21a6.5 6.5 0 0 1 13 0"/></svg></div>
+              <div class="big">75</div><div class="lbl">Biologisch</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Wat meten biomarkers -->
+  <section class="section section--soft">
+    <div class="container">
+      <div class="grid-2">
+        <div>
+          <span class="eyebrow"><span class="dot"></span> De meting</span>
+          <h2>Wat meten biomarkers precies?</h2>
+          <p class="muted">Biomarkers vangen duizenden subtiele processen tegelijk: ontsteking, metabolisme, orgaanfunctie, energiebalans, oxidatieve stress en herstelcapaciteit.</p>
+          <p class="muted"><strong>Metabolomics</strong> meet 250+ kleine moleculen tegelijk via NMR-technologie. Deze methode is zeer reproduceerbaar, schaalbaar en betaalbaar — geschikt voor grote groepen.</p>
+        </div>
+        <div class="card">
+          <span class="pill-tag">MetaboHealth</span>
+          <h3 style="margin:.8rem 0 .5rem">Specifieker dan cholesterol of BMI</h3>
+          <p class="muted mb-0">Uit één meting berekenen we een profiel van je actuele gezondheid: de MetaboHealth-score. Dat zegt veel meer dan losse waarden als cholesterol, glucose of BMI — het vat de onderliggende staat van je lichaam samen in één klinisch relevante maat.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- MetaboHealth score -->
+  <section class="section">
+    <div class="container">
+      <span class="eyebrow"><span class="dot"></span> De score</span>
+      <h2>Wat is de MetaboHealth-score?</h2>
+      <p class="lead">Een geavanceerde, maar betaalbare manier om je algemene gezondheid te meten via een uitgebreide bloedanalyse.</p>
+      <p class="muted mt-1">Ontwikkeld op basis van gegevens uit twaalf grote bevolkingsonderzoeken. De score voorspelt nauwkeurig gezondheidsrisico's en levensverwachting, vooral bij mensen van middelbare leeftijd. <a href="https://www.nature.com/articles/s41467-019-11311-9" target="_blank" rel="noopener" class="text-link">→ Bekijk onderzoek</a></p>
+
+      <p class="muted">De score doet meer dan risico's inschatten. Uit diverse studies blijkt dat de MetaboHealth-score een sterke graadmeter is voor ouderdomskwalen en vitaliteit:</p>
+      <div class="grid-2" style="margin-top:1.2rem">
+        <div class="feature">
+          <h3>Lichamelijke kwetsbaarheid</h3>
+          <p>Laat zien of je biologisch ouder of jonger bent dan je kalenderleeftijd, en hoe kwetsbaar je lichaam is. <a href="https://academic.oup.com/biomedgerontology/article-lookup/doi/10.1093/gerona/glad137" target="_blank" rel="noopener" class="text-link">(Studie)</a></p>
+        </div>
+        <div class="feature">
+          <h3>Hersenfunctie</h3>
+          <p>Een betere score hangt samen met een scherper brein, beter geheugen en behoud van zelfstandigheid. <a href="https://link.springer.com/article/10.1007/s11357-024-01391-x" target="_blank" rel="noopener" class="text-link">(Studie)</a></p>
+        </div>
+        <div class="feature">
+          <h3>Mentale gezondheid op termijn</h3>
+          <p>Kan helpen voorspellen of je geheugen de komende 10 jaar achteruitgaat. <a href="https://academic.oup.com/ageing/article/53/11/afae256/7903416?login=true" target="_blank" rel="noopener" class="text-link">(Studie)</a></p>
+        </div>
+        <div class="feature">
+          <h3>Weerstand</h3>
+          <p>Er is zelfs een verband gevonden met het verloop van infectieziekten zoals COVID-19. <a href="https://link.springer.com/article/10.1007/s11357-025-01591-z" target="_blank" rel="noopener" class="text-link">(Studie)</a></p>
+        </div>
+      </div>
+      <p class="muted mt-2"><strong>Kortom:</strong> MetaboHealth werkt als een "APK voor je lichaam" waarmee je gericht via leefstijl aan je gezondheid kunt werken.</p>
+    </div>
+  </section>
+
+  <!-- Onderzoek -->
+  <section class="section section--soft">
+    <div class="container">
+      <span class="eyebrow"><span class="dot"></span> Bewijs</span>
+      <h2>Wetenschappelijk onderzoek ondersteunt dit</h2>
+      <p class="lead">Grote studies laten keer op keer zien dat deze profielen sterke voorspellers zijn van gezondheid, ziekte en sterfte.</p>
+      <div class="study-grid">
+        <article class="study-card">
+          <div class="badge">A</div>
+          <div class="src">NTVG / LUMC / VOILA</div>
+          <h3>40.000+ personen</h3>
+          <p class="muted mb-0">Uit data van meer dan 40.000 personen blijkt dat biomarkers:</p>
+          <ul>
+            <li>sterfte zeer nauwkeurig voorspellen</li>
+            <li>kwetsbaarheid (frailty) voorspellen</li>
+            <li>cognitieve achteruitgang voorspellen</li>
+            <li>ziekenhuisopnames voorspellen</li>
+          </ul>
+          <p class="muted" style="margin-top:.6rem"><strong>Onafhankelijk van klassieke risicofactoren.</strong></p>
+        </article>
+        <article class="study-card">
+          <div class="badge">B</div>
+          <div class="src">Nature Medicine (2022)</div>
+          <h3>24 ziekten tegelijk</h3>
+          <p class="muted">Metabolomic profiles voorspellen het risico op 24 ziekten tegelijk (diabetes, hartfalen, nierziekte, dementie).</p>
+          <p class="muted mb-0">Het biomarkerprofiel <strong>overtreft of evenaart bestaande klinische modellen</strong>.</p>
+        </article>
+        <article class="study-card">
+          <div class="badge">C</div>
+          <div class="src">Nature Communications (2024)</div>
+          <h3>Drie nationale biobanken</h3>
+          <p class="muted mb-0">In drie biobanken (700.217 deelnemers) bleken metabolomics-profielen:</p>
+          <ul>
+            <li>vaak beter dan genetica in het voorspellen van ziekte</li>
+            <li>dynamisch — te veranderen door leefstijl</li>
+            <li>inzetbaar als schaalbare population-health-tool</li>
+          </ul>
+        </article>
+      </div>
+      <p style="font-weight:700;color:var(--ink);font-size:1.15rem;margin-top:1.8rem">Samen geven deze studies een ongekend sterke wetenschappelijke basis.</p>
+    </div>
+  </section>
+
+  <!-- Biologische leeftijd verbeteren -->
+  <section class="section">
+    <div class="container">
+      <div class="grid-2" style="align-items:center">
+        <div>
+          <h2>Je kunt je biologische leeftijd meten — én verbeteren</h2>
+          <p class="muted">Als klinisch relevante maat voor kwetsbaarheid, lange-termijnziekterisico, cognitieve gezondheid, hart- en vaatziekten, long- en nierziekten en algemene sterfte.</p>
+          <p style="font-weight:700;color:var(--ink);font-size:1.1rem">En belangrijker: je kunt het verbeteren.</p>
+          <p class="muted"><em>Biomarkers zijn gevoelig voor leefstijlinterventies — in tegenstelling tot genetica.</em></p>
+        </div>
+        <div class="card card--soft">
+          <span class="pill-tag">Voorbeelden uit onderzoek</span>
+          <ul class="checklist" style="margin-top:1rem">
+            <li>In interventiestudies kan de epigenetische leeftijd 25–40 weken teruglopen in slechts 13 weken</li>
+            <li>Metabolomics-profielen dalen bij gewichtsverlies of stoppen met roken</li>
+            <li>In Finland gebruiken huisartsen biomarkers als wake-up call</li>
+          </ul>
+          <p class="muted" style="margin-top:1rem">Dat maakt biomarkers niet alleen diagnostisch, maar ook motiverend en empowerend.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Waarom verandert dit de zorg -->
+  <section class="section section--soft">
+    <div class="container">
+      <span class="eyebrow"><span class="dot"></span> Impact</span>
+      <h2>Waarom dit het zorglandschap verandert</h2>
+      <div class="reasons">
+        <div class="reason"><div class="n">1</div><div><b>Betere risicoselectie voor preventie</b><p>Biomarkers identificeren wie écht risico loopt.</p></div></div>
+        <div class="reason"><div class="n">2</div><div><b>Van reactieve naar voorspellende zorg</b><p>Je ziet problemen jaren vóór ze klinisch worden.</p></div></div>
+        <div class="reason"><div class="n">3</div><div><b>Objectieve feedback op leefstijl</b><p>Niet alleen "ik voel me beter", maar meetbaar: "+2,1 voorspelde gezonde levensjaren".</p></div></div>
+        <div class="reason"><div class="n">4</div><div><b>Integratie met e-health, wearables &amp; AI</b><p>Voor een volledig gepersonaliseerd vitaliteitsprogramma.</p></div></div>
+        <div class="reason"><div class="n">5</div><div><b>Geschikt voor schaal</b><p>NMR-technologie maakt het mogelijk honderdduizenden mensen te testen.</p></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Vita Health + vervolg -->
+  <section class="section">
+    <div class="container">
+      <span class="eyebrow"><span class="dot"></span> Vita Health</span>
+      <h2>Van meten naar het winnen van gezonde levensjaren</h2>
+      <div class="grid-2" style="margin-top:1rem">
+        <div>
+          <p class="muted">Bij Vita Health stopt het niet bij meten. Op basis van jouw biomarkers bieden we een concreet vervolgtraject, gericht op duurzame verbetering van je gezondheid. Wij combineren:</p>
+          <ul class="checklist">
+            <li>De best gevalideerde biomarkers</li>
+            <li>Fysieke vitaliteitsmetingen</li>
+            <li>Coaching op voeding, beweging, stress en slaap</li>
+            <li>Een persoonlijk vitaliteitsprofiel</li>
+            <li>Een eigen ecosysteem van experts</li>
+          </ul>
+        </div>
+        <div class="card card--soft">
+          <h3>Persoonlijk, onderbouwd, haalbaar</h3>
+          <p class="muted">Geen standaardadvies, maar een persoonlijk gezondheidsplan dat werkt én vol te houden is — met heldere doelen, overzichtelijke stappen en regelmatige follow-up.</p>
+          <div class="quote-box">
+            <p class="q">"Meten is weten, maar veranderen is wat het verschil maakt. Vita Health vertaalt biomarkerdata naar duurzame gezondheidswinst."</p>
+            <p class="a">Chantalle Burgers — huisarts / leefstijlarts</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="section" style="padding-top:0">
+    <div class="container">
+      <div class="cta-band">
+        <h2>Benieuwd wat jouw bloed vertelt?</h2>
+        <p>Vraag een test aan en zet de eerste stap naar meer gezonde levensjaren.</p>
+        <a href="test.html" class="btn btn-accent">Ik wil een test
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer__grid">
+        <div>
+          <img src="assets/logo-white.svg" alt="Vita Health" />
+          <p>Vita Health maakt het onzichtbare zichtbaar. We vertalen biomarkers naar een persoonlijk, wetenschappelijk onderbouwd plan om gezonde levensjaren te winnen.</p>
+        </div>
+        <div><h4>Navigatie</h4><ul class="footer__links"><li><a href="index.html">Home</a></li><li><a href="biomarkers.html">Biomarkers</a></li><li><a href="wetenschap.html">Wetenschap</a></li><li><a href="doelgroepen.html">Doelgroepen</a></li></ul></div>
+        <div><h4>Organisatie</h4><ul class="footer__links"><li><a href="over-ons.html">Over ons</a></li><li><a href="contact.html">Contact</a></li><li><a href="test.html">Ik wil een test</a></li></ul></div>
+        <div><h4>Juridisch</h4><ul class="footer__links"><li><a href="#">Privacy &amp; AVG</a></li><li><a href="#">Algemene voorwaarden</a></li><li><a href="#">Cookiebeleid</a></li></ul></div>
+      </div>
+      <div class="footer__bottom"><span>© 2026 Vita Health. Alle rechten voorbehouden.</span><span>In samenwerking met het LUMC.</span></div>
+    </div>
+  </footer>
+
+  <script src="js/main.js"></script>
+</body>
+</html>

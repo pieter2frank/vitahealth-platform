@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Wetenschap — Vita Health</title>
+  <meta name="description" content="De wetenschappelijke basis van Vita Health: NMR-metabolomics, de MetaboHealth-score, validatie in grote cohorten en de samenwerking met het LUMC." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&display=swap" rel="stylesheet" media="print" onload="this.media='all'" />
+  <noscript><link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&display=swap" rel="stylesheet" /></noscript>
+  <link rel="stylesheet" href="css/styles.css" />
+  <style>
+    /* artistieke reageerbuisjes-laag in de hero: doorschijnend, oplichtend tegen
+       het indigo, en van links (kop) naar rechts ingefade zodat tekst leesbaar blijft */
+    .page-hero--sci::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: url("assets/blood%20samples.jpg") center/cover no-repeat;
+      opacity: .42;
+      mix-blend-mode: screen;
+      -webkit-mask-image: linear-gradient(100deg, transparent 0%, rgba(0,0,0,.12) 42%, #000 100%);
+              mask-image: linear-gradient(100deg, transparent 0%, rgba(0,0,0,.12) 42%, #000 100%);
+      pointer-events: none;
+    }
+
+    .refs { list-style: none; counter-reset: r; display: grid; gap: .8rem; margin-top: 1.5rem; }
+    .refs li { counter-increment: r; display: flex; gap: .9rem; align-items: flex-start; background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 1rem 1.1rem; box-shadow: var(--shadow-sm); }
+    .refs li::before { content: counter(r); flex-shrink: 0; width: 26px; height: 26px; border-radius: 50%; background: var(--brand-50); color: var(--brand); display: grid; place-items: center; font-weight: 700; font-size: .8rem; }
+    .refs a { color: var(--brand); font-weight: 600; }
+    .refs a:hover { text-decoration: underline; }
+    .refs .src { color: var(--muted); font-size: .85rem; }
+    .step { display: flex; gap: 1rem; align-items: flex-start; padding: 1.2rem 0; border-top: 1px solid var(--line); }
+    .step:first-child { border-top: none; }
+    .step .n { flex-shrink: 0; width: 38px; height: 38px; border-radius: 12px; background: var(--brand); color: #fff; display: grid; place-items: center; font-weight: 700; }
+    .step b { display: block; color: var(--ink); }
+    .step p { margin: .2rem 0 0; color: var(--muted); }
+  </style>
+</head>
+<body>
+
+  <header class="site-header">
+    <div class="container nav">
+      <a href="index.html" class="nav__logo" aria-label="Vita Health home"><img src="assets/logo-color.svg" alt="Vita Health" /></a>
+      <button class="nav__toggle" aria-label="Menu openen" aria-expanded="false">
+        <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
+      <nav class="nav__links">
+        <a href="index.html">Home</a>
+        <a href="biomarkers.html">Biomarkers</a>
+        <a href="wetenschap.html" class="active">Wetenschap</a>
+        <a href="over-ons.html">Over ons</a>
+        <a href="doelgroepen.html">Doelgroepen</a>
+        <a href="contact.html">Contact</a>
+        <span class="nav__cta"><a href="test.html" class="btn btn-accent">Ik wil een test</a></span>
+      </nav>
+    </div>
+  </header>
+
+  <section class="page-hero page-hero--sci">
+    <div class="container page-hero__inner">
+      <span class="eyebrow" style="background:rgba(255,255,255,.12);color:#fff"><span class="dot"></span> De wetenschap</span>
+      <h1>De wetenschappelijke basis</h1>
+      <p>Onze aanpak rust op gevalideerde metabolomics, grootschalige cohortstudies en een directe samenwerking met het LUMC. Hier leggen we uit hoe het werkt.</p>
+    </div>
+  </section>
+
+  <!-- NMR / metabolomics -->
+  <section class="section">
+    <div class="container">
+      <div class="grid-2" style="align-items:center">
+        <div>
+          <span class="eyebrow"><span class="dot"></span> Meettechniek</span>
+          <h2>Metabolomics via NMR</h2>
+          <p class="muted">Metabolomics is de studie van de kleine moleculen (metabolieten) die ontstaan bij alle processen in je lichaam — van vetstofwisseling tot ontsteking. Hun concentraties vormen een momentopname van je fysiologische staat.</p>
+          <p class="muted">Met <strong>NMR-spectroscopie</strong> (kernspinresonantie) meten we 250+ van deze moleculen tegelijk uit één bloedmonster. De methode is sterk gestandaardiseerd, zeer reproduceerbaar en kosten­efficiënt — voorwaarden om betrouwbaar op grote schaal te kunnen meten.</p>
+        </div>
+        <div class="card card--soft">
+          <h3>Waarom NMR?</h3>
+          <ul class="checklist" style="margin-top:1rem">
+            <li>Eén monster, honderden markers tegelijk</li>
+            <li>Hoge reproduceerbaarheid tussen labs</li>
+            <li>Schaalbaar en betaalbaar voor populatieonderzoek</li>
+            <li>Internationaal gebruikt in biobanken en cohorten</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- MetaboHealth model -->
+  <section class="section section--soft">
+    <div class="container">
+      <span class="eyebrow"><span class="dot"></span> Het model</span>
+      <h2>Van losse markers naar één score</h2>
+      <p class="lead">De MetaboHealth-score vat de meting samen in één klinisch relevante maat voor algemene gezondheid.</p>
+      <div style="margin-top:1.5rem">
+        <div class="step"><div class="n">1</div><div><b>Afname</b><p>Een bloedmonster wordt via NMR geanalyseerd op 250+ metabolieten.</p></div></div>
+        <div class="step"><div class="n">2</div><div><b>Modellering</b><p>Een gevalideerd, in grote cohorten getraind model weegt de markers die het sterkst samenhangen met gezondheidsuitkomsten.</p></div></div>
+        <div class="step"><div class="n">3</div><div><b>Score</b><p>Het resultaat is de MetaboHealth-score: een samenvattende maat die je biologische gezondheid weerspiegelt.</p></div></div>
+        <div class="step"><div class="n">4</div><div><b>Duiding &amp; actie</b><p>De score wordt vertaald naar inzicht en een leefstijlplan — en kan in de tijd worden gevolgd.</p></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Validatie / LUMC -->
+  <section class="section">
+    <div class="container">
+      <div class="proof">
+        <div>
+          <span class="eyebrow"><span class="dot"></span> Validatie &amp; samenwerking</span>
+          <h2>Ontwikkeld en getoetst met het LUMC</h2>
+          <p class="muted">Vita Health werkt samen met het <strong>Leids Universitair Medisch Centrum</strong>, een internationale autoriteit op het gebied van metabolomics en de biologie van veroudering. De MetaboHealth-score is ontwikkeld op basis van data uit twaalf grote bevolkingscohorten en daarna onafhankelijk gevalideerd.</p>
+          <p class="muted">Studies tonen consequent aan dat het profiel sterfte, kwetsbaarheid, cognitieve achteruitgang en tientallen ziekten voorspelt — vaak bovenop, en soms beter dan, klassieke risicofactoren en zelfs genetica.</p>
+          <div class="logo-strip">
+            <span class="pill-tag">LUMC</span>
+            <span class="pill-tag">VOILA-cohort</span>
+            <span class="pill-tag">UK Biobank</span>
+            <span class="pill-tag">Nature / Nature Medicine</span>
+          </div>
+        </div>
+        <div class="proof__panel">
+          <h3>Onderbouwd op schaal</h3>
+          <p>De voorspellende kracht is aangetoond in onafhankelijke, grootschalige studies.</p>
+          <div class="proof__stats">
+            <div class="proof__stat"><div class="n">12</div><div class="l">cohorten in de ontwikkeling</div></div>
+            <div class="proof__stat"><div class="n">24</div><div class="l">ziekten tegelijk voorspeld</div></div>
+            <div class="proof__stat"><div class="n">700k+</div><div class="l">deelnemers in validatie</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Referenties -->
+  <section class="section section--soft">
+    <div class="container">
+      <span class="eyebrow"><span class="dot"></span> Bronnen</span>
+      <h2>Geselecteerde publicaties</h2>
+      <p class="muted">Een greep uit het peer-reviewed onderzoek dat aan onze methode ten grondslag ligt.</p>
+      <ul class="refs">
+        <li><div><a href="https://www.nature.com/articles/s41467-019-11311-9" target="_blank" rel="noopener">A metabolic profile of all-cause mortality risk</a><div class="src">Nature Communications (2019) — ontwikkeling MetaboHealth-score in 12 cohorten</div></div></li>
+        <li><div><a href="https://academic.oup.com/biomedgerontology/article-lookup/doi/10.1093/gerona/glad137" target="_blank" rel="noopener">Metabolomic score &amp; physical frailty</a><div class="src">J. Gerontology (2023) — samenhang met lichamelijke kwetsbaarheid</div></div></li>
+        <li><div><a href="https://link.springer.com/article/10.1007/s11357-024-01391-x" target="_blank" rel="noopener">Metabolomic health &amp; cognition</a><div class="src">GeroScience (2024) — samenhang met hersenfunctie en geheugen</div></div></li>
+        <li><div><a href="https://academic.oup.com/ageing/article/53/11/afae256/7903416?login=true" target="_blank" rel="noopener">Predicting cognitive decline</a><div class="src">Age and Ageing (2024) — voorspelling van geheugenachteruitgang</div></div></li>
+        <li><div><a href="https://link.springer.com/article/10.1007/s11357-025-01591-z" target="_blank" rel="noopener">Metabolomic score &amp; infectious disease</a><div class="src">GeroScience (2025) — verband met verloop van o.a. COVID-19</div></div></li>
+      </ul>
+      <p class="form-note">Verwijzingen zijn ter onderbouwing en illustratie; raadpleeg de publicaties voor de volledige methodiek en context.</p>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="section" style="padding-top:0">
+    <div class="container">
+      <div class="cta-band">
+        <h2>Van wetenschap naar jouw gezondheid</h2>
+        <p>Laat de methode voor je werken. Vraag een test aan en ontdek je MetaboHealth-score.</p>
+        <a href="test.html" class="btn btn-accent">Ik wil een test
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer__grid">
+        <div>
+          <img src="assets/logo-white.svg" alt="Vita Health" />
+          <p>Vita Health maakt het onzichtbare zichtbaar. We vertalen biomarkers naar een persoonlijk, wetenschappelijk onderbouwd plan om gezonde levensjaren te winnen.</p>
+        </div>
+        <div><h4>Navigatie</h4><ul class="footer__links"><li><a href="index.html">Home</a></li><li><a href="biomarkers.html">Biomarkers</a></li><li><a href="wetenschap.html">Wetenschap</a></li><li><a href="doelgroepen.html">Doelgroepen</a></li></ul></div>
+        <div><h4>Organisatie</h4><ul class="footer__links"><li><a href="over-ons.html">Over ons</a></li><li><a href="contact.html">Contact</a></li><li><a href="test.html">Ik wil een test</a></li></ul></div>
+        <div><h4>Juridisch</h4><ul class="footer__links"><li><a href="#">Privacy &amp; AVG</a></li><li><a href="#">Algemene voorwaarden</a></li><li><a href="#">Cookiebeleid</a></li></ul></div>
+      </div>
+      <div class="footer__bottom"><span>© 2026 Vita Health. Alle rechten voorbehouden.</span><span>In samenwerking met het LUMC.</span></div>
+    </div>
+  </footer>
+
+  <script src="js/main.js"></script>
+</body>
+</html>
