@@ -89,9 +89,9 @@ export async function GET(
     return {
       'Batch ID':      batch.badge_id,
       'Kit ID':        kit.barcode,
-      'Afnamedatum':   formatDob((kit.sample_date as string | null) ?? null),
+      'Sample date':   formatDob((kit.sample_date as string | null) ?? null),
       'Date of birth': formatDob(client?.birth_date ?? null),
-      'Geslacht':      genderRaw ? (GENDER_CODE[genderRaw] ?? 'o') : '',
+      'Sex':           genderRaw ? (GENDER_CODE[genderRaw] ?? 'o') : '',
     }
   })
 
@@ -100,9 +100,9 @@ export async function GET(
   ws['!cols'] = [
     { wch: 20 }, // Batch ID
     { wch: 20 }, // Kit ID
-    { wch: 14 }, // Afnamedatum
+    { wch: 14 }, // Sample date
     { wch: 14 }, // Date of birth
-    { wch: 10 }, // Geslacht
+    { wch: 10 }, // Sex
   ]
 
   const wb = XLSX.utils.book_new()
