@@ -8,7 +8,7 @@ export default async function NieuweBatchPage() {
 
   const { data: retourRaw } = await supabase
     .from('vh_testkit')
-    .select('id, barcode, retour_date, vh_client(first_name, last_name), vh_company(name), vh_arbo(name)')
+    .select('id, barcode, retour_date, sample_date, vh_client(first_name, last_name), vh_company(name), vh_arbo(name)')
     .eq('status', 'retour')
     .is('batch_id', null)
     .order('retour_date', { ascending: true })
@@ -22,6 +22,7 @@ export default async function NieuweBatchPage() {
       id: kit.id,
       barcode: kit.barcode,
       retour_date: kit.retour_date as string | null,
+      sample_date: kit.sample_date as string | null,
       assignedName: c
         ? `${c.first_name} ${c.last_name}`
         : co?.name ?? a?.name ?? 'Niet toegewezen',

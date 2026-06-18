@@ -232,6 +232,7 @@ export default async function TestkitDetailPage({
               assigned:         kit.assigned,
               assignedClientId: client?.id ?? null,
               clientStatus:     client?.enrollment_status ?? null,
+              sampleDate:       kit.sample_date ?? null,
               trackingCode:     kit.tracking_code ?? null,
               trackingUrl:      kit.tracking_url ?? null,
               labelContentType: kit.label_content_type ?? null,

@@ -16,6 +16,7 @@ interface RetourKit {
   id: string
   barcode: string
   retour_date: string | null
+  sample_date: string | null
   assignedName: string
 }
 
@@ -28,8 +29,11 @@ export function BatchForm({ retourKits }: Props) {
 
   const [sentDate, setSentDate] = useState(() => new Date().toISOString().split('T')[0])
   const [notes, setNotes] = useState('')
+  // Alleen kits met een afnamedatum mogen in een batch
+  const selectableKits = retourKits.filter(k => k.sample_date)
+  const blockedCount = retourKits.length - selectableKits.length
   const [selected, setSelected] = useState<Set<string>>(
-    () => new Set(retourKits.map(k => k.id))
+    () => new Set(selectableKits.map(k => k.id))
   )
   const [previewSeq, setPreviewSeq] = useState<number | null>(null)
   const [saving, setSaving] = useState(false)
@@ -51,10 +55,12 @@ export function BatchForm({ retourKits }: Props) {
     ? buildBadgeId(year, previewSeq, selected.size || 0)
     : null
 
-  const allSelected = selected.size === retourKits.length && retourKits.length > 0
+  const allSelected = selected.size === selectableKits.length && selectableKits.length > 0
   const noneSelected = selected.size === 0
 
   function toggle(id: string) {
+    const kit = retourKits.find(k => k.id === id)
+    if (!kit?.sample_date) return // zonder afnamedatum niet selecteerbaar
     setSelected(prev => {
       const next = new Set(prev)
       next.has(id) ? next.delete(id) : next.add(id)
@@ -63,7 +69,7 @@ export function BatchForm({ retourKits }: Props) {
   }
 
   function toggleAll() {
-    setSelected(allSelected ? new Set() : new Set(retourKits.map(k => k.id)))
+    setSelected(allSelected ? new Set() : new Set(selectableKits.map(k => k.id)))
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -219,28 +225,43 @@ export function BatchForm({ retourKits }: Props) {
                 }
               </button>
               <span className="text-xs font-medium text-[#64748b]">
-                Testkits — {selected.size} van {retourKits.length} geselecteerd
+                Testkits — {selected.size} van {selectableKits.length} geselecteerd
               </span>
             </div>
             <span className="text-xs text-[#94a3b8]">Status: Retour</span>
           </div>
 
+          {blockedCount > 0 && (
+            <div className="flex items-start gap-2 border-b border-amber-100 bg-amber-50 px-4 py-2.5">
+              <AlertTriangle size={14} className="text-amber-600 shrink-0 mt-0.5" />
+              <p className="text-xs text-amber-800">
+                {blockedCount} kit{blockedCount === 1 ? '' : 's'} {blockedCount === 1 ? 'heeft' : 'hebben'} geen
+                afnamedatum en {blockedCount === 1 ? 'kan' : 'kunnen'} niet in een batch. Vul de afnamedatum in op de
+                kit-pagina.
+              </p>
+            </div>
+          )}
+
           {/* Kit lijst */}
           <div className="divide-y divide-[#f1f5f9] max-h-[480px] overflow-y-auto">
             {retourKits.map((kit) => {
+              const blocked = !kit.sample_date
               const isSelected = selected.has(kit.id)
               return (
                 <label
                   key={kit.id}
-                  className={`flex items-center gap-3 px-4 py-3 cursor-pointer transition-colors ${
-                    isSelected ? 'bg-[#eef4ff]' : 'hover:bg-[#f8fafc]'
+                  className={`flex items-center gap-3 px-4 py-3 transition-colors ${
+                    blocked
+                      ? 'bg-amber-50/40 cursor-not-allowed'
+                      : isSelected ? 'bg-[#eef4ff] cursor-pointer' : 'hover:bg-[#f8fafc] cursor-pointer'
                   }`}
                 >
                   <input
                     type="checkbox"
                     checked={isSelected}
+                    disabled={blocked}
                     onChange={() => toggle(kit.id)}
-                    className="h-4 w-4 rounded border-[#e2e8f0] accent-[#1f1683] shrink-0"
+                    className="h-4 w-4 rounded border-[#e2e8f0] accent-[#1f1683] shrink-0 disabled:opacity-40"
                   />
                   <div className="h-8 w-8 rounded-lg bg-[#eef4ff] flex items-center justify-center shrink-0">
                     <TestTube2 size={14} className="text-[#1f1683]" />
@@ -248,10 +269,29 @@ export function BatchForm({ retourKits }: Props) {
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-mono font-medium text-[#1e293b]">{kit.barcode}</p>
                     <p className="text-xs text-[#64748b] truncate">{kit.assignedName}</p>
+                    {blocked && (
+                      <p className="text-xs text-amber-700 mt-0.5 flex items-center gap-1">
+                        <AlertTriangle size={11} className="shrink-0" />
+                        Afnamedatum ontbreekt —{' '}
+                        <a
+                          href={`/testkits/${kit.id}`}
+                          onClick={e => e.stopPropagation()}
+                          className="underline hover:text-amber-900"
+                        >
+                          invullen
+                        </a>
+                      </p>
+                    )}
                   </div>
                   <div className="text-right shrink-0">
-                    <p className="text-xs text-[#94a3b8]">Retour</p>
-                    <p className="text-xs text-[#64748b]">{formatDate(kit.retour_date)}</p>
+                    {blocked ? (
+                      <p className="text-xs font-medium text-amber-600">Geblokkeerd</p>
+                    ) : (
+                      <>
+                        <p className="text-xs text-[#94a3b8]">Afname</p>
+                        <p className="text-xs text-[#64748b]">{formatDate(kit.sample_date)}</p>
+                      </>
+                    )}
                   </div>
                 </label>
               )

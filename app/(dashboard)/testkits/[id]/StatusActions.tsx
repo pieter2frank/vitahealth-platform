@@ -148,6 +148,7 @@ interface Props {
     assigned:         boolean
     assignedClientId: string | null
     clientStatus:     string | null
+    sampleDate:       string | null
     trackingCode:     string | null
     trackingUrl:      string | null
     labelContentType: string | null
@@ -171,6 +172,7 @@ export function StatusActions({ kit, clientAddress, returnAddressConfigured }: P
   const [badgeDate, setBadgeDate]     = useState(new Date().toISOString().split('T')[0])
   const [retourDate, setRetourDate]   = useState(new Date().toISOString().split('T')[0])
   const [resultsDate, setResultsDate] = useState(new Date().toISOString().split('T')[0])
+  const [sampleDate, setSampleDate]   = useState(kit.sampleDate ?? '')
 
   async function update(
     payload: Record<string, unknown>,
@@ -371,22 +373,35 @@ export function StatusActions({ kit, clientAddress, returnAddressConfigured }: P
       {kit.status === 'kit_verstuurd' && (
         <div className="space-y-3">
           <p className="text-sm text-[#64748b]">
-            Heeft de cliënt de testkit teruggestuurd?
+            Heeft de cliënt de testkit teruggestuurd? Voer de retour- én afnamedatum in.
           </p>
-          <div className="flex items-end gap-3">
-            <div className="flex-1">
-              <Input
-                label="Retourdatum"
-                type="date"
-                value={retourDate}
-                onChange={e => setRetourDate(e.target.value)}
-              />
-            </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Input
+              label="Retourdatum"
+              type="date"
+              value={retourDate}
+              onChange={e => setRetourDate(e.target.value)}
+            />
+            <Input
+              label="Afnamedatum (door cliënt)"
+              type="date"
+              value={sampleDate}
+              onChange={e => setSampleDate(e.target.value)}
+              required
+            />
+          </div>
+          <p className="text-xs text-[#94a3b8]">
+            De afnamedatum is verplicht om de kit later in een batch naar Nightingale te kunnen opnemen.
+          </p>
+          <div className="flex justify-end">
             <Button
-              onClick={() => update(
-                { status: 'retour', retour_date: retourDate },
-                { enrollment_status: 'kit_retour' },
-              )}
+              onClick={() => {
+                if (!sampleDate) { setError('Afnamedatum is verplicht.'); return }
+                update(
+                  { status: 'retour', retour_date: retourDate, sample_date: sampleDate },
+                  { enrollment_status: 'kit_retour' },
+                )
+              }}
               loading={saving}
               className="gap-2"
             >
@@ -425,17 +440,27 @@ export function StatusActions({ kit, clientAddress, returnAddressConfigured }: P
           <p className="text-sm text-[#64748b]">
             Retour ontvangen van een niet-toegewezen kit?
           </p>
-          <div className="flex items-end gap-3">
-            <div className="flex-1">
-              <Input
-                label="Retourdatum"
-                type="date"
-                value={retourDate}
-                onChange={e => setRetourDate(e.target.value)}
-              />
-            </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Input
+              label="Retourdatum"
+              type="date"
+              value={retourDate}
+              onChange={e => setRetourDate(e.target.value)}
+            />
+            <Input
+              label="Afnamedatum"
+              type="date"
+              value={sampleDate}
+              onChange={e => setSampleDate(e.target.value)}
+              required
+            />
+          </div>
+          <div className="flex justify-end">
             <Button
-              onClick={() => update({ status: 'retour', retour_date: retourDate })}
+              onClick={() => {
+                if (!sampleDate) { setError('Afnamedatum is verplicht.'); return }
+                update({ status: 'retour', retour_date: retourDate, sample_date: sampleDate })
+              }}
               loading={saving}
               className="gap-2"
             >
@@ -449,6 +474,34 @@ export function StatusActions({ kit, clientAddress, returnAddressConfigured }: P
       {/* retour → sent_nightingale */}
       {kit.status === 'retour' && (
         <div className="space-y-3">
+          {/* Afnamedatum — verplicht voor opname in een batch */}
+          <div className="rounded-lg border border-[#e2e8f0] bg-[#f8fafc] p-3 space-y-2">
+            <Input
+              label="Afnamedatum (door cliënt)"
+              type="date"
+              value={sampleDate}
+              onChange={e => setSampleDate(e.target.value)}
+              required
+            />
+            {!kit.sampleDate && (
+              <p className="text-xs text-amber-700 flex items-start gap-1.5">
+                <AlertTriangle size={13} className="shrink-0 mt-0.5" />
+                Afnamedatum ontbreekt. Vul deze in en sla op; zonder afnamedatum kan de kit niet in een batch.
+              </p>
+            )}
+            <Button
+              variant="secondary"
+              onClick={() => {
+                if (!sampleDate) { setError('Afnamedatum is verplicht.'); return }
+                update({ sample_date: sampleDate })
+              }}
+              loading={saving}
+              className="gap-2"
+            >
+              Afnamedatum opslaan
+            </Button>
+          </div>
+
           <p className="text-sm text-[#64748b]">
             Verstuur de kit naar Nightingale Health en registreer de batch.
           </p>

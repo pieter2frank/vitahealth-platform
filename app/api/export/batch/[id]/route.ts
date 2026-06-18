@@ -4,14 +4,20 @@ import { isUuid } from '@/lib/validation'
 import type { Client } from '@/types'
 import { logAuditEventOrThrow } from '@/lib/audit'
 
-function calcAge(birthDate: string | null): number | string {
+function formatDob(birthDate: string | null): string {
   if (!birthDate) return ''
-  const birth = new Date(birthDate)
-  const today = new Date()
-  let age = today.getFullYear() - birth.getFullYear()
-  const m = today.getMonth() - birth.getMonth()
-  if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--
-  return age
+  // Parse de datumdelen direct (tijdzone-onafhankelijk) uit "YYYY-MM-DD".
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(birthDate)
+  if (!m) return ''
+  return `${m[3]}-${m[2]}-${m[1]}`
+}
+
+// Geslacht naar Nightingale-codering: m (male), f (female), o (other).
+const GENDER_CODE: Record<string, string> = {
+  man:             'm',
+  vrouw:           'f',
+  anders:          'o',
+  zeg_liever_niet: 'o',
 }
 
 /**
@@ -22,13 +28,6 @@ function calcAge(birthDate: string | null): number | string {
 function safeSheetName(name: string): string {
   const cleaned = (name || 'Batch').replace(/[\\/?*[\]:]/g, '-').slice(0, 31).trim()
   return cleaned || 'Batch'
-}
-
-const GENDER_LABELS: Record<string, string> = {
-  man:             'Man',
-  vrouw:           'Vrouw',
-  anders:          'Anders',
-  zeg_liever_niet: 'Zeg ik liever niet',
 }
 
 export async function GET(
@@ -56,12 +55,12 @@ export async function GET(
   // 2. Kits in deze batch met cliëntgegevens
   const { data: kits } = await supabase
     .from('vh_testkit')
-    .select('id, barcode, vh_client(id, birth_date)')
+    .select('id, barcode, sample_date, vh_client(id, birth_date, gender)')
     .eq('batch_id', id)
     .order('barcode', { ascending: true })
 
   const clientIds = (kits ?? [])
-    .map(k => (k.vh_client as unknown as Pick<Client, 'id' | 'birth_date'> | null)?.id)
+    .map(k => (k.vh_client as unknown as Pick<Client, 'id' | 'birth_date' | 'gender'> | null)?.id)
     .filter((cid): cid is string => !!cid)
 
   // 3. Meest recente vragenlijstrespons per cliënt
@@ -82,15 +81,17 @@ export async function GET(
 
   // 4. Rijen opbouwen
   const rows = (kits ?? []).map(kit => {
-    const client    = kit.vh_client as unknown as Pick<Client, 'id' | 'birth_date'> | null
+    const client    = kit.vh_client as unknown as Pick<Client, 'id' | 'birth_date' | 'gender'> | null
     const resp      = client ? responseMap.get(client.id) : null
-    const genderRaw = resp?.d1_geslacht as string | undefined
+    // Geslacht primair uit het cliëntrecord, anders uit de vragenlijst
+    const genderRaw = (client?.gender ?? (resp?.d1_geslacht as string | undefined)) || ''
 
     return {
-      'Batch ID': batch.badge_id,
-      'Kit ID':   kit.barcode,
-      'Leeftijd': client ? calcAge(client.birth_date) : '',
-      'Geslacht': genderRaw ? (GENDER_LABELS[genderRaw] ?? genderRaw) : '',
+      'Batch ID':      batch.badge_id,
+      'Kit ID':        kit.barcode,
+      'Afnamedatum':   formatDob((kit.sample_date as string | null) ?? null),
+      'Date of birth': formatDob(client?.birth_date ?? null),
+      'Geslacht':      genderRaw ? (GENDER_CODE[genderRaw] ?? 'o') : '',
     }
   })
 
@@ -99,8 +100,9 @@ export async function GET(
   ws['!cols'] = [
     { wch: 20 }, // Batch ID
     { wch: 20 }, // Kit ID
-    { wch: 12 }, // Leeftijd
-    { wch: 22 }, // Geslacht
+    { wch: 14 }, // Afnamedatum
+    { wch: 14 }, // Date of birth
+    { wch: 10 }, // Geslacht
   ]
 
   const wb = XLSX.utils.book_new()
