@@ -12,6 +12,7 @@ import { ClientQuestionnaireSection } from './ClientQuestionnaireSection'
 import { ClientNotesSection } from './ClientNotesSection'
 import { ClientDocumentsSection } from './ClientDocumentsSection'
 import { EnrollmentStatusSection } from './EnrollmentStatusSection'
+import { CopyIntakeLink } from './CopyIntakeLink'
 import { ReminderButton } from './ReminderButton'
 
 const GENDER_LABELS: Record<string, string> = {
@@ -222,6 +223,7 @@ export default async function ClientDetailPage({
               </div>
             )}
           </dl>
+          <CopyIntakeLink clientId={client.id} />
         </div>
 
         {/* Contactgegevens */}
