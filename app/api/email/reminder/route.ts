@@ -35,7 +35,7 @@ export async function POST(req: Request) {
   if (!token) return NextResponse.json({ error: 'Token aanmaken mislukt.' }, { status: 500 })
 
   const portalUrl = process.env.NEXT_PUBLIC_PORTAL_URL ?? ''
-  const intakeUrl = `${portalUrl}/aanmelden?token=${token}`
+  const intakeUrl = `${portalUrl}/portal/aanmelden?token=${token}`
 
   const stoppedAfter: 'adresgegevens' | 'toestemmingen' =
     client.enrollment_status === 'toestemming_gegeven' ? 'toestemmingen' : 'adresgegevens'
