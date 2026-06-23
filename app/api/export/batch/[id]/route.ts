@@ -12,12 +12,12 @@ function formatDob(birthDate: string | null): string {
   return `${m[3]}-${m[2]}-${m[1]}`
 }
 
-// Geslacht naar Nightingale-codering: m (male), f (female), o (other).
+// Geslacht naar Nightingale-codering: male, female, other.
 const GENDER_CODE: Record<string, string> = {
-  man:             'm',
-  vrouw:           'f',
-  anders:          'o',
-  zeg_liever_niet: 'o',
+  man:             'male',
+  vrouw:           'female',
+  anders:          'other',
+  zeg_liever_niet: 'other',
 }
 
 /**
@@ -87,11 +87,11 @@ export async function GET(
     const genderRaw = (client?.gender ?? (resp?.d1_geslacht as string | undefined)) || ''
 
     return {
-      'Batch ID':      batch.badge_id,
-      'Kit ID':        kit.barcode,
-      'Sample date':   formatDob((kit.sample_date as string | null) ?? null),
-      'Date of birth': formatDob(client?.birth_date ?? null),
-      'Sex':           genderRaw ? (GENDER_CODE[genderRaw] ?? 'o') : '',
+      'Batch ID':                  batch.badge_id,
+      'Kit ID':                    kit.barcode,
+      'Date of Sample Collection': formatDob((kit.sample_date as string | null) ?? null),
+      'Date of Birth':             formatDob(client?.birth_date ?? null),
+      'Biological Sex':            genderRaw ? (GENDER_CODE[genderRaw] ?? 'other') : '',
     }
   })
 
@@ -100,9 +100,9 @@ export async function GET(
   ws['!cols'] = [
     { wch: 20 }, // Batch ID
     { wch: 20 }, // Kit ID
-    { wch: 14 }, // Sample date
-    { wch: 14 }, // Date of birth
-    { wch: 10 }, // Sex
+    { wch: 26 }, // Date of Sample Collection
+    { wch: 14 }, // Date of Birth
+    { wch: 14 }, // Biological Sex
   ]
 
   const wb = XLSX.utils.book_new()
