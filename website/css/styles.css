@@ -252,8 +252,8 @@ p { margin-bottom: .9rem; }
 
 /* CTA band */
 .cta-band { position: relative; overflow: hidden; background: linear-gradient(120deg, var(--brand) 0%, #2a1fae 100%); color: #fff; border-radius: var(--radius-lg); padding: clamp(2.5rem, 5vw, 4rem); text-align: center; }
-.cta-band::after { content: ""; position: absolute; inset: 0; background: radial-gradient(700px 300px at 50% 120%, rgba(23,228,161,.3), transparent 60%); }
-.cta-band > * { position: relative; }
+.cta-band::after { content: ""; position: absolute; inset: 0; background: radial-gradient(700px 300px at 50% 120%, rgba(23,228,161,.3), transparent 60%); pointer-events: none; }
+.cta-band > * { position: relative; z-index: 1; }
 .cta-band h2 { color: #fff; margin-bottom: .8rem; }
 .cta-band p { color: #dfe2f4; max-width: 50ch; margin: 0 auto 1.8rem; }
 
@@ -261,7 +261,7 @@ p { margin-bottom: .9rem; }
    Footer
    =========================================================================== */
 .site-footer { background: #0e0a3a; color: #c9cce6; padding: 3.5rem 0 2rem; }
-.footer__grid { display: grid; grid-template-columns: 1.4fr 1fr 1fr 1fr; gap: 2rem; }
+.footer__grid { display: grid; grid-template-columns: 1.6fr 1fr 1fr; gap: 2rem; }
 .site-footer img { height: 30px; margin-bottom: 1.1rem; }
 .site-footer h4 { color: #fff; font-size: .85rem; letter-spacing: .08em; text-transform: uppercase; margin-bottom: 1rem; }
 .site-footer p { color: #9b9fc6; font-size: .92rem; max-width: 34ch; }
@@ -302,6 +302,10 @@ p { margin-bottom: .9rem; }
 .form-note { font-size: .82rem; color: var(--muted); margin-top: 1rem; }
 .form-success { display: none; background: var(--accent-50); border: 1px solid #b8efdd; color: #065f46; border-radius: 12px; padding: 1rem 1.1rem; margin-bottom: 1.2rem; font-size: .95rem; }
 .form-success.show { display: block; }
+.form-error { display: none; background: #fef2f2; border: 1px solid #fecaca; color: #b91c1c; border-radius: 12px; padding: 1rem 1.1rem; margin-bottom: 1.2rem; font-size: .95rem; }
+.form-error.show { display: block; }
+/* honeypot — verborgen veld tegen spam */
+.hp { position: absolute !important; left: -9999px !important; width: 1px; height: 1px; overflow: hidden; }
 
 /* utilities */
 .mt-1 { margin-top: 1rem; } .mt-2 { margin-top: 2rem; } .mb-0 { margin-bottom: 0; }

@@ -47,15 +47,49 @@
     }
   }
 
-  // Eenvoudige formulier-afhandeling (demo: toont bevestiging, geen backend)
-  const form = document.querySelector('form[data-demo]');
-  if (form) {
+  // Formulier-afhandeling: verstuur via AJAX naar het PHP-script.
+  // Zonder JS valt het formulier terug op een normale POST (PHP toont dan een
+  // bedanktpagina), dankzij action/method op het <form>.
+  document.querySelectorAll('form[data-ajax]').forEach(function (form) {
     form.addEventListener('submit', function (e) {
       e.preventDefault();
-      const ok = form.querySelector('.form-success');
-      if (ok) ok.classList.add('show');
-      form.reset();
-      if (ok) ok.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      // .form-success/.form-error staan als broer van het formulier in .form-card
+      var card = form.closest('.form-card') || form.parentElement || document;
+      var ok  = card.querySelector('.form-success');
+      var err = card.querySelector('.form-error');
+      var btn = form.querySelector('button[type="submit"]');
+      if (err) { err.classList.remove('show'); err.textContent = ''; }
+
+      var original = btn ? btn.textContent : '';
+      if (btn) { btn.disabled = true; btn.textContent = 'Versturen…'; }
+
+      fetch(form.action, {
+        method: 'POST',
+        headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' },
+        body: new FormData(form),
+      })
+        .then(function (res) { return res.json().then(function (d) { return { res: res, data: d }; }); })
+        .then(function (r) {
+          if (r.res.ok && r.data && r.data.ok) {
+            if (ok) { ok.classList.add('show'); ok.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+            form.reset();
+          } else {
+            showFormError(err, (r.data && r.data.error) || 'Versturen mislukt. Probeer het later opnieuw.');
+          }
+        })
+        .catch(function () {
+          showFormError(err, 'Er ging iets mis. Controleer je verbinding en probeer het opnieuw.');
+        })
+        .finally(function () {
+          if (btn) { btn.disabled = false; btn.textContent = original; }
+        });
     });
+  });
+
+  function showFormError(el, msg) {
+    if (!el) { alert(msg); return; }
+    el.textContent = msg;
+    el.classList.add('show');
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
   }
 })();
