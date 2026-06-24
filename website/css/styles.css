@@ -147,20 +147,30 @@ p { margin-bottom: .9rem; }
 .hero__actions { display: flex; flex-wrap: wrap; gap: .75rem; }
 .hero__visual {
   position: relative; aspect-ratio: 4/5; border-radius: var(--radius-lg);
-  overflow: hidden;
+  overflow: hidden; isolation: isolate;
   background: center/cover no-repeat #1a1270 url("../assets/home1.jpg");
-  box-shadow: var(--shadow-lg);
+  /* zachte blauwe gloed rond het kader */
+  box-shadow: var(--shadow-lg), 0 0 90px -16px rgba(83, 139, 221, .55);
 }
-/* roulerende achtergrondlagen (crossfade) */
+/* roulerende achtergrondlagen (crossfade) — licht ontkleurd voor de duotone */
 .hero__slide {
   position: absolute; inset: 0; z-index: 1;
   background-size: cover; background-position: center; background-repeat: no-repeat;
   opacity: 0; transition: opacity 1.2s ease;
+  filter: grayscale(.45) contrast(1.05) brightness(.97);
 }
 .hero__slide.is-active { opacity: 1; }
+/* blauwe duotone-tint over de foto's (houdt de helderheid, kleurt naar indigo) */
 .hero__visual::before {
   content: ""; position: absolute; inset: 0; z-index: 2; border-radius: inherit;
-  background: linear-gradient(180deg, transparent 50%, rgba(21,15,94,.55));
+  background: linear-gradient(150deg, #2a1fae 0%, #1f1683 55%, #0f8a66 100%);
+  mix-blend-mode: color; opacity: .72; pointer-events: none;
+}
+/* subtiele verdonkering onderaan voor diepte + leesbaarheid van de chip */
+.hero__visual::after {
+  content: ""; position: absolute; inset: 0; z-index: 2; border-radius: inherit;
+  background: linear-gradient(180deg, transparent 55%, rgba(13, 10, 58, .55));
+  pointer-events: none;
 }
 .hero__chip {
   position: absolute; left: 1rem; bottom: 1rem; right: 1rem; z-index: 3;
