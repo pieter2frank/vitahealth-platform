@@ -1,14 +1,20 @@
 <!DOCTYPE html>
 <html lang="nl">
 <head>
-  <!-- Google tag (gtag.js) -->
-  <script async src="https://www.googletagmanager.com/gtag/js?id=G-8GWRZRH9M2"></script>
+  <!-- Google tag (gtag.js) — laadt pas na cookietoestemming -->
   <script>
     window.dataLayer = window.dataLayer || [];
-    function gtag(){dataLayer.push(arguments);}
-    gtag('js', new Date());
-
-    gtag('config', 'G-8GWRZRH9M2');
+    function gtag(){ dataLayer.push(arguments); }
+    window.loadGoogleAnalytics = function () {
+      if (window.__gaLoaded) return; window.__gaLoaded = true;
+      var s = document.createElement('script');
+      s.async = true;
+      s.src = 'https://www.googletagmanager.com/gtag/js?id=G-8GWRZRH9M2';
+      document.head.appendChild(s);
+      gtag('js', new Date());
+      gtag('config', 'G-8GWRZRH9M2');
+    };
+    try { if (localStorage.getItem('vh-cookie-consent') === 'accepted') window.loadGoogleAnalytics(); } catch (e) {}
   </script>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -99,8 +105,8 @@
     <div class="container">
       <div class="grid-2" style="align-items:center">
         <div>
-          <h2>Signalen die een verhaal vormen</h2>
-          <p class="muted">In elke cel, in je bloedbaan, geeft je lichaam voortdurend signalen af. Signalen die samen een verhaal vormen over jouw veroudering, jouw veerkracht, jouw risico's. Dankzij moderne moleculaire biomarkers kunnen we dat verhaal lezen.</p>
+          <h2>Signalen die een verhaal vertellen</h2>
+          <p class="muted">In elke cel, in je bloedbaan, geeft je lichaam voortdurend signalen af. Signalen die samen een verhaal vertellen over jouw veroudering, jouw veerkracht, jouw risico's. Dankzij moderne moleculaire biomarkers kunnen we dat verhaal lezen.</p>
           <p class="muted">Deze biomarkers meten de onderliggende fysiologische staat van je lichaam — de mate van algemene gezondheid, soms ook <strong>"metabole leeftijd"</strong> genoemd. En die zegt veel meer dan je kalenderleeftijd.</p>
           <p style="font-weight:700;color:var(--ink);font-size:1.1rem;margin-top:1rem">Kalenderleeftijd is te grof — metabole leeftijd is onderscheidend.</p>
         </div>
