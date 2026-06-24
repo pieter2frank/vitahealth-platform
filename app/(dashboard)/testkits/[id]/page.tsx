@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { formatDate, formatDateTime, STATUS_LABELS, STATUS_COLORS } from '@/lib/utils'
 import { ArrowLeft, TestTube2, User, Building2, Stethoscope, CheckCircle2, Circle } from 'lucide-react'
 import { StatusActions } from './StatusActions'
+import { KitNotes } from './KitNotes'
 import { DeleteButton } from '@/components/ui/DeleteButton'
 import type { Client, Company, Arbo } from '@/types'
 
@@ -103,8 +104,9 @@ export default async function TestkitDetailPage({
       </div>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-        {/* Toewijzing */}
-        <div className="lg:col-span-1 rounded-xl border border-[#e2e8f0] bg-white p-5 shadow-sm">
+        {/* Toewijzing + opmerkingen */}
+        <div className="lg:col-span-1 space-y-4">
+          <div className="rounded-xl border border-[#e2e8f0] bg-white p-5 shadow-sm">
           <h2 className="text-sm font-semibold text-[#1e293b] mb-4">Toegewezen aan</h2>
           {assignedTo ? (
             <Link
@@ -167,6 +169,9 @@ export default async function TestkitDetailPage({
               </div>
             )}
           </div>
+          </div>
+
+          <KitNotes kitId={kit.id} initialNotes={kit.notes ?? null} />
         </div>
 
         {/* Timeline + acties */}

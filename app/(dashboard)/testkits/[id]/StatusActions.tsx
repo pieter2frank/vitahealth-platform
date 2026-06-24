@@ -285,8 +285,11 @@ export function StatusActions({ kit, clientAddress, returnAddressConfigured }: P
       {kit.status === 'assigned' && (() => {
         // Versturen mag pas nadat de arts de intake heeft goedgekeurd.
         // (Geldt voor cliënten; kits voor bedrijf/arbo hebben geen intake.)
+        // Ook goed als de cliënt al verder is in het traject — denk aan een
+        // vervangkit na een mislukte afname (status dan bv. 'kit_opgestuurd').
         const needsApproval = !!kit.assignedClientId
-        const approved = kit.clientStatus === 'intake_akkoord'
+        const APPROVED_STATUSES = ['intake_akkoord', 'kit_opgestuurd', 'kit_retour', 'uitslag_bekend', 'uitslag_besproken']
+        const approved = APPROVED_STATUSES.includes(kit.clientStatus ?? '')
 
         if (needsApproval && !approved) {
           return (
