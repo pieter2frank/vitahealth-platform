@@ -125,4 +125,41 @@
     bar.querySelector('[data-cc="accept"]').addEventListener('click', function () { finish('accepted'); });
     bar.querySelector('[data-cc="decline"]').addEventListener('click', function () { finish('declined'); });
   })();
+
+  // ── Lightbox: klikbare afbeeldingen ([data-full]) openen in een modal ────────
+  (function initLightbox() {
+    var triggers = document.querySelectorAll('[data-full]');
+    if (!triggers.length) return;
+
+    var box = document.createElement('div');
+    box.className = 'lightbox';
+    box.setAttribute('role', 'dialog');
+    box.setAttribute('aria-modal', 'true');
+    box.innerHTML = '<button type="button" class="lightbox__close" aria-label="Sluiten">&times;</button><img alt="">';
+    document.body.appendChild(box);
+
+    var img = box.querySelector('img');
+    var closeBtn = box.querySelector('.lightbox__close');
+
+    function open(src, alt) {
+      img.src = src; img.alt = alt || '';
+      box.classList.add('is-open');
+      document.body.style.overflow = 'hidden';
+    }
+    function close() {
+      box.classList.remove('is-open');
+      document.body.style.overflow = '';
+      setTimeout(function () { img.src = ''; }, 200);
+    }
+
+    triggers.forEach(function (t) {
+      t.addEventListener('click', function () {
+        var inner = t.querySelector('img');
+        open(t.getAttribute('data-full'), inner ? inner.alt : '');
+      });
+    });
+    box.addEventListener('click', function (e) { if (e.target === box) close(); });
+    closeBtn.addEventListener('click', close);
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape') close(); });
+  })();
 })();
