@@ -3,7 +3,9 @@
 // vastlegging van de verklaring server-side (zodat de opgeslagen tekst exact
 // overeenkomt met wat de deelnemer te zien kreeg).
 
-export const SCREENER_VERSION = 1
+// v2: bloedverdunners/antistolling verwijderd — volgens Nightingale geen
+// uitsluiting (alleen praktische aandachtspunten bij de vingerprik).
+export const SCREENER_VERSION = 2
 
 export const SCREENER_INTRO =
   'De bloedafnamekit is niet voor iedereen geschikt. U kunt mogelijk niet deelnemen als u:'
@@ -12,7 +14,6 @@ export const SCREENER_CRITERIA: string[] = [
   'jonger bent dan 18 jaar;',
   'zwanger bent of borstvoeding geeft;',
   'een bloedingsstoornis heeft (zoals hemofilie of een vergelijkbare aandoening);',
-  'bloedverdunners of antistollingsmedicatie gebruikt;',
   'bekend bent met ernstige bloedarmoede;',
   'in de afgelopen drie maanden een bloedtransfusie heeft gehad;',
   'in de afgelopen drie maanden een operatie heeft ondergaan;',
