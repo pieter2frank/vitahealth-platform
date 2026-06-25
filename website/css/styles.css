@@ -367,6 +367,10 @@ p { margin-bottom: .9rem; }
 .media-thumb:hover { box-shadow: var(--shadow); transform: translateY(-3px); border-color: var(--brand-50); }
 .media-thumb:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
 .media-thumb img { display: block; width: 100%; height: auto; }
+
+/* 2-koloms variant voor twee figuren naast elkaar */
+.figure-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.25rem; max-width: 58rem; margin: 2.2rem auto 0; }
+@media (max-width: 760px) { .figure-grid { grid-template-columns: 1fr; max-width: 28rem; } }
 .media-thumb__cap { display: block; padding: .6rem .8rem; font-size: .85rem; font-weight: 600; color: var(--brand); text-align: center; }
 
 .lightbox {
