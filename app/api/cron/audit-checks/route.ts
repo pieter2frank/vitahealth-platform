@@ -10,16 +10,19 @@
 
 import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { isCronAuthorized } from '@/lib/cron'
 
 export async function GET(req: Request) {
-  const secret = req.headers.get('x-cron-secret')
-  if (!secret || secret !== process.env.CRON_SECRET) {
+  // Cron-geheim via x-cron-secret of Authorization: Bearer.
+  if (!isCronAuthorized(req)) {
     return NextResponse.json({ error: 'Niet geautoriseerd.' }, { status: 401 })
   }
 
   const admin = createAdminClient()
 
-  const { data, error } = await admin.rpc('run_all_checks', {}, { schema: 'audit' } as object)
+  // public.run_all_checks() is een wrapper rond audit.run_all_checks()
+  // (zie migratie 051) — PostgREST serveert alleen het public-schema.
+  const { data, error } = await admin.rpc('run_all_checks')
 
   if (error) {
     console.error('[cron/audit-checks] Fout:', error)

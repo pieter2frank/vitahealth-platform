@@ -2,6 +2,7 @@ import { Resend } from 'resend'
 import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { dagelijkseActiesEmail } from '@/lib/email/templates'
+import { isCronAuthorized } from '@/lib/cron'
 
 // Dagelijkse digest met openstaande acties. Wordt aangeroepen door een planner
 // (bijv. Vercel Cron) met header `Authorization: Bearer <CRON_SECRET>`.
@@ -13,9 +14,8 @@ const resend = new Resend(process.env.RESEND_API_KEY)
 const DEFAULT_DIGEST_EMAIL = 'info@dokterchantalle.nl'
 
 export async function GET(req: Request) {
-  // Beveiliging: alleen aanroepbaar met het juiste cron-geheim.
-  const secret = process.env.CRON_SECRET
-  if (!secret || req.headers.get('authorization') !== `Bearer ${secret}`) {
+  // Beveiliging: cron-geheim via x-cron-secret of Authorization: Bearer.
+  if (!isCronAuthorized(req)) {
     return NextResponse.json({ error: 'Niet geautoriseerd.' }, { status: 401 })
   }
 
