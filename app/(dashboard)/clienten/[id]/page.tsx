@@ -11,6 +11,7 @@ import { DeleteButton } from '@/components/ui/DeleteButton'
 import { ClientQuestionnaireSection } from './ClientQuestionnaireSection'
 import { ClientNotesSection } from './ClientNotesSection'
 import { ClientDocumentsSection } from './ClientDocumentsSection'
+import { ReportSection } from './ReportSection'
 import { EnrollmentStatusSection } from './EnrollmentStatusSection'
 import { CopyIntakeLink } from './CopyIntakeLink'
 import { ReminderButton } from './ReminderButton'
@@ -64,6 +65,8 @@ export default async function ClientDetailPage({
     { data: clientNote },
     { data: clientDocuments },
     { data: screenerResp },
+    { data: reportsRaw },
+    { data: biomarkerRefs },
   ] = await Promise.all([
     supabase
       .from('vh_testkit')
@@ -97,6 +100,14 @@ export default async function ClientDetailPage({
       .order('created_at', { ascending: false })
       .limit(1)
       .maybeSingle(),
+    supabase
+      .from('vh_report')
+      .select('id, sample_id, sample_date, metabolic_age, resilience_score, resilience_percentile, resilience_category, parse_status, vh_report_disease_risk(disease, result_category, risk_current_pct, risk_age70_pct), vh_report_biomarker(marker_code, value, unit, ref_optimal, association)')
+      .eq('client_id', id)
+      .order('sample_date', { ascending: false }),
+    supabase
+      .from('vh_biomarker_ref')
+      .select('code, display_name, unit, marker_group, direction, sort_order'),
   ])
 
   const questionnaireAssignments = (qaRaw ?? []).map(a => ({
@@ -297,6 +308,12 @@ export default async function ClientDetailPage({
       <ClientDocumentsSection
         clientId={client.id}
         initialDocuments={clientDocuments ?? []}
+      />
+
+      {/* ── Uitgelezen rapportgegevens — alleen arts/leefstijlarts ───────────── */}
+      <ReportSection
+        reports={reportsRaw ?? []}
+        refs={biomarkerRefs ?? []}
       />
 
       {/* ── Aantekeningen arts — alleen arts/leefstijlarts ──────────────────── */}

@@ -1,5 +1,6 @@
 'use client'
 import { useState, useRef } from 'react'
+import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { FileText, Trash2, ExternalLink, Loader2, AlertTriangle, ShieldCheck, ScanLine } from 'lucide-react'
 import { formatDateTime } from '@/lib/utils'
@@ -44,6 +45,7 @@ function isValidPdf(file: File): boolean {
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export function ClientDocumentsSection({ clientId, initialDocuments }: Props) {
+  const router = useRouter()
   const { name, email, role } = useUser()
   const [documents, setDocuments]   = useState<Document[]>(initialDocuments)
   const [uploading, setUploading]   = useState<UploadItem[]>([])
@@ -131,6 +133,8 @@ export function ClientDocumentsSection({ clientId, initialDocuments }: Props) {
 
       setDocuments(prev => [doc as Document, ...prev])
       setUploading(prev => prev.filter(u => u.tempId !== item.tempId))
+      // Probeer het rapport automatisch uit te lezen (stil: niet-herkende PDF's negeren).
+      void handleParse(doc as Document, true)
     }
   }
 
@@ -181,9 +185,9 @@ export function ClientDocumentsSection({ clientId, initialDocuments }: Props) {
 
   // ─── Rapport uitlezen → gestructureerde data (review-status) ─────────────────
 
-  async function handleParse(doc: Document) {
+  async function handleParse(doc: Document, silent = false) {
     setParsingId(doc.id)
-    setGlobalError('')
+    if (!silent) setGlobalError('')
     try {
       const res = await fetch('/api/reports/parse', {
         method:  'POST',
@@ -192,16 +196,18 @@ export function ClientDocumentsSection({ clientId, initialDocuments }: Props) {
       })
       const data = await res.json().catch(() => ({}))
       if (!res.ok || !data.ok) {
-        setGlobalError(data.error || 'Uitlezen is mislukt.')
+        // Bij automatisch uitlezen na upload: een niet-herkend PDF stil negeren.
+        if (!silent) setGlobalError(data.error || 'Uitlezen is mislukt.')
       } else {
         const s = data.summary
         setParsedInfo(prev => ({
           ...prev,
           [doc.id]: `${s.biomarkers} markers · ${s.diseases} risico's · score ${s.resilienceScore ?? '?'} — controleer`,
         }))
+        router.refresh()   // toont/ververst het reviewscherm met de uitgelezen waarden
       }
     } catch {
-      setGlobalError('Er ging iets mis bij het uitlezen.')
+      if (!silent) setGlobalError('Er ging iets mis bij het uitlezen.')
     } finally {
       setParsingId(null)
     }
