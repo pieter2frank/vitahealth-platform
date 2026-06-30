@@ -1,7 +1,7 @@
 'use client'
 import { useState, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { FileText, Trash2, ExternalLink, Loader2, AlertTriangle } from 'lucide-react'
+import { FileText, Trash2, ExternalLink, Loader2, AlertTriangle, ShieldCheck } from 'lucide-react'
 import { formatDateTime } from '@/lib/utils'
 import { useUser } from '@/components/providers/UserProvider'
 import { canSeeResults } from '@/lib/auth/roles'
@@ -49,6 +49,9 @@ export function ClientDocumentsSection({ clientId, initialDocuments }: Props) {
   const [uploading, setUploading]   = useState<UploadItem[]>([])
   const [dragging, setDragging]     = useState(false)
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null)
+  const [confirmSend, setConfirmSend] = useState<string | null>(null)
+  const [sendingId, setSendingId]     = useState<string | null>(null)
+  const [sentIds, setSentIds]         = useState<string[]>([])
   const [globalError, setGlobalError] = useState('')
   const inputRef = useRef<HTMLInputElement>(null)
 
@@ -149,6 +152,31 @@ export function ClientDocumentsSection({ clientId, initialDocuments }: Props) {
     setConfirmDelete(null)
   }
 
+  // ─── Beveiligd versturen naar de cliënt (via bezorg-provider + auditlog) ─────
+
+  async function handleSendSecure(doc: Document) {
+    setConfirmSend(null)
+    setSendingId(doc.id)
+    setGlobalError('')
+    try {
+      const res = await fetch('/api/reports/send', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ documentId: doc.id }),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok || !data.ok) {
+        setGlobalError(data.error || 'Beveiligd versturen is mislukt.')
+      } else {
+        setSentIds(prev => [...prev, doc.id])
+      }
+    } catch {
+      setGlobalError('Er ging iets mis bij het beveiligd versturen.')
+    } finally {
+      setSendingId(null)
+    }
+  }
+
   // ─── Drag & drop handlers ──────────────────────────────────────────────────
 
   function onDragOver(e: React.DragEvent)  { e.preventDefault(); setDragging(true)  }
@@ -240,8 +268,29 @@ export function ClientDocumentsSection({ clientId, initialDocuments }: Props) {
                         <button onClick={() => handleDelete(doc)} className="font-semibold text-red-600 hover:text-red-700">Ja</button>
                         <button onClick={() => setConfirmDelete(null)} className="text-[#64748b] hover:text-[#1e293b]">Nee</button>
                       </div>
+                    ) : confirmSend === doc.id ? (
+                      <div className="flex items-center gap-2 text-xs">
+                        <span className="text-[#64748b]">Beveiligd naar cliënt versturen?</span>
+                        <button onClick={() => handleSendSecure(doc)} className="font-semibold text-[#1f1683] hover:text-[#1a1270]">Ja</button>
+                        <button onClick={() => setConfirmSend(null)} className="text-[#64748b] hover:text-[#1e293b]">Nee</button>
+                      </div>
                     ) : (
                       <>
+                        {sentIds.includes(doc.id) && (
+                          <span className="inline-flex items-center gap-1 text-xs text-emerald-600 mr-1">
+                            <ShieldCheck size={13} /> Verstuurd
+                          </span>
+                        )}
+                        <button
+                          onClick={() => setConfirmSend(doc.id)}
+                          disabled={sendingId === doc.id}
+                          title="Beveiligd versturen naar cliënt"
+                          className="p-1.5 rounded-lg text-[#64748b] hover:text-[#1f1683] hover:bg-[#eef4ff] transition-colors disabled:opacity-50"
+                        >
+                          {sendingId === doc.id
+                            ? <Loader2 size={14} className="animate-spin" />
+                            : <ShieldCheck size={14} />}
+                        </button>
                         <button
                           onClick={() => handleDownload(doc)}
                           title="Openen"
