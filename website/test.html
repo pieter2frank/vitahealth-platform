@@ -27,21 +27,27 @@
   <link rel="icon" href="favicon.ico" sizes="any" />
   <link rel="stylesheet" href="css/styles.css" />
   <style>
-    .proc { max-width: 46rem; margin: 2.5rem auto 0; display: grid; gap: 1.1rem; text-align: left; }
-    .proc-card { background: #fff; border: 1px solid var(--line); border-radius: var(--radius-lg); padding: 1.5rem 1.7rem; box-shadow: var(--shadow-sm); }
-    .proc-card__head { display: flex; align-items: center; gap: .9rem; margin-bottom: .7rem; }
-    .proc-card__ic { width: 44px; height: 44px; flex-shrink: 0; border-radius: 12px; background: var(--brand-50); color: var(--brand); display: grid; place-items: center; }
-    .proc-card__ic svg { width: 22px; height: 22px; }
-    .proc-card h3 { margin: 0; font-size: 1.15rem; }
-    .proc-card p { color: var(--muted); margin: 0 0 .6rem; }
-    .proc-card p:last-child { margin-bottom: 0; }
-    .proc-card ul { margin: .4rem 0 0 1.15rem; color: var(--muted); display: grid; gap: .3rem; }
-    .proc-card__price { font-size: 1.7rem; font-weight: 800; color: var(--ink); }
-    .proc-card--price { border-color: #b8efdd; background: var(--accent-50); }
-    .proc-card--price .proc-card__ic { background: var(--accent); color: #06281f; }
-    .proc-card--warn { border-color: #fed7aa; background: #fff7ed; }
-    .proc-card--warn .proc-card__ic { background: #ffedd5; color: #c2410c; }
-    .proc-note { max-width: 46rem; margin: 1.4rem auto 0; text-align: left; }
+    /* compacter: minder verticale ruimte tussen de blokken op deze pagina */
+    .section { padding-top: clamp(2.25rem, 4vw, 3.25rem); padding-bottom: clamp(2.25rem, 4vw, 3.25rem); }
+    .section .lead { margin-left: auto; margin-right: auto; margin-bottom: 0; }
+    /* genummerde processtappen — zelfde stijl-taal als de andere pagina's */
+    .steps { max-width: 46rem; margin: 1.6rem auto 0; display: grid; gap: 1rem; text-align: left; }
+    .step { display: flex; gap: 1.2rem; align-items: flex-start; background: #fff; border: 1px solid var(--line); border-radius: var(--radius-lg); padding: 1.6rem 1.8rem; box-shadow: var(--shadow-sm); }
+    .step__n { flex-shrink: 0; width: 40px; height: 40px; border-radius: 12px; background: var(--brand); color: #fff; display: grid; place-items: center; font-weight: 800; font-size: 1.05rem; }
+    .step__body { min-width: 0; }
+    .step__body h3 { margin: .15rem 0 .5rem; font-size: 1.15rem; }
+    .step__body p { color: var(--muted); margin: 0 0 .6rem; }
+    .step__body p:last-child { margin-bottom: 0; }
+    /* opvallende prijskaart */
+    .price-card { max-width: 46rem; margin: 1.4rem auto 0; text-align: left; background: var(--accent-50); border: 1px solid #b8efdd; border-radius: var(--radius-lg); padding: 1.6rem 1.8rem; box-shadow: var(--shadow-sm); }
+    .price-card__amount { font-size: 2.4rem; font-weight: 800; color: var(--ink); line-height: 1; }
+    .price-card__amount span { font-size: 1rem; font-weight: 600; color: var(--muted); }
+    .price-card p { color: var(--ink-soft); margin: .8rem 0 0; }
+    /* uitsluitingsblok met amber-accent */
+    .exclude-card { max-width: 46rem; margin: 1.4rem auto 0; text-align: left; background: #fff7ed; border: 1px solid #fed7aa; border-left: 4px solid #fb923c; border-radius: 0 var(--radius-lg) var(--radius-lg) 0; padding: 1.6rem 1.8rem; }
+    .exclude-card p { color: var(--ink-soft); margin: 0 0 .8rem; }
+    .exclude-card ul { margin: 0 0 .8rem 1.15rem; color: var(--muted); display: grid; gap: .35rem; }
+    .exclude-card p:last-child { margin-bottom: 0; }
   </style>
 </head>
 <body>
@@ -72,101 +78,113 @@
     </div>
   </section>
 
-  <!-- ===== Zo werkt het ===== -->
+  <!-- ===== Intro ===== -->
   <section class="section">
     <div class="container center">
       <span class="eyebrow"><span class="dot"></span> Zo werkt het</span>
       <h2>Van intake tot begeleiding</h2>
       <p class="lead">We nemen je stap voor stap mee door het hele traject: de digitale intake, de bloedafname thuis en de persoonlijke terugkoppeling. Zo weet je precies wat we doen en waar je rekening mee moet houden.</p>
 
-      <div class="card card--soft proc-note">
-        <p class="muted mb-0">We starten in <strong>september 2026</strong> met de metingen. Meld je nu aan, dan zetten we je op de wachtlijst en ontvang je in september een uitnodiging voor de digitale intake.</p>
+      <div class="card card--soft" style="max-width:46rem;margin:1.4rem auto 0;text-align:left">
+        <p class="muted">We starten in <strong>september 2026</strong> met de metingen. Meld je nu aan, dan zetten we je op de wachtlijst en ontvang je in september een uitnodiging voor de digitale intake.</p>
+        <p style="margin:.8rem 0 0"><a href="#aanmelden" style="color:var(--brand);font-weight:700">Naar het aanmeldformulier →</a></p>
       </div>
+    </div>
+  </section>
 
-      <div class="proc">
+  <!-- ===== Kosten ===== -->
+  <section class="section section--soft">
+    <div class="container center">
+      <span class="eyebrow"><span class="dot"></span> Kosten</span>
+      <h2>Wat kost het?</h2>
+      <div class="price-card">
+        <div class="price-card__amount">€ 240,– <span>incl. btw</span></div>
+        <p>Voor de intake, de bloedtest én de persoonlijke terugkoppeling samen. Je betaalt pas ná de digitale intake — dus niet bij je aanmelding. Blijkt uit de beoordeling dat afname voor jou niet mogelijk is, dan betaal je niets.</p>
+      </div>
+    </div>
+  </section>
 
-        <!-- Kosten -->
-        <div class="proc-card proc-card--price">
-          <div class="proc-card__head">
-            <span class="proc-card__ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg></span>
-            <h3>Wat kost het?</h3>
-          </div>
-          <p class="proc-card__price">€ 240,– <span style="font-size:1rem;font-weight:600;color:var(--muted)">incl. btw</span></p>
-          <p>Voor de intake, de bloedtest én de persoonlijke terugkoppeling samen. Je betaalt pas ná de digitale intake — dus niet bij je aanmelding. Blijkt uit de beoordeling dat afname voor jou niet mogelijk is, dan betaal je niets.</p>
-        </div>
+  <!-- ===== Het proces in 3 stappen ===== -->
+  <section class="section">
+    <div class="container center">
+      <span class="eyebrow"><span class="dot"></span> Het proces</span>
+      <h2>In drie stappen</h2>
+      <p class="lead">Van de digitale intake tot een persoonlijk gesprek over je uitslag.</p>
 
-        <!-- Digitale intake -->
-        <div class="proc-card">
-          <div class="proc-card__head">
-            <span class="proc-card__ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="13" y2="17"/></svg></span>
+      <div class="steps">
+        <!-- 1. Digitale intake -->
+        <div class="step">
+          <span class="step__n">1</span>
+          <div class="step__body">
             <h3>Digitale intake</h3>
+            <p>Je begint met een digitale intake. Je vult je naam- en adresgegevens in en geeft toestemming voor de analyse van je bloedmonster.</p>
+            <p>Daarna doorloop je een korte vragenlijst — die kost ongeveer 10 minuten — over je gezondheid en leefstijl. Denk aan je medische achtergrond en medicijngebruik, en aan beweging, voeding, slaap, stress en je persoonlijke doelen.</p>
+            <p>Een arts beoordeelt op basis van je antwoorden of de afname veilig en met succes kan plaatsvinden. Pas daarna gaat het proces verder.</p>
           </div>
-          <p>Je begint met een digitale intake. Je vult je naam- en adresgegevens in en geeft toestemming voor de analyse van je bloedmonster.</p>
-          <p>Daarna doorloop je een korte vragenlijst — die kost ongeveer 10 minuten — over je gezondheid en leefstijl. Denk aan je medische achtergrond en medicijngebruik, en aan beweging, voeding, slaap, stress en je persoonlijke doelen.</p>
-          <p>Een arts beoordeelt op basis van je antwoorden of de afname veilig en met succes kan plaatsvinden. Pas daarna gaat het proces verder.</p>
         </div>
 
-        <!-- Wanneer geen afname -->
-        <div class="proc-card proc-card--warn">
-          <div class="proc-card__head">
-            <span class="proc-card__ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></span>
-            <h3>Wanneer is afname niet mogelijk?</h3>
-          </div>
-          <p>De vingerprik-bloedafname is niet voor iedereen geschikt. Je kunt mogelijk niet deelnemen als je:</p>
-          <ul>
-            <li>jonger bent dan 18 jaar;</li>
-            <li>zwanger bent of borstvoeding geeft;</li>
-            <li>een bloedingsstoornis hebt (zoals hemofilie of een vergelijkbare aandoening);</li>
-            <li>bekend bent met ernstige bloedarmoede;</li>
-            <li>in de afgelopen drie maanden een bloedtransfusie hebt gehad;</li>
-            <li>in de afgelopen drie maanden een operatie hebt ondergaan;</li>
-            <li>op het moment van afname koorts of een actieve infectie hebt;</li>
-            <li>twijfelt of vingerprikafname voor jou veilig is.</li>
-          </ul>
-          <p style="margin-top:.7rem">Twijfel je? Geef het aan in de intake — de arts kijkt met je mee.</p>
-        </div>
-
-        <!-- Bloedtest -->
-        <div class="proc-card">
-          <div class="proc-card__head">
-            <span class="proc-card__ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg></span>
+        <!-- 2. Bloedtest -->
+        <div class="step">
+          <span class="step__n">2</span>
+          <div class="step__body">
             <h3>Bloedtest met een vingerprik</h3>
-          </div>
-          <p>Na goedkeuring sturen we je de bloedafnamekit thuis. Met een klein vingerprikje neem je zelf een paar druppels bloed af — eenvoudig, met duidelijke instructies in de kit en zonder ziekenhuisbezoek.</p>
-          <p>Je stuurt het monster terug met het bijgevoegde, voorgefrankeerde retourlabel. De verzending is dus al voor je geregeld.</p>
-          <p>Na ontvangst van je monster duurt het ongeveer 2 tot 3 weken om je bloed te analyseren en je persoonlijke rapportage op te stellen.</p>
-          <div class="figure-grid" style="margin-top:1.2rem">
-            <button type="button" class="media-thumb" data-full="assets/blood_sample_kit.jpg">
-              <img src="assets/blood_sample_kit.jpg" alt="De bloedafnamekit" loading="lazy" />
-            </button>
-            <button type="button" class="media-thumb" data-full="assets/blood_sample_kit2.jpg">
-              <img src="assets/blood_sample_kit2.jpg" alt="Bloedafname met een vingerprik" loading="lazy" />
-            </button>
+            <p>Na goedkeuring sturen we je de bloedafnamekit thuis. Met een klein vingerprikje neem je zelf een paar druppels bloed af — eenvoudig, met duidelijke instructies in de kit en zonder ziekenhuisbezoek.</p>
+            <p>Je stuurt het monster terug met het bijgevoegde, voorgefrankeerde retourlabel. De verzending is dus al voor je geregeld.</p>
+            <p>Na ontvangst van je monster duurt het ongeveer 2 tot 3 weken om je bloed te analyseren en je persoonlijke rapportage op te stellen.</p>
+            <div class="figure-grid" style="margin-top:1.2rem">
+              <button type="button" class="media-thumb" data-full="assets/blood_sample_kit.jpg">
+                <img src="assets/blood_sample_kit.jpg" alt="De bloedafnamekit" loading="lazy" />
+              </button>
+              <button type="button" class="media-thumb" data-full="assets/blood_sample_kit2.jpg">
+                <img src="assets/blood_sample_kit2.jpg" alt="Bloedafname met een vingerprik" loading="lazy" />
+              </button>
+            </div>
           </div>
         </div>
 
-        <!-- Uitslag bespreken -->
-        <div class="proc-card">
-          <div class="proc-card__head">
-            <span class="proc-card__ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span>
+        <!-- 3. Uitslag bespreken -->
+        <div class="step">
+          <span class="step__n">3</span>
+          <div class="step__body">
             <h3>Uitslag bespreken</h3>
+            <p>Zodra je resultaten binnen zijn, bespreken we ze in een kort persoonlijk gesprek. Je krijgt uitleg bij je profiel en concrete tips om mee aan de slag te gaan.</p>
+            <p>En het belangrijkste: je biologische gezondheid ligt niet vast. Anders dan je genen reageren biomarkers op leefstijl — verbetering is dus mogelijk. We vertellen je graag waar je je het beste op kunt richten en hoe wij je daarbij kunnen ondersteunen, met aanwijzingen die je zelf kunt toepassen of via een vervolgprogramma.</p>
           </div>
-          <p>Zodra je resultaten binnen zijn, bespreken we ze in een kort persoonlijk gesprek. Je krijgt uitleg bij je profiel en concrete tips om mee aan de slag te gaan.</p>
-          <p>En het belangrijkste: je biologische gezondheid ligt niet vast. Anders dan je genen reageren biomarkers op leefstijl — verbetering is dus mogelijk. We vertellen je graag waar je je het beste op kunt richten en hoe wij je daarbij kunnen ondersteunen, met aanwijzingen die je zelf kunt toepassen of via een vervolgprogramma.</p>
         </div>
+      </div>
+    </div>
+  </section>
 
+  <!-- ===== Wanneer is afname niet mogelijk? ===== -->
+  <section class="section section--soft">
+    <div class="container center">
+      <span class="eyebrow"><span class="dot"></span> Goed om te weten</span>
+      <h2>Wanneer is afname niet mogelijk?</h2>
+      <div class="exclude-card">
+        <p>De vingerprik-bloedafname is niet voor iedereen geschikt. Je kunt mogelijk niet deelnemen als je:</p>
+        <ul>
+          <li>jonger bent dan 18 jaar;</li>
+          <li>zwanger bent of borstvoeding geeft;</li>
+          <li>een bloedingsstoornis hebt (zoals hemofilie of een vergelijkbare aandoening);</li>
+          <li>bekend bent met ernstige bloedarmoede;</li>
+          <li>in de afgelopen drie maanden een bloedtransfusie hebt gehad;</li>
+          <li>in de afgelopen drie maanden een operatie hebt ondergaan;</li>
+          <li>op het moment van afname koorts of een actieve infectie hebt;</li>
+          <li>twijfelt of vingerprikafname voor jou veilig is.</li>
+        </ul>
+        <p>Twijfel je? Geef het aan in de intake — de arts kijkt met je mee.</p>
       </div>
     </div>
   </section>
 
   <!-- ===== Aanmeldformulier ===== -->
-  <section class="section section--soft">
-    <div class="container center" style="max-width:42rem">
+  <section class="section" id="aanmelden" style="scroll-margin-top:90px">
+    <div class="container center">
       <span class="eyebrow"><span class="dot"></span> Aanmelden</span>
       <h2>Meld je aan voor de test</h2>
       <p class="lead">Vul je gegevens in, dan nemen we contact met je op over de vervolgstappen.</p>
 
-      <div class="form-card" style="margin-top:2rem;text-align:left">
+      <div class="form-card" style="max-width:46rem;margin:2rem auto 0;text-align:left">
         <div class="form-success">Bedankt voor je interesse! We nemen zo snel mogelijk contact met u op over de vervolgstappen.</div>
         <div class="form-error"></div>
         <form action="send-test.php" method="post" data-ajax>
