@@ -1,12 +1,13 @@
 import { createClient } from '@/lib/supabase/server'
-import { Settings, PackageOpen } from 'lucide-react'
+import { Settings, PackageOpen, Mail } from 'lucide-react'
 import { SettingsForm } from './SettingsForm'
 import { RetourAdresForm, type RetourAdres } from './RetourAdresForm'
+import { DigestEmailForm } from './DigestEmailForm'
 
 export default async function InstellingenPage() {
   const supabase = await createClient()
 
-  const [{ data: questionnaires }, { data: setting }, { data: retourSetting }] = await Promise.all([
+  const [{ data: questionnaires }, { data: setting }, { data: retourSetting }, { data: digestSetting }] = await Promise.all([
     supabase
       .from('vh_questionnaire')
       .select('id, title')
@@ -21,6 +22,11 @@ export default async function InstellingenPage() {
       .from('vh_setting')
       .select('value')
       .eq('key', 'retour_adres')
+      .maybeSingle(),
+    supabase
+      .from('vh_setting')
+      .select('value')
+      .eq('key', 'daily_digest_email')
       .maybeSingle(),
   ])
 
@@ -62,6 +68,20 @@ export default async function InstellingenPage() {
           De cliënt plakt dit label op de retourzending.
         </p>
         <RetourAdresForm current={retourAdres} />
+      </div>
+
+      {/* Dagelijkse actie-mail */}
+      <div className="rounded-xl border border-[#e2e8f0] bg-white p-6 shadow-sm mt-6">
+        <h2 className="text-sm font-semibold text-[#1e293b] mb-1 flex items-center gap-2">
+          <Mail size={15} className="text-[#94a3b8]" />
+          Dagelijkse actie-mail
+        </h2>
+        <p className="text-xs text-[#94a3b8] mb-5">
+          Elke ochtend ontvangt dit adres een overzicht van openstaande acties — ingevulde
+          vragenlijsten die de arts moet beoordelen en binnengekomen uitslagen die besproken
+          moeten worden. De mail wordt alleen verstuurd als er daadwerkelijk acties openstaan.
+        </p>
+        <DigestEmailForm current={digestSetting?.value ?? null} />
       </div>
     </div>
   )

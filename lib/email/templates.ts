@@ -443,3 +443,29 @@ export function reminderEmail(opts: {
     html: shell('Nog even afmaken', body),
   }
 }
+
+// ─── Dagelijkse actie-mail (interne digest) ───────────────────────────────────
+
+export function dagelijkseActiesEmail(opts: {
+  nIntake: number
+  nResults: number
+  dashboardUrl: string
+}): { subject: string; html: string } {
+  const total = opts.nIntake + opts.nResults
+
+  const body = `
+    ${p('Goedemorgen,')}
+    ${p('Er staan acties klaar in het Vita Health platform.')}
+    ${p('<strong style="color:#1e293b;">Openstaande acties:</strong>')}
+    <ul style="margin:0 0 8px;padding-left:20px;color:#475569;font-size:14px;line-height:1.9;">
+      <li>er zijn <strong style="color:#1e293b;">${opts.nIntake}</strong> cli&euml;nten die de vragenlijst hebben ingevuld</li>
+      <li>er zijn <strong style="color:#1e293b;">${opts.nResults}</strong> uitslagen binnen</li>
+    </ul>
+    ${opts.dashboardUrl ? btn(opts.dashboardUrl, 'Naar het dashboard') : ''}
+  `
+
+  return {
+    subject: `Vita Health openstaande acties: er zijn ${total} nieuwe acties`,
+    html: shell('Openstaande acties', body),
+  }
+}
