@@ -1,7 +1,7 @@
 'use client'
 import { useState, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { FileText, Trash2, ExternalLink, Loader2, AlertTriangle, ShieldCheck } from 'lucide-react'
+import { FileText, Trash2, ExternalLink, Loader2, AlertTriangle, ShieldCheck, ScanLine } from 'lucide-react'
 import { formatDateTime } from '@/lib/utils'
 import { useUser } from '@/components/providers/UserProvider'
 import { canSeeResults } from '@/lib/auth/roles'
@@ -52,6 +52,8 @@ export function ClientDocumentsSection({ clientId, initialDocuments }: Props) {
   const [confirmSend, setConfirmSend] = useState<string | null>(null)
   const [sendingId, setSendingId]     = useState<string | null>(null)
   const [sentIds, setSentIds]         = useState<string[]>([])
+  const [parsingId, setParsingId]     = useState<string | null>(null)
+  const [parsedInfo, setParsedInfo]   = useState<Record<string, string>>({})
   const [globalError, setGlobalError] = useState('')
   const inputRef = useRef<HTMLInputElement>(null)
 
@@ -177,6 +179,34 @@ export function ClientDocumentsSection({ clientId, initialDocuments }: Props) {
     }
   }
 
+  // ─── Rapport uitlezen → gestructureerde data (review-status) ─────────────────
+
+  async function handleParse(doc: Document) {
+    setParsingId(doc.id)
+    setGlobalError('')
+    try {
+      const res = await fetch('/api/reports/parse', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ documentId: doc.id }),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok || !data.ok) {
+        setGlobalError(data.error || 'Uitlezen is mislukt.')
+      } else {
+        const s = data.summary
+        setParsedInfo(prev => ({
+          ...prev,
+          [doc.id]: `${s.biomarkers} markers · ${s.diseases} risico's · score ${s.resilienceScore ?? '?'} — controleer`,
+        }))
+      }
+    } catch {
+      setGlobalError('Er ging iets mis bij het uitlezen.')
+    } finally {
+      setParsingId(null)
+    }
+  }
+
   // ─── Drag & drop handlers ──────────────────────────────────────────────────
 
   function onDragOver(e: React.DragEvent)  { e.preventDefault(); setDragging(true)  }
@@ -260,6 +290,9 @@ export function ClientDocumentsSection({ clientId, initialDocuments }: Props) {
                       {formatDateTime(doc.created_at)}
                       {doc.file_size != null && <> · {formatFileSize(doc.file_size)}</>}
                     </p>
+                    {parsedInfo[doc.id] && (
+                      <p className="text-xs text-emerald-600 mt-0.5">{parsedInfo[doc.id]}</p>
+                    )}
                   </div>
                   <div className="flex items-center gap-1 shrink-0">
                     {confirmDelete === doc.id ? (
@@ -276,6 +309,14 @@ export function ClientDocumentsSection({ clientId, initialDocuments }: Props) {
                       </div>
                     ) : (
                       <>
+                        <button
+                          onClick={() => handleParse(doc)}
+                          disabled={parsingId === doc.id}
+                          title="Gegevens uitlezen uit het PDF"
+                          className="p-1.5 rounded-lg text-[#64748b] hover:text-[#1f1683] hover:bg-[#eef4ff] transition-colors disabled:opacity-50"
+                        >
+                          {parsingId === doc.id ? <Loader2 size={14} className="animate-spin" /> : <ScanLine size={14} />}
+                        </button>
                         {sentIds.includes(doc.id) && (
                           <span className="inline-flex items-center gap-1 text-xs text-emerald-600 mr-1">
                             <ShieldCheck size={13} /> Verstuurd

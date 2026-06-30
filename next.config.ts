@@ -31,6 +31,8 @@ const securityHeaders = [
 
 const nextConfig: NextConfig = {
   output: 'standalone',
+  // pdfjs-dist niet bundelen — wordt server-side uit node_modules geladen (rapport-parser).
+  serverExternalPackages: ['pdfjs-dist'],
   // TypeScript checking kost te veel RAM op de build-server (2GB).
   // Types worden lokaal gecontroleerd voor elke push.
   typescript: {
