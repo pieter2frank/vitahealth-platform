@@ -33,6 +33,12 @@ const nextConfig: NextConfig = {
   output: 'standalone',
   // pdfjs-dist niet bundelen — wordt server-side uit node_modules geladen (rapport-parser).
   serverExternalPackages: ['pdfjs-dist'],
+  // De pdfjs-worker wordt alleen dynamisch geïmporteerd; de standalone file-tracer
+  // mist 'm. Expliciet meenemen voor de parse-route (anders: "Cannot find module
+  // .../pdf.worker.mjs").
+  outputFileTracingIncludes: {
+    '/api/reports/parse': ['./node_modules/pdfjs-dist/legacy/build/**'],
+  },
   // TypeScript checking kost te veel RAM op de build-server (2GB).
   // Types worden lokaal gecontroleerd voor elke push.
   typescript: {
