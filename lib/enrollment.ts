@@ -40,7 +40,7 @@ export const ENROLLMENT_COLORS: Record<string, string> = {
   intake_afgewezen:     'bg-red-50 text-red-700 border-red-200',
   kit_opgestuurd:       'bg-cyan-50 text-cyan-700 border-cyan-200',
   kit_retour:           'bg-orange-50 text-orange-700 border-orange-200',
-  uitslag_bekend:       'bg-amber-50 text-amber-700 border-amber-200',
+  uitslag_bekend:       'bg-green-100 text-green-800 border-green-300',
   uitslag_besproken:    'bg-green-50 text-green-700 border-green-200',
 }
 

@@ -1,5 +1,5 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useUser } from '@/components/providers/UserProvider'
 import { canSeeResults } from '@/lib/auth/roles'
@@ -43,6 +43,9 @@ export function EnrollmentStatusSection({ clientId, initialStatus, assignedKitId
   const [confirmReject, setConfirmReject] = useState(false)
   const [onHoldAction, setOnHoldAction]   = useState(false)
   const [error,   setError]   = useState('')
+
+  // Externe statuswijziging (bv. na inlezen van een uitslag) live overnemen.
+  useEffect(() => { setStatus(initialStatus) }, [initialStatus])
 
   // ── Index voor de tijdlijn ──────────────────────────────────────────────────
   const isRejected    = status === 'intake_afgewezen'

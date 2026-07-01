@@ -127,13 +127,31 @@ export async function POST(req: Request) {
   }
   if (parsed.biomarkers.length) {
     await admin.from('vh_report_biomarker').insert(parsed.biomarkers.map(b => ({
-      report_id:   rep.id,
-      marker_code: b.markerCode,
-      value:       b.value,
-      unit:        b.unit,
-      ref_optimal: b.refOptimal,
-      association: b.association,
+      report_id:       rep.id,
+      marker_code:     b.markerCode,
+      value:           b.value,
+      value_qualifier: b.qualifier,
+      unit:            b.unit,
+      ref_optimal:     b.refOptimal,
+      association:     b.association,
     })))
+  }
+
+  // Cliëntstatus naar 'uitslag_bekend' zodra de uitslag is ingelezen (tenzij al besproken).
+  const { data: cl } = await admin
+    .from('vh_client').select('enrollment_status').eq('id', doc.client_id).maybeSingle()
+  if (cl && !['uitslag_bekend', 'uitslag_besproken'].includes(cl.enrollment_status)) {
+    await admin.from('vh_client').update({ enrollment_status: 'uitslag_bekend' }).eq('id', doc.client_id)
+    await logAuditEvent({
+      actorUserId:     user.id,
+      actorRole:       'medisch_deskundige',
+      subjectClientId: doc.client_id,
+      resourceType:    'enrollment_status',
+      resourceId:      doc.client_id,
+      action:          'status_change',
+      outcome:         'success',
+      reason:          'Uitslag ingelezen → uitslag_bekend',
+    }).catch(() => {})
   }
 
   await logAuditEvent({

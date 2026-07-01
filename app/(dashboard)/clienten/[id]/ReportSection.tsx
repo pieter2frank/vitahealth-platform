@@ -9,7 +9,7 @@ import { canSeeResults } from '@/lib/auth/roles'
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface RefEntry { code: string; display_name: string; unit: string | null; marker_group: string | null; direction: string | null; sort_order: number }
 interface DiseaseRisk { disease: string; result_category: string | null; risk_current_pct: number | null; risk_age70_pct: number | null }
-interface Biomarker { marker_code: string; value: number | null; unit: string | null; ref_optimal: number | null; association: string | null }
+interface Biomarker { marker_code: string; value: number | null; value_qualifier: string | null; unit: string | null; ref_optimal: number | null; association: string | null }
 interface Report {
   id: string; sample_id: string | null; sample_date: string | null
   metabolic_age: number | null; resilience_score: number | null
@@ -162,7 +162,7 @@ export function ReportSection({ reports, refs }: Props) {
                             {m.ref?.display_name ?? m.marker_code}
                           </span>
                           <span className="text-[#64748b] tabular-nums">
-                            <span className="font-medium text-[#1e293b]">{m.value ?? '—'}</span> {m.unit ?? ''}
+                            <span className="font-medium text-[#1e293b]">{m.value_qualifier ?? ''}{m.value ?? '—'}</span> {m.unit ?? ''}
                             {m.ref_optimal != null && <span className="text-[#94a3b8]"> · opt. {m.ref_optimal}</span>}
                           </span>
                         </div>

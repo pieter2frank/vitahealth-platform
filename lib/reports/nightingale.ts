@@ -28,6 +28,7 @@ export interface ParsedDisease {
 export interface ParsedBiomarker {
   markerCode: string
   value: number
+  qualifier: string | null       // '>' of '<' als de waarde buiten het meetbereik valt
   unit: string | null
   refOptimal: number | null
   association: 'strongest' | 'moderate' | 'weakest'
@@ -67,7 +68,8 @@ const MONTHS: Record<string, string> = {
 }
 
 // Eenheid accepteert beide mu-varianten (µ U+00B5 en μ U+03BC) voor µmol/L.
-const VALUE_RE = /^(\d+(?:\.\d+)?)\s*(mmol\/L|g\/L|mmol\/mol|[µμ]mol\/L|mol\/L|ratio|%)$/
+// Optionele prefix <, >, ≤ of ≥ (waarde buiten het meetbereik → qualifier).
+const VALUE_RE = /^([<>≤≥]?)\s*(\d+(?:\.\d+)?)\s*(mmol\/L|g\/L|mmol\/mol|[µμ]mol\/L|mol\/L|ratio|%)$/
 const REF_RE   = /^[≤≥]\s*(\d+(?:\.\d+)?)$/
 
 const norm = (s: string) => s.toLowerCase().replace(/\s+/g, ' ').trim()
@@ -148,10 +150,10 @@ export function parseNightingaleReport(pages: string[][]): ParsedReport {
       for (let i = 0; i < pg.length; i++) {
         const code = MARKERS[norm(pg[i])]
         if (!code) continue
-        let value: number | null = null, unit: string | null = null
+        let value: number | null = null, unit: string | null = null, qualifier: string | null = null
         for (let k = i + 1; k <= i + 2 && k < pg.length; k++) {
           const m = pg[k].match(VALUE_RE)
-          if (m) { value = Number(m[1]); unit = fixUnit(m[2]); break }
+          if (m) { qualifier = m[1] || null; value = Number(m[2]); unit = fixUnit(m[3]); break }
         }
         let refOptimal: number | null = null
         for (let k = i - 2; k <= i + 3; k++) {
@@ -160,7 +162,7 @@ export function parseNightingaleReport(pages: string[][]): ParsedReport {
           if (m) { refOptimal = Number(m[1]); break }
         }
         if (value !== null && !out.biomarkers.some(b => b.markerCode === code)) {
-          out.biomarkers.push({ markerCode: code, value, unit, refOptimal, association })
+          out.biomarkers.push({ markerCode: code, value, qualifier, unit, refOptimal, association })
         }
       }
     }
