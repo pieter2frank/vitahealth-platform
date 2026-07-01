@@ -102,7 +102,7 @@ export default async function ClientDetailPage({
       .maybeSingle(),
     supabase
       .from('vh_report')
-      .select('id, sample_id, sample_date, metabolic_age, resilience_score, resilience_percentile, resilience_category, projection_age, parse_status, warnings, vh_report_disease_risk(disease, result_category, risk_current_pct, risk_avg_pct, risk_age70_pct, risk_age70_avg_pct), vh_report_biomarker(marker_code, value, value_qualifier, unit, ref_optimal, association)')
+      .select('id, sample_id, sample_date, metabolic_age, resilience_score, resilience_percentile, resilience_category, projection_age, parse_status, warnings, vh_client_document(filename), vh_report_disease_risk(disease, result_category, risk_current_pct, risk_avg_pct, risk_age70_pct, risk_age70_avg_pct), vh_report_biomarker(marker_code, value, value_qualifier, unit, ref_optimal, association)')
       .eq('client_id', id)
       .order('sample_date', { ascending: false }),
     supabase
