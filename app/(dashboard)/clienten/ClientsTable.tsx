@@ -2,7 +2,7 @@
 import { useState, useMemo } from 'react'
 import { formatDate } from '@/lib/utils'
 import { ClickableRow } from '@/components/ui/ClickableRow'
-import { ENROLLMENT_LABELS, ENROLLMENT_COLORS, type EnrollmentStatus } from '@/lib/enrollment'
+import { ENROLLMENT_LABELS, ENROLLMENT_COLORS, NEUTRAL_PILL, statusPillClass, type EnrollmentStatus } from '@/lib/enrollment'
 import { ChevronUp, ChevronDown, ChevronsUpDown, ListFilter } from 'lucide-react'
 
 export interface ClientRow {
@@ -45,20 +45,23 @@ export function ClientsTable({ clients, initialStatus }: { clients: ClientRow[];
 
   return (
     <>
-      {/* Statusfilter */}
-      <div className="mb-4 flex items-center gap-2">
-        <ListFilter size={15} className="text-[#94a3b8]" />
-        <select
-          value={status}
-          onChange={e => setStatus(e.target.value)}
-          className="h-9 rounded-lg border border-[#e2e8f0] bg-white px-3 text-sm text-[#1e293b] focus:outline-none focus:ring-2 focus:ring-[#1f1683]/30 focus:border-[#1f1683]"
-        >
-          <option value="">Alle statussen</option>
-          {STATUS_OPTIONS.map(([key, label]) => (
-            <option key={key} value={key}>{label}</option>
-          ))}
-        </select>
-        <span className="text-xs text-[#94a3b8]">{rows.length} cliënt{rows.length !== 1 ? 'en' : ''}</span>
+      {/* Statusfilter — pills in de statuskleur van de tabel */}
+      <div className="mb-4 flex flex-wrap items-center gap-2">
+        <ListFilter size={15} className="shrink-0 text-[#94a3b8]" />
+        <button type="button" onClick={() => setStatus('')} className={statusPillClass(NEUTRAL_PILL, status === '')}>
+          Alle
+        </button>
+        {STATUS_OPTIONS.map(([key, label]) => (
+          <button
+            key={key}
+            type="button"
+            onClick={() => setStatus(s => (s === key ? '' : key))}
+            className={statusPillClass(ENROLLMENT_COLORS[key as EnrollmentStatus] ?? NEUTRAL_PILL, status === key)}
+          >
+            {label}
+          </button>
+        ))}
+        <span className="ml-1 text-xs text-[#94a3b8]">{rows.length} cliënt{rows.length !== 1 ? 'en' : ''}</span>
       </div>
 
       <div className="rounded-xl border border-[#e2e8f0] bg-white shadow-sm overflow-hidden">

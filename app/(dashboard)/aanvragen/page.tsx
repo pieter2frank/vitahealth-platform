@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
-import { ENROLLMENT_LABELS, type EnrollmentStatus } from '@/lib/enrollment'
+import { ENROLLMENT_LABELS, ENROLLMENT_COLORS, NEUTRAL_PILL, statusPillClass, type EnrollmentStatus } from '@/lib/enrollment'
 import { UserCheck } from 'lucide-react'
 import { AanvragenTable, type AanvraagRow } from './AanvragenTable'
 
@@ -57,15 +57,12 @@ export default async function AanvragenPage({
       <div className="mb-4 flex flex-wrap gap-2">
         {STATUS_TABS.map(tab => {
           const active = (tab.key === '' && !status) || tab.key === status
+          const colorCls = tab.key ? (ENROLLMENT_COLORS[tab.key as EnrollmentStatus] ?? NEUTRAL_PILL) : NEUTRAL_PILL
           return (
             <Link
               key={tab.key}
               href={tab.key ? `/aanvragen?status=${tab.key}` : '/aanvragen'}
-              className={`rounded-full px-3 py-1 text-xs font-medium transition-colors border ${
-                active
-                  ? 'bg-[#1f1683] text-white border-[#1f1683]'
-                  : 'bg-white text-[#64748b] border-[#e2e8f0] hover:border-[#1f1683] hover:text-[#1f1683]'
-              }`}
+              className={statusPillClass(colorCls, active)}
             >
               {tab.label}
             </Link>

@@ -49,3 +49,14 @@ export const ENROLLMENT_COLORS: Record<string, string> = {
 export function enrollmentStatusIndex(status: string): number {
   return ENROLLMENT_STATUSES.indexOf(status as EnrollmentStatus)
 }
+
+// Neutrale kleur voor een "Alle"-filterknop (geen status).
+export const NEUTRAL_PILL = 'bg-slate-100 text-slate-700 border-slate-200'
+
+// Classnames voor een filter-pill in de statuskleur van de tabel.
+// Actief: volledige kleur + ring; inactief: gedimd tot hover.
+export function statusPillClass(colorCls: string, active: boolean): string {
+  return `rounded-full border px-3 py-1 text-xs font-medium whitespace-nowrap transition-all ${colorCls} ${
+    active ? 'ring-2 ring-offset-1 ring-[#1f1683] font-semibold shadow-sm' : 'opacity-55 hover:opacity-100'
+  }`
+}
