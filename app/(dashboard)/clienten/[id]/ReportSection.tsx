@@ -7,7 +7,7 @@ import { useUser } from '@/components/providers/UserProvider'
 import { canSeeResults } from '@/lib/auth/roles'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
-interface RefEntry { code: string; display_name: string; unit: string | null; marker_group: string | null; direction: string | null; sort_order: number }
+interface RefEntry { code: string; display_name: string; unit: string | null; marker_group: string | null; direction: string | null; sort_order: number; description: string | null }
 interface DiseaseRisk {
   disease: string; result_category: string | null
   risk_current_pct: number | null; risk_avg_pct: number | null
@@ -173,8 +173,13 @@ export function ReportSection({ reports, refs }: Props) {
                       return (
                         <div key={m.marker_code} className="flex items-center justify-between gap-3 px-3 py-1.5 text-sm">
                           <span className="flex items-center gap-2.5 text-[#1e293b]">
-                            <span className={`h-2.5 w-2.5 rounded-full ring-2 ${DOT[st]} ${RING[st]}`} />
-                            {m.ref?.display_name ?? m.marker_code}
+                            <span className={`h-2.5 w-2.5 shrink-0 rounded-full ring-2 ${DOT[st]} ${RING[st]}`} />
+                            <span
+                              title={m.ref?.description ?? undefined}
+                              className={m.ref?.description ? 'cursor-help border-b border-dotted border-[#94a3b8]' : ''}
+                            >
+                              {m.ref?.display_name ?? m.marker_code}
+                            </span>
                           </span>
                           <span className="text-[#64748b] tabular-nums">
                             <span className={`font-semibold ${VAL[st]}`}>{m.value_qualifier ?? ''}{nl(m.value)}</span> {m.unit ?? ''}

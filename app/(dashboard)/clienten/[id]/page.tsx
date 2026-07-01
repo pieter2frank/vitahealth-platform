@@ -107,7 +107,7 @@ export default async function ClientDetailPage({
       .order('sample_date', { ascending: false }),
     supabase
       .from('vh_biomarker_ref')
-      .select('code, display_name, unit, marker_group, direction, sort_order'),
+      .select('code, display_name, unit, marker_group, direction, sort_order, description'),
   ])
 
   const questionnaireAssignments = (qaRaw ?? []).map(a => ({
