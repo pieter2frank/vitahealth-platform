@@ -1,7 +1,7 @@
 'use client'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Activity, CheckCircle2, Loader2, AlertTriangle } from 'lucide-react'
+import { Activity, CheckCircle2, Loader2, AlertTriangle, ChevronDown } from 'lucide-react'
 import { formatDate } from '@/lib/utils'
 import { useUser } from '@/components/providers/UserProvider'
 import { canSeeResults } from '@/lib/auth/roles'
@@ -61,6 +61,8 @@ export function ReportSection({ reports, refs }: Props) {
   const report = reports[0] ?? null   // prop-gedreven: ververst mee na router.refresh()
   const [confirming, setConfirming] = useState(false)
   const [error, setError] = useState('')
+  const [open, setOpen] = useState(true)
+  const [tip, setTip] = useState<{ text: string; cx: number; top: number; bottom: number } | null>(null)
 
   if (!canSeeResults(role) || !report) return null
 
@@ -94,24 +96,32 @@ export function ReportSection({ reports, refs }: Props) {
 
   return (
     <div className="mt-4 rounded-xl border border-[#e2e8f0] bg-white shadow-sm overflow-hidden">
-      {/* Header */}
-      <div className="flex items-center justify-between gap-3 border-b border-[#e2e8f0] px-5 py-4">
+      {/* Header — klik om in/uit te klappen */}
+      <button
+        type="button"
+        onClick={() => setOpen(o => !o)}
+        className={`flex w-full items-center justify-between gap-3 px-5 py-4 text-left transition-colors hover:bg-[#f8fafc] ${open ? 'border-b border-[#e2e8f0]' : ''}`}
+      >
         <h2 className="text-sm font-semibold text-[#1e293b] flex items-center gap-2">
           <Activity size={15} className="text-[#94a3b8]" />
           Uitgelezen rapportgegevens
           {report.sample_date && <span className="text-xs font-normal text-[#94a3b8]">· {formatDate(report.sample_date)}</span>}
         </h2>
-        {needsReview ? (
-          <span className="inline-flex items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-700">
-            <AlertTriangle size={12} /> Te controleren
-          </span>
-        ) : (
-          <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700">
-            <CheckCircle2 size={12} /> Bevestigd
-          </span>
-        )}
-      </div>
+        <div className="flex items-center gap-2">
+          {needsReview ? (
+            <span className="inline-flex items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-700">
+              <AlertTriangle size={12} /> Te controleren
+            </span>
+          ) : (
+            <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700">
+              <CheckCircle2 size={12} /> Bevestigd
+            </span>
+          )}
+          <ChevronDown size={16} className={`text-[#94a3b8] transition-transform ${open ? '' : '-rotate-90'}`} />
+        </div>
+      </button>
 
+      {open && (
       <div className="p-5 space-y-6">
         {/* Waarschuwingen (bijv. kit-ID komt niet overeen) */}
         {report.warnings && report.warnings.length > 0 && (
@@ -175,7 +185,11 @@ export function ReportSection({ reports, refs }: Props) {
                           <span className="flex items-center gap-2.5 text-[#1e293b]">
                             <span className={`h-2.5 w-2.5 shrink-0 rounded-full ring-2 ${DOT[st]} ${RING[st]}`} />
                             <span
-                              title={m.ref?.description ?? undefined}
+                              onMouseEnter={m.ref?.description ? (e) => {
+                                const r = e.currentTarget.getBoundingClientRect()
+                                setTip({ text: m.ref!.description!, cx: r.left + r.width / 2, top: r.top, bottom: r.bottom })
+                              } : undefined}
+                              onMouseLeave={() => setTip(null)}
                               className={m.ref?.description ? 'cursor-help border-b border-dotted border-[#94a3b8]' : ''}
                             >
                               {m.ref?.display_name ?? m.marker_code}
@@ -212,6 +226,21 @@ export function ReportSection({ reports, refs }: Props) {
           </div>
         )}
       </div>
+      )}
+
+      {tip && (
+        <div
+          style={{
+            position: 'fixed',
+            left: tip.cx,
+            top: tip.top < 130 ? tip.bottom + 8 : tip.top - 8,
+            transform: tip.top < 130 ? 'translate(-50%, 0)' : 'translate(-50%, -100%)',
+          }}
+          className="pointer-events-none z-50 max-w-xs rounded-lg bg-[#1e293b] px-3 py-2 text-xs leading-relaxed text-white shadow-xl"
+        >
+          {tip.text}
+        </div>
+      )}
     </div>
   )
 }
