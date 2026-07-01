@@ -98,6 +98,7 @@ export async function POST(req: Request) {
       resilience_score:      parsed.scores.resilienceScore,
       resilience_percentile: parsed.scores.resiliencePercentile,
       resilience_category:   parsed.scores.resilienceCategory,
+      projection_age:        parsed.projectionAge,
       parse_status:          'needs_review',
       parsed_at:             new Date().toISOString(),
       warnings:              parsed.warnings,

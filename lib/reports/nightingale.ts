@@ -36,6 +36,7 @@ export interface ParsedBiomarker {
 export interface ParsedReport {
   meta: ParsedMeta
   scores: ParsedScores
+  projectionAge: number | null    // leeftijd waarnaar het toekomstige risico projecteert
   diseases: ParsedDisease[]
   biomarkers: ParsedBiomarker[]
   warnings: string[]
@@ -79,6 +80,7 @@ export function parseNightingaleReport(pages: string[][]): ParsedReport {
   const out: ParsedReport = {
     meta:   { sex: null, age: null, sampleId: null, sampleDate: null },
     scores: { metabolicAge: null, resilienceScore: null, resiliencePercentile: null, resilienceCategory: null },
+    projectionAge: null,
     diseases: [],
     biomarkers: [],
     warnings: [],
@@ -127,6 +129,9 @@ export function parseNightingaleReport(pages: string[][]): ParsedReport {
     // ── Ziektepagina ──
     const diseaseLine = pg.slice(0, 6).map(norm).find(l => DISEASES[l])
     if (diseaseLine && joined.includes('your current result category')) {
+      // Projectieleeftijd uit "Your risk at age NN" (zelfde voor elke ziekte).
+      const pm = joined.match(/your risk at age (\d+)/)
+      if (pm && out.projectionAge === null) out.projectionAge = Number(pm[1])
       const d: ParsedDisease = {
         disease: DISEASES[diseaseLine],
         resultCategory: null, riskCurrentPct: null, riskAvgPct: null,

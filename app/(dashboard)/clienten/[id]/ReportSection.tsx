@@ -8,12 +8,17 @@ import { canSeeResults } from '@/lib/auth/roles'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface RefEntry { code: string; display_name: string; unit: string | null; marker_group: string | null; direction: string | null; sort_order: number }
-interface DiseaseRisk { disease: string; result_category: string | null; risk_current_pct: number | null; risk_age70_pct: number | null }
+interface DiseaseRisk {
+  disease: string; result_category: string | null
+  risk_current_pct: number | null; risk_avg_pct: number | null
+  risk_age70_pct: number | null; risk_age70_avg_pct: number | null
+}
 interface Biomarker { marker_code: string; value: number | null; value_qualifier: string | null; unit: string | null; ref_optimal: number | null; association: string | null }
 interface Report {
   id: string; sample_id: string | null; sample_date: string | null
   metabolic_age: number | null; resilience_score: number | null
   resilience_percentile: number | null; resilience_category: string | null
+  projection_age: number | null
   parse_status: string
   warnings: string[] | null
   vh_report_disease_risk: DiseaseRisk[]
@@ -44,6 +49,11 @@ function markerStatus(value: number | null, optimal: number | null, direction: s
   return 'neutral'
 }
 const DOT: Record<string, string> = { good: 'bg-emerald-500', attention: 'bg-amber-500', neutral: 'bg-[#cbd5e1]' }
+const RING: Record<string, string> = { good: 'ring-emerald-200', attention: 'ring-amber-200', neutral: 'ring-[#e2e8f0]' }
+const VAL: Record<string, string> = { good: 'text-emerald-600', attention: 'text-amber-600', neutral: 'text-[#1e293b]' }
+
+// Nederlandse getalnotatie (komma als decimaalteken).
+const nl = (n: number | null | undefined) => (n == null ? '—' : String(n).replace('.', ','))
 
 export function ReportSection({ reports, refs }: Props) {
   const router = useRouter()
@@ -130,13 +140,18 @@ export function ReportSection({ reports, refs }: Props) {
             <div className="rounded-lg border border-[#e2e8f0] divide-y divide-[#f1f5f9]">
               {report.vh_report_disease_risk.map(d => {
                 const cat = d.result_category ? CATEGORY[d.result_category] : null
+                const proj = report.projection_age ? `${report.projection_age}jr` : 'later'
                 return (
-                  <div key={d.disease} className="flex items-center justify-between gap-3 px-3 py-2 text-sm">
-                    <span className="text-[#1e293b]">{DISEASE[d.disease] ?? d.disease}</span>
-                    <div className="flex items-center gap-3">
-                      <span className="text-[#64748b] tabular-nums">{d.risk_current_pct ?? '—'}%<span className="text-[#cbd5e1]"> · 70j {d.risk_age70_pct ?? '—'}%</span></span>
-                      {cat && <span className={`rounded-full border px-2 py-0.5 text-xs font-medium ${cat.cls}`}>{cat.label}</span>}
+                  <div key={d.disease} className="px-3 py-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-sm font-medium text-[#1e293b]">{DISEASE[d.disease] ?? d.disease}</span>
+                      {cat && <span className={`shrink-0 rounded-full border px-2 py-0.5 text-xs font-medium ${cat.cls}`}>{cat.label}</span>}
                     </div>
+                    <p className="mt-0.5 text-xs text-[#64748b] tabular-nums">
+                      huidig risico <span className="font-semibold text-[#1e293b]">{nl(d.risk_current_pct)}%</span> (gem. {nl(d.risk_avg_pct)}%)
+                      <span className="text-[#cbd5e1]"> — </span>
+                      risico {proj} <span className="font-semibold text-[#1e293b]">{nl(d.risk_age70_pct)}%</span> (gem. {nl(d.risk_age70_avg_pct)}%)
+                    </p>
                   </div>
                 )
               })}
@@ -157,13 +172,13 @@ export function ReportSection({ reports, refs }: Props) {
                       const st = markerStatus(m.value, m.ref_optimal, m.ref?.direction ?? null)
                       return (
                         <div key={m.marker_code} className="flex items-center justify-between gap-3 px-3 py-1.5 text-sm">
-                          <span className="flex items-center gap-2 text-[#1e293b]">
-                            <span className={`h-1.5 w-1.5 rounded-full ${DOT[st]}`} />
+                          <span className="flex items-center gap-2.5 text-[#1e293b]">
+                            <span className={`h-2.5 w-2.5 rounded-full ring-2 ${DOT[st]} ${RING[st]}`} />
                             {m.ref?.display_name ?? m.marker_code}
                           </span>
                           <span className="text-[#64748b] tabular-nums">
-                            <span className="font-medium text-[#1e293b]">{m.value_qualifier ?? ''}{m.value ?? '—'}</span> {m.unit ?? ''}
-                            {m.ref_optimal != null && <span className="text-[#94a3b8]"> · opt. {m.ref_optimal}</span>}
+                            <span className={`font-semibold ${VAL[st]}`}>{m.value_qualifier ?? ''}{nl(m.value)}</span> {m.unit ?? ''}
+                            {m.ref_optimal != null && <span className="text-[#94a3b8]"> · opt. {nl(m.ref_optimal)}</span>}
                           </span>
                         </div>
                       )
