@@ -59,12 +59,36 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Niet herkend als Nightingale-rapport.' }, { status: 422 })
   }
 
+  // ── Kit-ID-controle ─────────────────────────────────────────────────────────
+  // Conventie bestandsnaam: "NGH Health Check - <kit-id> - <yymmdd>.pdf".
+  // Het kit-id (≥7 cijfers) moet overeenkomen met het sample-ID in het rapport.
+  const filenameKitId = doc.filename.match(/\d{7,}/)?.[0] ?? null
+  if (filenameKitId && parsed.meta.sampleId && filenameKitId !== parsed.meta.sampleId) {
+    parsed.warnings.unshift(
+      `Kit-ID in de bestandsnaam (${filenameKitId}) komt niet overeen met het sample-ID in het rapport (${parsed.meta.sampleId}).`,
+    )
+  }
+
+  // Testkit koppelen op basis van het sample-ID (best-effort) + cliënt-check.
+  let testkitId: string | null = null
+  if (parsed.meta.sampleId) {
+    const { data: kit } = await admin
+      .from('vh_testkit').select('id, assigned_client_id').eq('barcode', parsed.meta.sampleId).maybeSingle()
+    if (kit) {
+      testkitId = kit.id
+      if (kit.assigned_client_id && kit.assigned_client_id !== doc.client_id) {
+        parsed.warnings.unshift('Let op: dit kit-ID is in het systeem aan een andere cliënt gekoppeld.')
+      }
+    }
+  }
+
   // ── Opslaan (idempotent: 1 rapport per document) ────────────────────────────
   const { data: rep, error: repErr } = await admin
     .from('vh_report')
     .upsert({
       client_id:             doc.client_id,
       document_id:           doc.id,
+      testkit_id:            testkitId,
       source:                'nightingale',
       sample_id:             parsed.meta.sampleId,
       sample_date:           parsed.meta.sampleDate,
@@ -76,6 +100,7 @@ export async function POST(req: Request) {
       resilience_category:   parsed.scores.resilienceCategory,
       parse_status:          'needs_review',
       parsed_at:             new Date().toISOString(),
+      warnings:              parsed.warnings,
       raw_json:              parsed,
     }, { onConflict: 'document_id' })
     .select('id')

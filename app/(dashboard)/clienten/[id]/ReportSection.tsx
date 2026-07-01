@@ -1,5 +1,6 @@
 'use client'
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { Activity, CheckCircle2, Loader2, AlertTriangle } from 'lucide-react'
 import { formatDate } from '@/lib/utils'
 import { useUser } from '@/components/providers/UserProvider'
@@ -14,6 +15,7 @@ interface Report {
   metabolic_age: number | null; resilience_score: number | null
   resilience_percentile: number | null; resilience_category: string | null
   parse_status: string
+  warnings: string[] | null
   vh_report_disease_risk: DiseaseRisk[]
   vh_report_biomarker: Biomarker[]
 }
@@ -44,8 +46,9 @@ function markerStatus(value: number | null, optimal: number | null, direction: s
 const DOT: Record<string, string> = { good: 'bg-emerald-500', attention: 'bg-amber-500', neutral: 'bg-[#cbd5e1]' }
 
 export function ReportSection({ reports, refs }: Props) {
+  const router = useRouter()
   const { role } = useUser()
-  const [report, setReport] = useState(reports[0] ?? null)
+  const report = reports[0] ?? null   // prop-gedreven: ververst mee na router.refresh()
   const [confirming, setConfirming] = useState(false)
   const [error, setError] = useState('')
 
@@ -63,7 +66,7 @@ export function ReportSection({ reports, refs }: Props) {
       })
       const data = await res.json().catch(() => ({}))
       if (!res.ok || !data.ok) { setError(data.error || 'Bevestigen mislukt.'); return }
-      setReport({ ...report, parse_status: 'parsed' })
+      router.refresh()
     } catch { setError('Er ging iets mis.') } finally { setConfirming(false) }
   }
 
@@ -100,6 +103,18 @@ export function ReportSection({ reports, refs }: Props) {
       </div>
 
       <div className="p-5 space-y-6">
+        {/* Waarschuwingen (bijv. kit-ID komt niet overeen) */}
+        {report.warnings && report.warnings.length > 0 && (
+          <div className="rounded-lg border border-amber-200 bg-amber-50 p-3">
+            <p className="mb-1 flex items-center gap-1.5 text-xs font-semibold text-amber-800">
+              <AlertTriangle size={13} /> Controlepunten
+            </p>
+            <ul className="list-disc space-y-0.5 pl-5 text-xs text-amber-700">
+              {report.warnings.map((w, i) => <li key={i}>{w}</li>)}
+            </ul>
+          </div>
+        )}
+
         {/* Topscores */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           <Stat label="Metabole leeftijd" value={report.metabolic_age != null ? `${report.metabolic_age} jr` : '—'} />

@@ -156,6 +156,7 @@ export function ClientDocumentsSection({ clientId, initialDocuments }: Props) {
 
     setDocuments(prev => prev.filter(d => d.id !== doc.id))
     setConfirmDelete(null)
+    router.refresh()   // rapport is via cascade verwijderd → reviewscherm verversen
   }
 
   // ─── Beveiligd versturen naar de cliënt (via bezorg-provider + auditlog) ─────
