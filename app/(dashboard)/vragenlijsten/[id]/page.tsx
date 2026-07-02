@@ -23,6 +23,13 @@ export default async function VragenlijstDetailPage({
 
   if (!q) notFound()
 
+  // Vragenlijsten bewerken is voorbehouden aan admins (zie de bewerken-pagina).
+  const { data: { user } } = await supabase.auth.getUser()
+  const { data: self } = user
+    ? await supabase.from('vh_medewerker').select('role').eq('user_id', user.id).maybeSingle()
+    : { data: null }
+  const isAdmin = self?.role === 'admin'
+
   const [{ data: assignments }, { data: clients }] = await Promise.all([
     supabase
       .from('vh_questionnaire_assignment')
@@ -77,13 +84,15 @@ export default async function VragenlijstDetailPage({
             }`}>
               {q.status === 'active' ? 'Actief' : 'Concept'}
             </span>
-            <Link
-              href={`/vragenlijsten/${q.id}/bewerken`}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-[#1f1683] px-3 py-1.5 text-sm font-medium text-white hover:bg-[#1a1270] transition-colors"
-            >
-              <Pencil size={14} />
-              Bewerken
-            </Link>
+            {isAdmin && (
+              <Link
+                href={`/vragenlijsten/${q.id}/bewerken`}
+                className="inline-flex items-center gap-1.5 rounded-lg bg-[#1f1683] px-3 py-1.5 text-sm font-medium text-white hover:bg-[#1a1270] transition-colors"
+              >
+                <Pencil size={14} />
+                Bewerken
+              </Link>
+            )}
             <DeleteButton
               table="vh_questionnaire"
               id={q.id}
