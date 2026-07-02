@@ -71,11 +71,13 @@ export async function POST(req: Request) {
 
   // Testkit koppelen op basis van het sample-ID (best-effort) + cliënt-check.
   let testkitId: string | null = null
+  let testkitStatus: string | null = null
   if (parsed.meta.sampleId) {
     const { data: kit } = await admin
-      .from('vh_testkit').select('id, assigned_client_id').eq('barcode', parsed.meta.sampleId).maybeSingle()
+      .from('vh_testkit').select('id, assigned_client_id, status').eq('barcode', parsed.meta.sampleId).maybeSingle()
     if (kit) {
       testkitId = kit.id
+      testkitStatus = kit.status
       if (kit.assigned_client_id && kit.assigned_client_id !== doc.client_id) {
         parsed.warnings.unshift('Let op: dit kit-ID is in het systeem aan een andere cliënt gekoppeld.')
       }
@@ -152,6 +154,33 @@ export async function POST(req: Request) {
       action:          'status_change',
       outcome:         'success',
       reason:          'Uitslag ingelezen → uitslag_bekend',
+    }).catch(() => {})
+  }
+
+  // Kit-status naar 'results_available' ("Resultaten") zodra de uitslag binnen is.
+  // Bij voorkeur de kit die op het sample-ID matcht; anders — als eenduidig —
+  // de enige nog niet afgeronde kit van deze cliënt.
+  let kitToUpdate = testkitId
+  let kitPrevStatus = testkitStatus
+  if (!kitToUpdate) {
+    const { data: kits } = await admin
+      .from('vh_testkit').select('id, status').eq('assigned_client_id', doc.client_id)
+    const candidates = (kits ?? []).filter(k => k.status !== 'results_available')
+    if (candidates.length === 1) { kitToUpdate = candidates[0].id; kitPrevStatus = candidates[0].status }
+  }
+  if (kitToUpdate && kitPrevStatus !== 'results_available') {
+    await admin.from('vh_testkit')
+      .update({ status: 'results_available', results_date: new Date().toISOString() })
+      .eq('id', kitToUpdate)
+    await logAuditEvent({
+      actorUserId:     user.id,
+      actorRole:       'medisch_deskundige',
+      subjectClientId: doc.client_id,
+      resourceType:    'kit_status',
+      resourceId:      kitToUpdate,
+      action:          'status_change',
+      outcome:         'success',
+      reason:          'Uitslag ingelezen → kit-status results_available',
     }).catch(() => {})
   }
 
