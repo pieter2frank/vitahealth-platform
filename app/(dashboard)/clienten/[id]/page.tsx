@@ -15,6 +15,7 @@ import { ReportSection } from './ReportSection'
 import { EnrollmentStatusSection } from './EnrollmentStatusSection'
 import { CopyIntakeLink } from './CopyIntakeLink'
 import { ReminderButton } from './ReminderButton'
+import { InsightsModal } from './InsightsModal'
 
 const GENDER_LABELS: Record<string, string> = {
   man:             'Man',
@@ -141,6 +142,11 @@ export default async function ClientDetailPage({
             </p>
           </div>
           <div className="flex items-center gap-2">
+            <InsightsModal
+              clientId={client.id}
+              clientName={`${client.first_name} ${client.last_name}`}
+              birthDate={client.birth_date ?? null}
+            />
             <ReminderButton
               clientId={client.id}
               clientEmail={client.email}
