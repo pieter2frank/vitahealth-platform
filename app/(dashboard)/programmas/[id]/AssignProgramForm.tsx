@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
+import { DateInput } from '@/components/ui/date-input'
 import { UserPlus, AlertTriangle } from 'lucide-react'
 
 interface Props {
@@ -71,13 +72,7 @@ export function AssignProgramForm({ programId, clients }: Props) {
         </div>
 
         <div>
-          <label className="block text-xs font-medium text-[#64748b] mb-1">Startdatum</label>
-          <input
-            type="date"
-            value={startDate}
-            onChange={e => setStartDate(e.target.value)}
-            className="w-full h-9 rounded-lg border border-[#e2e8f0] bg-white px-3 text-sm text-[#1e293b] focus:outline-none focus:ring-2 focus:ring-[#1f1683]/30 focus:border-[#1f1683]"
-          />
+          <DateInput label="Startdatum" value={startDate} onChange={setStartDate} />
         </div>
 
         {error && (

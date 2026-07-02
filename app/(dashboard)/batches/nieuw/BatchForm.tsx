@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Input } from '@/components/ui/input'
+import { DateInput } from '@/components/ui/date-input'
 import { Button } from '@/components/ui/button'
 import { TestTube2, Package, AlertTriangle, CheckSquare2, Square } from 'lucide-react'
 import { formatDate } from '@/lib/utils'
@@ -166,11 +167,10 @@ export function BatchForm({ retourKits }: Props) {
             </p>
           </div>
 
-          <Input
+          <DateInput
             label="Verzenddatum"
-            type="date"
             value={sentDate}
-            onChange={e => setSentDate(e.target.value)}
+            onChange={setSentDate}
             required
           />
 

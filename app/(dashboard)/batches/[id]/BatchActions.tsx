@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Input } from '@/components/ui/input'
+import { DateInput } from '@/components/ui/date-input'
 import { Button } from '@/components/ui/button'
 import { FlaskConical, AlertTriangle } from 'lucide-react'
 
@@ -59,11 +60,10 @@ export function BatchActions({ batchId, kitCount }: Props) {
 
       <div className="flex items-end gap-3">
         <div className="flex-1">
-          <Input
+          <DateInput
             label="Datum resultaten ontvangen"
-            type="date"
             value={resultsDate}
-            onChange={e => setResultsDate(e.target.value)}
+            onChange={setResultsDate}
           />
         </div>
         <Button

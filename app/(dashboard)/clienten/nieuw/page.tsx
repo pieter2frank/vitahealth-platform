@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Input } from '@/components/ui/input'
+import { DateInput } from '@/components/ui/date-input'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
@@ -99,11 +100,10 @@ export default function NieuweClientPage() {
             />
           </div>
           <div className="mt-4">
-            <Input
+            <DateInput
               label="Geboortedatum"
-              type="date"
               value={form.birth_date}
-              onChange={e => set('birth_date', e.target.value)}
+              onChange={v => set('birth_date', v)}
             />
           </div>
         </div>
