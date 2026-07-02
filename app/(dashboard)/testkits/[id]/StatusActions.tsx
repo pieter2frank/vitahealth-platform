@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Input } from '@/components/ui/input'
+import { DateInput } from '@/components/ui/date-input'
 import { Button } from '@/components/ui/button'
 import { PackageCheck, Send, FlaskConical, RotateCcw, Unlink, AlertTriangle, Printer, Truck, Undo2 } from 'lucide-react'
 import type { TestkitStatus } from '@/types'
@@ -335,12 +336,7 @@ export function StatusActions({ kit, clientAddress, returnAddressConfigured }: P
           </p>
           <div className="flex items-end gap-3 flex-wrap">
             <div className="flex-1 min-w-[160px]">
-              <Input
-                label="Verzenddatum"
-                type="date"
-                value={sentDate}
-                onChange={e => setSentDate(e.target.value)}
-              />
+              <DateInput label="Verzenddatum" value={sentDate} onChange={setSentDate} />
             </div>
             <Button
               onClick={() => update(
@@ -379,19 +375,8 @@ export function StatusActions({ kit, clientAddress, returnAddressConfigured }: P
             Heeft de cliënt de testkit teruggestuurd? Voer de retour- én afnamedatum in.
           </p>
           <div className="grid gap-3 sm:grid-cols-2">
-            <Input
-              label="Retourdatum"
-              type="date"
-              value={retourDate}
-              onChange={e => setRetourDate(e.target.value)}
-            />
-            <Input
-              label="Afnamedatum (door cliënt)"
-              type="date"
-              value={sampleDate}
-              onChange={e => setSampleDate(e.target.value)}
-              required
-            />
+            <DateInput label="Retourdatum" value={retourDate} onChange={setRetourDate} />
+            <DateInput label="Afnamedatum (door cliënt)" value={sampleDate} onChange={setSampleDate} required />
           </div>
           <p className="text-xs text-[#94a3b8]">
             De afnamedatum is verplicht om de kit later in een batch naar Nightingale te kunnen opnemen.
@@ -444,19 +429,8 @@ export function StatusActions({ kit, clientAddress, returnAddressConfigured }: P
             Retour ontvangen van een niet-toegewezen kit?
           </p>
           <div className="grid gap-3 sm:grid-cols-2">
-            <Input
-              label="Retourdatum"
-              type="date"
-              value={retourDate}
-              onChange={e => setRetourDate(e.target.value)}
-            />
-            <Input
-              label="Afnamedatum"
-              type="date"
-              value={sampleDate}
-              onChange={e => setSampleDate(e.target.value)}
-              required
-            />
+            <DateInput label="Retourdatum" value={retourDate} onChange={setRetourDate} />
+            <DateInput label="Afnamedatum" value={sampleDate} onChange={setSampleDate} required />
           </div>
           <div className="flex justify-end">
             <Button
@@ -479,13 +453,7 @@ export function StatusActions({ kit, clientAddress, returnAddressConfigured }: P
         <div className="space-y-3">
           {/* Afnamedatum — verplicht voor opname in een batch */}
           <div className="rounded-lg border border-[#e2e8f0] bg-[#f8fafc] p-3 space-y-2">
-            <Input
-              label="Afnamedatum (door cliënt)"
-              type="date"
-              value={sampleDate}
-              onChange={e => setSampleDate(e.target.value)}
-              required
-            />
+            <DateInput label="Afnamedatum (door cliënt)" value={sampleDate} onChange={setSampleDate} required />
             {!kit.sampleDate && (
               <p className="text-xs text-amber-700 flex items-start gap-1.5">
                 <AlertTriangle size={13} className="shrink-0 mt-0.5" />
@@ -517,12 +485,7 @@ export function StatusActions({ kit, clientAddress, returnAddressConfigured }: P
           />
           <div className="flex items-end gap-3">
             <div className="flex-1">
-              <Input
-                label="Verzenddatum"
-                type="date"
-                value={badgeDate}
-                onChange={e => setBadgeDate(e.target.value)}
-              />
+              <DateInput label="Verzenddatum" value={badgeDate} onChange={setBadgeDate} />
             </div>
             <Button
               onClick={() => {
@@ -547,12 +510,7 @@ export function StatusActions({ kit, clientAddress, returnAddressConfigured }: P
           </p>
           <div className="flex items-end gap-3">
             <div className="flex-1">
-              <Input
-                label="Datum resultaten"
-                type="date"
-                value={resultsDate}
-                onChange={e => setResultsDate(e.target.value)}
-              />
+              <DateInput label="Datum resultaten" value={resultsDate} onChange={setResultsDate} />
             </div>
             <Button
               onClick={() => update(
