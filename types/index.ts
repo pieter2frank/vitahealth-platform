@@ -38,6 +38,7 @@ export interface Client {
   address: string | null
   city: string | null
   postal_code: string | null
+  enrollment_status: string | null
   created_at: string
 }
 
