@@ -17,6 +17,7 @@ import { CopyIntakeLink } from './CopyIntakeLink'
 import { ReminderButton } from './ReminderButton'
 import { InsightsModal } from './InsightsModal'
 import { AdviceSection } from './AdviceSection'
+import { TrainingDocModal } from './TrainingDocModal'
 
 const GENDER_LABELS: Record<string, string> = {
   man:             'Man',
@@ -154,6 +155,7 @@ export default async function ClientDetailPage({
               clientName={`${client.first_name} ${client.last_name}`}
               birthDate={client.birth_date ?? null}
             />
+            <TrainingDocModal clientId={client.id} />
             <ReminderButton
               clientId={client.id}
               clientEmail={client.email}
