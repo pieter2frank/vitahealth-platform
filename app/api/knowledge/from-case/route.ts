@@ -5,7 +5,7 @@ import { logAuditEvent } from '@/lib/audit'
 import { getAiProvider } from '@/lib/ai'
 import { requireRole } from '@/lib/ai/route-guard'
 import { indexKnowledge } from '@/lib/ai/knowledge'
-import { isKnowledgeDomain } from '@/lib/knowledge-domains'
+import { isKnowledgeDomain, CASE_SOURCE } from '@/lib/knowledge-domains'
 
 // POST /api/knowledge/from-case  { clientId, title, domain, body, activate }
 // Maakt een kennisdocument uit een (door de arts gecontroleerd) casusdocument,
@@ -35,7 +35,7 @@ export async function POST(req: Request) {
     .insert({
       domain, title, body,
       content_type: 'text',
-      source:  'Casus (arts)',
+      source:  CASE_SOURCE,
       status:  activate ? 'active' : 'draft',
       created_by: auth.name,
     })

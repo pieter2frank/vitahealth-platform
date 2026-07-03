@@ -21,6 +21,9 @@ export function isKnowledgeDomain(v: unknown): v is KnowledgeDomain {
   return typeof v === 'string' && KNOWLEDGE_DOMAINS.some(d => d.value === v)
 }
 
+// Bron-markering voor kennisdocumenten die uit een cliëntcasus zijn gemaakt.
+export const CASE_SOURCE = 'Casus (arts)'
+
 // Statuslabels + pill-kleuren voor kennisdocumenten.
 export const KNOWLEDGE_STATUS_LABELS: Record<string, string> = {
   draft:    'Concept',
