@@ -31,13 +31,14 @@ const securityHeaders = [
 
 const nextConfig: NextConfig = {
   output: 'standalone',
-  // pdfjs-dist niet bundelen — wordt server-side uit node_modules geladen (rapport-parser).
-  serverExternalPackages: ['pdfjs-dist'],
-  // De pdfjs-worker wordt alleen dynamisch geïmporteerd; de standalone file-tracer
-  // mist 'm. Expliciet meenemen voor de parse-route (anders: "Cannot find module
-  // .../pdf.worker.mjs").
+  // Niet bundelen — server-side uit node_modules geladen (pdf-parser + docx-extractie).
+  serverExternalPackages: ['pdfjs-dist', 'mammoth'],
+  // Dynamisch geïmporteerde bestanden (pdfjs-worker, mammoth) worden door de
+  // standalone file-tracer gemist. Expliciet meenemen per route (anders:
+  // "Cannot find module .../pdf.worker.mjs").
   outputFileTracingIncludes: {
-    '/api/reports/parse': ['./node_modules/pdfjs-dist/legacy/build/**'],
+    '/api/reports/parse':     ['./node_modules/pdfjs-dist/legacy/build/**'],
+    '/api/knowledge/extract': ['./node_modules/pdfjs-dist/legacy/build/**', './node_modules/mammoth/**'],
   },
   // TypeScript checking kost te veel RAM op de build-server (2GB).
   // Types worden lokaal gecontroleerd voor elke push.

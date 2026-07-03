@@ -1,8 +1,8 @@
 'use client'
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
-import { AlertTriangle, Save, RefreshCw, Trash2, CheckCircle2, Sparkles } from 'lucide-react'
+import { AlertTriangle, Save, RefreshCw, Trash2, CheckCircle2, Sparkles, Upload, Loader2 } from 'lucide-react'
 import { KNOWLEDGE_DOMAINS } from '@/lib/knowledge-domains'
 
 export interface KnowledgeExisting {
@@ -36,10 +36,34 @@ export function KnowledgeForm({ existing }: { existing?: KnowledgeExisting }) {
 
   const [saving, setSaving]     = useState(false)
   const [indexing, setIndexing] = useState(false)
+  const [uploading, setUploading] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [error, setError]       = useState('')
   const [notice, setNotice]     = useState('')
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (fileInputRef.current) fileInputRef.current.value = '' // zelfde bestand opnieuw kunnen kiezen
+    if (!file) return
+    setError(''); setNotice(''); setUploading(true)
+
+    const fd = new FormData()
+    fd.append('file', file)
+    const res = await fetch('/api/knowledge/extract', { method: 'POST', body: fd })
+    const data = await res.json().catch(() => ({}))
+    setUploading(false)
+    if (!res.ok) { setError(data.error ?? 'Inlezen mislukt.'); return }
+
+    // Tekst in het inhoudsveld zetten (toevoegen als er al inhoud staat).
+    setBody(prev => prev.trim() ? `${prev.trim()}\n\n${data.text}` : data.text)
+    // Titel afleiden uit bestandsnaam als die nog leeg is.
+    if (!title.trim()) setTitle(file.name.replace(/\.[^.]+$/, ''))
+    if (!source.trim()) setSource(file.name)
+    setContentType('text')
+    setNotice(`Ingelezen: ${data.chars.toLocaleString('nl-NL')} tekens uit ${file.name}. Controleer de tekst en klik daarna op “Opslaan & (her)indexeren”.`)
+  }
 
   const payload = () => ({
     domain, title, content_type: contentType, body,
@@ -140,13 +164,34 @@ export function KnowledgeForm({ existing }: { existing?: KnowledgeExisting }) {
         )}
 
         <div className="space-y-1.5">
-          <label className="block text-sm font-medium text-[#1e293b]">
-            {contentType === 'video' ? 'Transcript / samenvatting' : 'Inhoud'}
-            <span className="ml-1 font-normal text-[#94a3b8]">— wordt in fragmenten geïndexeerd</span>
-          </label>
+          <div className="flex items-center justify-between gap-3">
+            <label className="block text-sm font-medium text-[#1e293b]">
+              {contentType === 'video' ? 'Transcript / samenvatting' : 'Inhoud'}
+              <span className="ml-1 font-normal text-[#94a3b8]">— wordt in fragmenten geïndexeerd</span>
+            </label>
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={uploading}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-[#e2e8f0] bg-white px-3 py-1.5 text-xs font-medium text-[#64748b] hover:bg-[#f8fafc] transition-colors disabled:opacity-50"
+            >
+              {uploading ? <Loader2 size={13} className="animate-spin" /> : <Upload size={13} />}
+              {uploading ? 'Inlezen…' : 'Bestand inlezen'}
+            </button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".pdf,.docx,.txt,.md,.markdown,.rtf"
+              onChange={handleFile}
+              className="hidden"
+            />
+          </div>
           <textarea value={body} onChange={e => setBody(e.target.value)} rows={14}
             className={`${inputCls} resize-y leading-relaxed`}
-            placeholder="Schrijf hier de kennis. Scheid onderwerpen met een lege regel — dat helpt bij het opdelen in fragmenten." />
+            placeholder="Schrijf hier de kennis, of lees een bestand in (pdf, docx, txt, md, rtf). Scheid onderwerpen met een lege regel — dat helpt bij het opdelen in fragmenten." />
+          <p className="text-xs text-[#94a3b8]">
+            Uit een geüpload document wordt alleen de tekst overgenomen; controleer en corrigeer die vóór je indexeert.
+          </p>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
