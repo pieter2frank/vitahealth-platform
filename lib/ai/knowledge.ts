@@ -12,17 +12,54 @@ export interface RetrievedChunk {
   similarity: number
 }
 
-// Splitst tekst in chunks van ~800 tekens op paragraafgrenzen.
-export function chunkText(body: string, target = 800): string[] {
-  const paras = body.split(/\n\s*\n/).map(p => p.trim()).filter(Boolean)
-  const chunks: string[] = []
+// Herkent een losstaande kop-regel (markdown # … of **vetgedrukt**). Geeft de
+// schone koptekst terug, of null als de alinea geen kop is.
+function asHeading(para: string): string | null {
+  if (para.includes('\n')) return null // meerdere regels = geen kop
+  const atx = /^#{1,6}\s+(.+)$/.exec(para)
+  if (atx) return atx[1].trim()
+  const bold = /^\*\*(.+?)\*\*$/.exec(para)
+  if (bold) return bold[1].trim()
+  return null
+}
+
+// Splitst een te lange alinea op zinsgrenzen (nooit midden in een zin).
+function splitLongParagraph(p: string, target: number): string[] {
+  const sentences = p.match(/[^.!?\n]+[.!?]*\s*/g) ?? [p]
+  const out: string[] = []
   let buf = ''
-  for (const p of paras) {
-    if (buf && (buf.length + p.length + 2) > target) { chunks.push(buf); buf = '' }
-    buf = buf ? `${buf}\n\n${p}` : p
-    while (buf.length > target * 1.5) { chunks.push(buf.slice(0, target)); buf = buf.slice(target) }
+  for (const s of sentences) {
+    if (buf && (buf.length + s.length) > target) { out.push(buf.trim()); buf = '' }
+    buf += s
+    while (buf.length > target * 1.5) { out.push(buf.slice(0, target).trim()); buf = buf.slice(target) }
   }
-  if (buf.trim()) chunks.push(buf.trim())
+  if (buf.trim()) out.push(buf.trim())
+  return out
+}
+
+// Splitst tekst in chunks van ~800 tekens op paragraafgrenzen. Koppen worden
+// niet als los fragment opgeslagen maar als context vóór elk fragment van hun
+// sectie gezet, zodat een fragment ook los te begrijpen (en te vinden) is.
+export function chunkText(body: string, target = 800): string[] {
+  const paras = body.replace(/\r\n?/g, '\n').split(/\n\s*\n/).map(p => p.trim()).filter(Boolean)
+  const chunks: string[] = []
+  let heading = ''
+  let buf = ''
+
+  const flush = () => { const t = buf.trim(); if (t) chunks.push(t); buf = '' }
+
+  for (const para of paras) {
+    const h = asHeading(para)
+    if (h !== null) { flush(); heading = h; continue } // kop opent een nieuwe sectie
+
+    const pieces = para.length > target * 1.5 ? splitLongParagraph(para, target) : [para]
+    for (const piece of pieces) {
+      if (buf && (buf.length + piece.length + 2) > target) flush()
+      // Nieuw fragment binnen een sectie krijgt de kop als context-prefix.
+      buf = buf ? `${buf}\n\n${piece}` : (heading ? `${heading}\n${piece}` : piece)
+    }
+  }
+  flush()
   return chunks
 }
 

@@ -2,7 +2,7 @@
 import { useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
-import { AlertTriangle, Save, RefreshCw, Trash2, CheckCircle2, Sparkles, Upload, Loader2 } from 'lucide-react'
+import { AlertTriangle, Save, RefreshCw, Trash2, CheckCircle2, Sparkles, Upload, Loader2, Lightbulb } from 'lucide-react'
 import { KNOWLEDGE_DOMAINS } from '@/lib/knowledge-domains'
 
 export interface KnowledgeExisting {
@@ -20,6 +20,26 @@ export interface KnowledgeExisting {
 
 const inputCls =
   'w-full rounded-lg border border-[#e2e8f0] bg-white px-3 py-2.5 text-sm text-[#1e293b] placeholder:text-[#94a3b8] focus:outline-none focus:ring-2 focus:ring-[#1f1683]/30 focus:border-[#1f1683]'
+
+// Voorbeeldsjabloon dat de curator kan invoegen. Koppen (##) worden door de
+// indexer aan hun sectie geplakt; elke alinea = één zelfstandig fragment.
+const EXAMPLE_TEMPLATE = `## Verhoogd LDL-cholesterol — leefstijladvies
+
+Een verhoogd LDL-cholesterol (streefwaarde < 2,6 mmol/L) hangt samen met een hoger risico op hart- en vaatziekten. Leefstijl kan de waarde meetbaar verlagen, meestal binnen 8–12 weken.
+
+Verzadigd vet vervangen door onverzadigd vet verlaagt LDL. Praktisch: roomboter vervangen door olijfolie, vet vlees door vis of peulvruchten, en 2× per week vette vis eten.
+
+Oplosbare vezels (haver, peulvruchten, appel) binden galzuren en verlagen LDL met ongeveer 5–10% bij 5–10 gram per dag.`
+
+const TIPS = [
+  'Eén onderwerp per document; splits een dikke richtlijn liever op in losse documenten per thema.',
+  'Scheid elk idee met een lege regel en houd alinea’s op ±300–800 tekens — dat is de fragmentgrens.',
+  'Schrijf conditie-gericht en in dezelfde taal als de signalen ("Bij een verhoogd LDL…"), niet als encyclopedie.',
+  'Maak elke passage zelfstandig: noem doelgroep, eenheid en nuance ín de alinea (het fragment wordt los gebruikt).',
+  'Gebruik koppen met ## — die worden als context aan elk fragment van de sectie geplakt.',
+  'Ruim na het inlezen van een pdf/docx kop-/voetteksten, paginanummers en afgebroken woorden op.',
+  'Kies het juiste domein en archiveer oude versies in plaats van tegenstrijdige dubbelingen te laten staan.',
+]
 
 export function KnowledgeForm({ existing }: { existing?: KnowledgeExisting }) {
   const router = useRouter()
@@ -63,6 +83,12 @@ export function KnowledgeForm({ existing }: { existing?: KnowledgeExisting }) {
     if (!source.trim()) setSource(file.name)
     setContentType('text')
     setNotice(`Ingelezen: ${data.chars.toLocaleString('nl-NL')} tekens uit ${file.name}. Controleer de tekst en klik daarna op “Opslaan & (her)indexeren”.`)
+  }
+
+  function insertExample() {
+    setBody(prev => prev.trim() ? `${prev.trim()}\n\n${EXAMPLE_TEMPLATE}` : EXAMPLE_TEMPLATE)
+    if (!title.trim()) setTitle('Verhoogd LDL-cholesterol — leefstijladvies')
+    setContentType('text')
   }
 
   const payload = () => ({
@@ -122,6 +148,33 @@ export function KnowledgeForm({ existing }: { existing?: KnowledgeExisting }) {
 
   return (
     <div className="space-y-5">
+      {/* Tips voor kwalitatief goede kennis */}
+      <details className="group rounded-xl border border-[#c7d7fd] bg-[#f5f8ff] shadow-sm">
+        <summary className="flex cursor-pointer items-center gap-2 px-5 py-3 text-sm font-semibold text-[#1f1683] list-none">
+          <Lightbulb size={15} className="text-[#1f1683]" />
+          Tips voor goede kennis (voor betere training)
+          <span className="ml-auto text-xs font-normal text-[#64748b] group-open:hidden">tonen</span>
+          <span className="ml-auto text-xs font-normal text-[#64748b] hidden group-open:inline">verbergen</span>
+        </summary>
+        <div className="px-5 pb-4 pt-1 space-y-3">
+          <ul className="space-y-1.5">
+            {TIPS.map((t, i) => (
+              <li key={i} className="flex items-start gap-2 text-xs text-[#334155] leading-relaxed">
+                <span className="mt-[6px] h-1 w-1 rounded-full bg-[#1f1683] shrink-0" />
+                {t}
+              </li>
+            ))}
+          </ul>
+          <div className="flex items-center gap-3 pt-1">
+            <button type="button" onClick={insertExample}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-[#c7d7fd] bg-white px-3 py-1.5 text-xs font-medium text-[#1f1683] hover:bg-[#eef4ff] transition-colors">
+              <Sparkles size={13} /> Voorbeeld invoegen
+            </button>
+            <span className="text-xs text-[#94a3b8]">Zet een correct opgemaakt voorbeeld in het inhoudsveld.</span>
+          </div>
+        </div>
+      </details>
+
       <div className="rounded-xl border border-[#e2e8f0] bg-white p-5 shadow-sm space-y-4">
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div className="space-y-1.5">
