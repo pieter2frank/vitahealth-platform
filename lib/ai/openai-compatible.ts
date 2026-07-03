@@ -26,6 +26,8 @@ function fitDimensions(vec: number[], dims?: number): number[] {
 }
 
 export function makeOpenAiCompatibleProvider(cfg: Config): AiProvider {
+  // Trailing slash weghalen; anders ontstaat `…/v1//embeddings` → 404.
+  const baseUrl = cfg.baseUrl.replace(/\/+$/, '')
   const headers = () => ({
     Authorization: `Bearer ${cfg.apiKey}`,
     'Content-Type': 'application/json',
@@ -42,7 +44,7 @@ export function makeOpenAiCompatibleProvider(cfg: Config): AiProvider {
       const body: Record<string, unknown> = { model: cfg.embedModel, input: texts }
       if (cfg.embedDimensions) body.dimensions = cfg.embedDimensions
 
-      const res = await fetch(`${cfg.baseUrl}/embeddings`, {
+      const res = await fetch(`${baseUrl}/embeddings`, {
         method: 'POST',
         headers: headers(),
         body: JSON.stringify(body),
@@ -59,7 +61,7 @@ export function makeOpenAiCompatibleProvider(cfg: Config): AiProvider {
       if (system) messages.push({ role: 'system', content: system })
       messages.push({ role: 'user', content: user })
 
-      const res = await fetch(`${cfg.baseUrl}/chat/completions`, {
+      const res = await fetch(`${baseUrl}/chat/completions`, {
         method: 'POST',
         headers: headers(),
         body: JSON.stringify({ model: cfg.chatModel, messages, max_tokens: maxTokens, temperature }),
