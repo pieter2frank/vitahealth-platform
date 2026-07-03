@@ -1,9 +1,8 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
-import { createAdminClient } from '@/lib/supabase/admin'
 import { isUuid } from '@/lib/validation'
 import { logAuditEvent } from '@/lib/audit'
 import { getAiProvider } from '@/lib/ai'
+import { requireRole } from '@/lib/ai/route-guard'
 import { generateAdvice } from '@/lib/ai/advice'
 
 // POST /api/advice/generate  { clientId }
@@ -13,15 +12,8 @@ import { generateAdvice } from '@/lib/ai/advice'
 export const dynamic = 'force-dynamic'
 
 export async function POST(req: Request) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Niet geautoriseerd.' }, { status: 401 })
-
-  const admin = createAdminClient()
-  const { data: me } = await admin.from('vh_medewerker').select('role').eq('user_id', user.id).maybeSingle()
-  if (!me || !['arts', 'leefstijlarts'].includes(me.role)) {
-    return NextResponse.json({ error: 'Alleen voor arts/leefstijlarts.' }, { status: 403 })
-  }
+  const auth = await requireRole(['arts', 'leefstijlarts'])
+  if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.status })
 
   const provider = getAiProvider()
   if (!provider.isConfigured()) {
@@ -32,9 +24,9 @@ export async function POST(req: Request) {
   if (!isUuid(clientId)) return NextResponse.json({ error: 'Ongeldig clientId.' }, { status: 400 })
 
   try {
-    const result = await generateAdvice(clientId, user.id)
+    const result = await generateAdvice(clientId, auth.name)
     await logAuditEvent({
-      actorUserId:     user.id,
+      actorUserId:     auth.userId,
       actorRole:       'medisch_deskundige',
       subjectClientId: clientId,
       resourceType:    'client',

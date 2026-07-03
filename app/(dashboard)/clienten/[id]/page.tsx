@@ -16,6 +16,7 @@ import { EnrollmentStatusSection } from './EnrollmentStatusSection'
 import { CopyIntakeLink } from './CopyIntakeLink'
 import { ReminderButton } from './ReminderButton'
 import { InsightsModal } from './InsightsModal'
+import { AdviceSection } from './AdviceSection'
 
 const GENDER_LABELS: Record<string, string> = {
   man:             'Man',
@@ -68,6 +69,7 @@ export default async function ClientDetailPage({
     { data: screenerResp },
     { data: reportsRaw },
     { data: biomarkerRefs },
+    { data: advicesRaw },
   ] = await Promise.all([
     supabase
       .from('vh_testkit')
@@ -109,6 +111,11 @@ export default async function ClientDetailPage({
     supabase
       .from('vh_biomarker_ref')
       .select('code, display_name, unit, marker_group, direction, sort_order, description'),
+    supabase
+      .from('vh_advice')
+      .select('id, status, content, model, created_by, approved_by, approved_at, created_at')
+      .eq('client_id', id)
+      .order('created_at', { ascending: false }),
   ])
 
   const questionnaireAssignments = (qaRaw ?? []).map(a => ({
@@ -320,6 +327,12 @@ export default async function ClientDetailPage({
       <ReportSection
         reports={reportsRaw ?? []}
         refs={biomarkerRefs ?? []}
+      />
+
+      {/* ── AI-advies (concept) — alleen arts/leefstijlarts ─────────────────── */}
+      <AdviceSection
+        clientId={client.id}
+        initialAdvices={advicesRaw ?? []}
       />
 
       {/* ── Aantekeningen arts — alleen arts/leefstijlarts ──────────────────── */}

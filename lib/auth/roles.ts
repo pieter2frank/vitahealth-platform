@@ -7,3 +7,11 @@ export function canSeeResults(role: string | null | undefined): boolean {
 export function isAdmin(role: string | null | undefined): boolean {
   return role === 'admin'
 }
+
+/**
+ * Wie mag de kennisbank beheren en advies genereren/goedkeuren?
+ * Klinische inhoud → arts en leefstijlarts; admin voor beheer.
+ */
+export function canManageKnowledge(role: string | null | undefined): boolean {
+  return role === 'admin' || role === 'arts' || role === 'leefstijlarts'
+}

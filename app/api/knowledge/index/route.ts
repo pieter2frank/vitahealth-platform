@@ -1,23 +1,17 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
-import { createAdminClient } from '@/lib/supabase/admin'
 import { isUuid } from '@/lib/validation'
 import { getAiProvider } from '@/lib/ai'
+import { requireRole } from '@/lib/ai/route-guard'
 import { indexKnowledge } from '@/lib/ai/knowledge'
 
 // POST /api/knowledge/index  { knowledgeId }
-// (Her)indexeert een kennisdocument (chunk → embed → opslaan). Alleen admins.
+// (Her)indexeert een kennisdocument (chunk → embed → opslaan).
 
 export const dynamic = 'force-dynamic'
 
 export async function POST(req: Request) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Niet geautoriseerd.' }, { status: 401 })
-
-  const admin = createAdminClient()
-  const { data: me } = await admin.from('vh_medewerker').select('role').eq('user_id', user.id).maybeSingle()
-  if (me?.role !== 'admin') return NextResponse.json({ error: 'Alleen voor admins.' }, { status: 403 })
+  const auth = await requireRole(['admin', 'arts', 'leefstijlarts'])
+  if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.status })
 
   const provider = getAiProvider()
   if (!provider.isConfigured()) {
