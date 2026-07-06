@@ -12,31 +12,26 @@ export default async function PubliekeVragenlijstPage({
   const { assignmentId } = await params
   const supabase = await createClient()
 
-  const { data: assignment } = await supabase
-    .from('vh_questionnaire_assignment')
-    .select('id, status, client_id, questionnaire_id, vh_client(first_name, last_name), vh_questionnaire(title, json_content)')
-    .eq('id', assignmentId)
-    .single()
+  // Token-gescopet ophalen via SECURITY DEFINER-RPC (geen directe leestoegang
+  // op vh_client/vh_intake_token met de anon-key — zie migratie 059/060).
+  const { data: a } = await supabase.rpc('portal_get_assignment', { p_assignment_id: assignmentId })
+  const assignment = a as {
+    status: string; client_id: string; questionnaire_id: string
+    title: string; json_content: QuestionnaireDefinition
+    first_name: string | null; last_name: string | null; token: string | null
+  } | null
 
-  if (!assignment) notFound()
+  if (!assignment?.json_content) notFound()
 
-  const client = assignment.vh_client as unknown as { first_name: string; last_name: string } | null
-  const q = assignment.vh_questionnaire as unknown as { title: string; json_content: QuestionnaireDefinition } | null
-
-  if (!q) notFound()
-
-  const def = q.json_content
-
-  // Status-URL ophalen via intake-token
-  const { data: tokenRow } = await supabase
-    .from('vh_intake_token')
-    .select('token')
-    .eq('client_id', assignment.client_id)
-    .maybeSingle()
+  const client = assignment.first_name
+    ? { first_name: assignment.first_name, last_name: assignment.last_name ?? '' }
+    : null
+  const q = { title: assignment.title }
+  const def = assignment.json_content
 
   const portalUrl = process.env.NEXT_PUBLIC_PORTAL_URL ?? ''
-  const statusUrl = tokenRow?.token
-    ? `${portalUrl}/portal/status/${tokenRow.token}`
+  const statusUrl = assignment.token
+    ? `${portalUrl}/portal/status/${assignment.token}`
     : null
 
   return (

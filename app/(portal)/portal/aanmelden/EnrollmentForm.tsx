@@ -228,25 +228,26 @@ export function EnrollmentForm({
         setSaving(false)
         if (updateErr) { setError('Opslaan mislukt: ' + updateErr.message); return }
       } else {
-        // Nieuwe cliënt: record aanmaken
-        const { data: newClient, error: insertErr } = await supabase
-          .from('vh_client')
-          .insert({
-            first_name:        firstName.trim(),
-            last_name:         lastName.trim(),
-            email:             email.trim(),
-            enrollment_status: 'aangemeld',
-            ...adresPayload,
+        // Nieuwe cliënt: aanmaken via SECURITY DEFINER-RPC (geen directe anon
+        // insert/return op vh_client — zie migratie 059/060).
+        const { data: newId, error: insertErr } = await supabase
+          .rpc('portal_register_client', {
+            p_first_name:  firstName.trim(),
+            p_last_name:   lastName.trim(),
+            p_email:       email.trim(),
+            p_phone:       phone.trim() || null,
+            p_birth_date:  birthDate || null,
+            p_address:     address.trim(),
+            p_postal_code: postalCode.trim(),
+            p_city:        city.trim(),
           })
-          .select('id')
-          .single()
 
         setSaving(false)
-        if (insertErr || !newClient) {
+        if (insertErr || !newId) {
           setError('Registratie mislukt: ' + (insertErr?.message ?? 'onbekende fout'))
           return
         }
-        setClientId(newClient.id)
+        setClientId(newId as string)
       }
 
       setStep(3)
