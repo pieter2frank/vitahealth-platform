@@ -15,6 +15,13 @@ export async function POST(req: Request) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Niet geautoriseerd.' }, { status: 401 })
 
+  // Rol-controle: alleen arts/leefstijlarts mag medische rapporten versturen.
+  const { data: me } = await supabase
+    .from('vh_medewerker').select('role').eq('user_id', user.id).maybeSingle()
+  if (!me || !['arts', 'leefstijlarts'].includes(me.role)) {
+    return NextResponse.json({ error: 'Alleen voor arts/leefstijlarts.' }, { status: 403 })
+  }
+
   const { documentId } = await req.json().catch(() => ({}))
   if (!isUuid(documentId)) {
     return NextResponse.json({ error: 'Ongeldig documentId.' }, { status: 400 })
