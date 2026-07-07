@@ -29,6 +29,7 @@ export interface ResumeInfo {
   hasAddress:   boolean
   assignmentId: string | null
   token:        string | null
+  screenerChoice: 'ok' | 'hold' | null
 }
 
 interface Props {
@@ -155,8 +156,16 @@ export function EnrollmentForm({
       if (err) { setError(err); return }
 
       // Uitgenodigde cliënt (clientId al bekend via hervatten): e-mailcheck
-      // overslaan — anders verschijnt de hervat-banner opnieuw. Direct door.
+      // overslaan. Persisteer stap-1-gegevens meteen, zodat een reminder later
+      // bij stap 2 hervat (en niet terugvalt naar stap 1).
       if (clientId) {
+        setSaving(true)
+        const supabase = createClient()
+        await supabase
+          .from('vh_client')
+          .update({ phone: phone.trim() || null, birth_date: birthDate || null })
+          .eq('id', clientId)
+        setSaving(false)
         setStep(2)
         window.scrollTo({ top: 0, behavior: 'smooth' })
         return
@@ -311,20 +320,28 @@ export function EnrollmentForm({
     setPostalCode(resumeInfo.postalCode)
     setCity(resumeInfo.city)
 
-    const canGoToStep4 = resumeInfo.status === 'toestemming_gegeven' && resumeInfo.assignmentId !== null
-
+    const info = resumeInfo
     setResumeInfo(null)
 
-    if (canGoToStep4) {
-      setAssignmentId(resumeInfo.assignmentId!)
+    // Hervat bij de eerst-nog-te-doen stap, op basis van wat is opgeslagen.
+    const consentDone = info.status === 'toestemming_gegeven' || info.status === 'intake_on_hold'
+
+    if (consentDone && info.assignmentId !== null) {
+      // Toestemmingen gegeven → naar de vragenlijst (stap 4). Sla de
+      // geschiktheidscheck over als die al is beantwoord.
+      setAssignmentId(info.assignmentId)
+      if (info.screenerChoice === 'ok') setScreeningChoice('ok')
+      else if (info.screenerChoice === 'hold' || info.status === 'intake_on_hold') setScreeningChoice('hold')
       setStep(4)
-    } else if (!resumeInfo.hasAddress) {
-      // Uitgenodigde cliënt: nog geen adres én mogelijk geen geboortedatum.
-      // Start bij stap 1 (persoonsgegevens) zodat ook geboortedatum ingevuld
-      // kan worden. Naam en e-mail zijn al voorgevuld.
-      setStep(1)
-    } else {
+    } else if (info.hasAddress) {
+      // Adres opgeslagen, toestemmingen nog niet → stap 3.
       setStep(3)
+    } else if (info.phone || info.birthDate) {
+      // Persoonsgegevens ingevuld, adres nog niet → stap 2.
+      setStep(2)
+    } else {
+      // Nog niets ingevuld → stap 1 (naam/e-mail zijn al voorgevuld).
+      setStep(1)
     }
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }

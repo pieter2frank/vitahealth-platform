@@ -33,6 +33,7 @@ export default async function AanmeldenPage({ searchParams }: PageProps) {
         hasAddress:   data.has_address   ?? false,
         assignmentId: data.assignment_id ?? null,
         token:        data.token         ?? token ?? null,
+        screenerChoice: (data.screener_choice as 'ok' | 'hold' | null) ?? null,
       }
     }
   }
