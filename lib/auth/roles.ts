@@ -15,3 +15,12 @@ export function isAdmin(role: string | null | undefined): boolean {
 export function canManageKnowledge(role: string | null | undefined): boolean {
   return role === 'admin' || role === 'arts' || role === 'leefstijlarts'
 }
+
+/**
+ * Wie mag de geboortedatum van een cliënt zien/bewerken? De logistieke
+ * 'medewerker'-rol niet (dataminimalisatie — zie P2-8). DOB is een sterk
+ * identificerend gegeven en niet nodig voor kit-logistiek.
+ */
+export function canSeeBirthDate(role: string | null | undefined): boolean {
+  return role === 'admin' || role === 'arts' || role === 'leefstijlarts'
+}

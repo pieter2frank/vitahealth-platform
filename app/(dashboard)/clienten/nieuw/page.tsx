@@ -7,9 +7,13 @@ import { DateInput } from '@/components/ui/date-input'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
+import { useUser } from '@/components/providers/UserProvider'
+import { canSeeBirthDate } from '@/lib/auth/roles'
 
 export default function NieuweClientPage() {
   const router = useRouter()
+  const { role } = useUser()
+  const showDob = canSeeBirthDate(role)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
 
@@ -99,13 +103,15 @@ export default function NieuweClientPage() {
               required
             />
           </div>
-          <div className="mt-4">
-            <DateInput
-              label="Geboortedatum"
-              value={form.birth_date}
-              onChange={v => set('birth_date', v)}
-            />
-          </div>
+          {showDob && (
+            <div className="mt-4">
+              <DateInput
+                label="Geboortedatum"
+                value={form.birth_date}
+                onChange={v => set('birth_date', v)}
+              />
+            </div>
+          )}
         </div>
 
         <div className="border-t border-[#f1f5f9]" />

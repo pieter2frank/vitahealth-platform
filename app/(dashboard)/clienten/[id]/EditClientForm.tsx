@@ -8,6 +8,8 @@ import { DateFieldNL } from '@/components/ui/DateFieldNL'
 import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
 import type { Client } from '@/types'
+import { useUser } from '@/components/providers/UserProvider'
+import { canSeeBirthDate } from '@/lib/auth/roles'
 
 const GENDER_OPTIONS = [
   { value: '',                label: '— Niet opgegeven' },
@@ -19,6 +21,8 @@ const GENDER_OPTIONS = [
 
 export function EditClientForm({ client }: { client: Client }) {
   const router = useRouter()
+  const { role } = useUser()
+  const showDob = canSeeBirthDate(role)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
 
@@ -51,7 +55,9 @@ export function EditClientForm({ client }: { client: Client }) {
         last_name: form.last_name.trim(),
         email: form.email.trim() || null,
         phone: form.phone.trim() || null,
-        birth_date: form.birth_date || null,
+        // birth_date alleen meesturen als de rol het mag zien/bewerken — anders
+        // niet aanraken (voorkomt dat de logistieke rol de DOB per ongeluk wist).
+        ...(showDob ? { birth_date: form.birth_date || null } : {}),
         gender: form.gender || null,
         address: form.address.trim() || null,
         city: form.city.trim() || null,
@@ -89,14 +95,16 @@ export function EditClientForm({ client }: { client: Client }) {
             <Input label="Achternaam" value={form.last_name} onChange={e => set('last_name', e.target.value)} required />
           </div>
           <div className="mt-4 grid grid-cols-2 gap-4">
-            <div className="space-y-1.5">
-              <label className="block text-sm font-medium text-[#1e293b]">Geboortedatum</label>
-              <DateFieldNL
-                value={form.birth_date}
-                onChange={v => set('birth_date', v)}
-                className="w-full rounded-lg border border-[#e2e8f0] px-3 py-2 text-sm text-[#1e293b] placeholder:text-[#94a3b8] focus:outline-none focus:ring-2 focus:ring-[#1f1683]/30 focus:border-[#1f1683]"
-              />
-            </div>
+            {showDob && (
+              <div className="space-y-1.5">
+                <label className="block text-sm font-medium text-[#1e293b]">Geboortedatum</label>
+                <DateFieldNL
+                  value={form.birth_date}
+                  onChange={v => set('birth_date', v)}
+                  className="w-full rounded-lg border border-[#e2e8f0] px-3 py-2 text-sm text-[#1e293b] placeholder:text-[#94a3b8] focus:outline-none focus:ring-2 focus:ring-[#1f1683]/30 focus:border-[#1f1683]"
+                />
+              </div>
+            )}
             <div className="space-y-1.5">
               <label className="block text-sm font-medium text-[#1e293b]">Geslacht</label>
               <select

@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { formatDate, formatDateTime, STATUS_LABELS, STATUS_COLORS } from '@/lib/utils'
 import { ArrowLeft, Pencil, TestTube2, User, Phone, Mail, MapPin, Calendar, ShieldAlert, ShieldCheck } from 'lucide-react'
 import { SCREENER_DECLARATION_LABEL } from '@/lib/screener'
+import { canSeeBirthDate } from '@/lib/auth/roles'
 import { EditClientForm } from './EditClientForm'
 import { TestkitLinker } from '@/components/testkits/TestkitLinker'
 import { DeleteButton } from '@/components/ui/DeleteButton'
@@ -47,6 +48,12 @@ export default async function ClientDetailPage({
     .single()
 
   if (!client) notFound()
+
+  // P2-8: geboortedatum niet naar de logistieke 'medewerker'-rol sturen (ook niet
+  // in de page-source). Wordt op dataniveau geneutraliseerd vóór weergave/bewerken.
+  const { data: me } = await supabase
+    .from('vh_medewerker').select('role').eq('user_id', user?.id ?? '').maybeSingle()
+  if (!canSeeBirthDate(me?.role)) client.birth_date = null
 
   // Auditlog: inzage cliëntdossier (fire-and-forget — blokkeert pagina niet)
   if (user) {
