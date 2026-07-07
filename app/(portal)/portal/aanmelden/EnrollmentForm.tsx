@@ -56,6 +56,9 @@ export function EnrollmentForm({
   // Als initialResumeInfo meegegeven is (token-link): direct banner tonen, geen check nodig
   const [resumeInfo, setResumeInfo]             = useState<ResumeInfo | null>(initialResumeInfo ?? null)
   const [checkingInitialEmail, setCheckingInitialEmail] = useState(!!initialEmail && !initialResumeInfo)
+  // Bekend e-mailadres → veilige hervat-link naar het geregistreerde adres i.p.v.
+  // gegevens inline tonen (voorkomt anonieme PII-/token-disclosure, zie P3-10).
+  const [resumeEmailSent, setResumeEmailSent] = useState(false)
 
   // Persoonsgegevens
   const [firstName,  setFirstName]  = useState('')
@@ -87,26 +90,17 @@ export function EnrollmentForm({
   useEffect(() => {
     if (!initialEmail) return
     const supabase = createClient()
-    supabase.rpc('check_enrollment_email', { p_email: initialEmail.trim() }).then(({ data, error }) => {
+    supabase.rpc('check_enrollment_email', { p_email: initialEmail.trim() }).then(async ({ data, error }) => {
       if (error) {
         console.error('[EnrollmentForm] check_enrollment_email fout:', error)
       }
       if (data?.exists) {
-        setResumeInfo({
-          clientId:     data.id,
-          status:       data.status,
-          firstName:    data.first_name   ?? '',
-          lastName:     data.last_name    ?? '',
-          email:        data.email        ?? initialEmail.trim(),
-          phone:        data.phone        ?? '',
-          birthDate:    data.birth_date   ?? '',
-          address:      data.address      ?? '',
-          postalCode:   data.postal_code  ?? '',
-          city:         data.city         ?? '',
-          hasAddress:   data.has_address  ?? false,
-          assignmentId: data.assignment_id ?? null,
-          token:        data.token        ?? null,
-        })
+        // Geen inline gegevens (e-mail is niet geheim). Veilige link naar het adres.
+        await fetch('/api/portal/resume-link', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: initialEmail.trim() }),
+        }).catch(() => {})
+        setResumeEmailSent(true)
       }
       setCheckingInitialEmail(false)
     })
@@ -172,31 +166,24 @@ export function EnrollmentForm({
       const supabase = createClient()
       const { data: checkData, error: checkError } = await supabase
         .rpc('check_enrollment_email', { p_email: email.trim() })
-      setSaving(false)
 
       if (checkError) {
         console.error('[EnrollmentForm] check_enrollment_email fout:', checkError)
       }
 
       if (checkData?.exists) {
-        setResumeInfo({
-          clientId:     checkData.id,
-          status:       checkData.status,
-          firstName:    checkData.first_name   ?? '',
-          lastName:     checkData.last_name    ?? '',
-          email:        checkData.email        ?? email.trim(),
-          phone:        checkData.phone        ?? '',
-          birthDate:    checkData.birth_date   ?? '',
-          address:      checkData.address      ?? '',
-          postalCode:   checkData.postal_code  ?? '',
-          city:         checkData.city         ?? '',
-          hasAddress:   checkData.has_address  ?? false,
-          assignmentId: checkData.assignment_id ?? null,
-          token:        checkData.token        ?? null,
-        })
+        // Bekend adres → veilige hervat-link mailen; geen gegevens inline tonen.
+        await fetch('/api/portal/resume-link', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: email.trim() }),
+        }).catch(() => {})
+        setSaving(false)
+        setResumeEmailSent(true)
+        window.scrollTo({ top: 0, behavior: 'smooth' })
         return
       }
 
+      setSaving(false)
       setStep(2)
       window.scrollTo({ top: 0, behavior: 'smooth' })
       return
@@ -516,8 +503,24 @@ export function EnrollmentForm({
           </div>
         )}
 
+        {/* ── Stap 1: Bekend e-mailadres → veilige hervat-link gemaild ────────── */}
+        {step === 1 && !checkingInitialEmail && resumeEmailSent && (
+          <div className="p-6">
+            <div className="rounded-2xl border border-green-200 bg-green-50 p-8 text-center shadow-sm">
+              <div className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-green-100 mb-4">
+                <CheckCircle2 size={22} className="text-green-600" />
+              </div>
+              <h2 className="text-lg font-semibold text-green-800 mb-1">Check je e-mail</h2>
+              <p className="text-sm text-green-700 leading-relaxed max-w-sm mx-auto">
+                Als dit e-mailadres bij ons bekend is, hebben we je een e-mail gestuurd met een
+                veilige link om je aanmelding te hervatten. Controleer ook je spam-map.
+              </p>
+            </div>
+          </div>
+        )}
+
         {/* ── Stap 1: Persoonsgegevens ────────────────────────────────────────── */}
-        {step === 1 && !checkingInitialEmail && resumeInfo === null && (
+        {step === 1 && !checkingInitialEmail && resumeInfo === null && !resumeEmailSent && (
           <div className="p-6 space-y-4">
             <h2 className="text-base font-semibold text-[#1e293b]">Persoonsgegevens</h2>
 
@@ -1118,7 +1121,7 @@ export function EnrollmentForm({
         )}
 
         {/* ── Foutmelding + navigatiebuttons (stap 1–3, niet bij resume-banner of laden) ── */}
-        {step <= 3 && resumeInfo === null && !checkingInitialEmail && (
+        {step <= 3 && resumeInfo === null && !checkingInitialEmail && !resumeEmailSent && (
           <div className="border-t border-[#f1f5f9] px-6 py-4 space-y-3">
             {error && <ErrorBanner message={error} />}
             <div className="flex items-center justify-between">
