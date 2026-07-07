@@ -23,3 +23,14 @@ export function sanitizeString(value: unknown, maxLength = 500): string {
   if (typeof value !== 'string') return ''
   return value.trim().slice(0, maxLength)
 }
+
+/**
+ * Maakt een zoekterm veilig voor gebruik in een PostgREST .or()/.ilike()-filter.
+ * Verwijdert de structurele metatekens , ( ) en de LIKE-wildcards % _ (plus * \ ")
+ * zodat een gebruiker niet uit de filtergrammatica kan breken of wildcard-injectie
+ * kan doen. Begrenst de lengte.
+ */
+export function sanitizeSearchTerm(value: unknown, maxLength = 100): string {
+  if (typeof value !== 'string') return ''
+  return value.replace(/[,()%_*\\"]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, maxLength)
+}

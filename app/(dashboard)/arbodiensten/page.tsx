@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { formatDate } from '@/lib/utils'
 import { Stethoscope, Search } from 'lucide-react'
 import { ClickableRow } from '@/components/ui/ClickableRow'
+import { sanitizeSearchTerm } from '@/lib/validation'
 
 export default async function ArbodienstenPage({
   searchParams,
@@ -17,7 +18,8 @@ export default async function ArbodienstenPage({
     .select('id, name, contact_name, email, phone, city, created_at')
     .order('name', { ascending: true })
 
-  if (q) query = query.ilike('name', `%${q}%`)
+  const term = sanitizeSearchTerm(q)
+  if (term) query = query.ilike('name', `%${term}%`)
 
   const { data: arbos, error } = await query
 

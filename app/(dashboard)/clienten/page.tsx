@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
 import { UserPlus, Search, Send } from 'lucide-react'
 import { ClientsTable } from './ClientsTable'
+import { sanitizeSearchTerm } from '@/lib/validation'
 
 export default async function ClientenPage({
   searchParams,
@@ -16,8 +17,9 @@ export default async function ClientenPage({
     .select('id, first_name, last_name, email, phone, city, created_at, enrollment_status')
     .order('last_name', { ascending: true })
 
-  if (q) {
-    query = query.or(`last_name.ilike.%${q}%,first_name.ilike.%${q}%,email.ilike.%${q}%`)
+  const term = sanitizeSearchTerm(q)
+  if (term) {
+    query = query.or(`last_name.ilike.%${term}%,first_name.ilike.%${term}%,email.ilike.%${term}%`)
   }
 
   const { data: clients, error } = await query

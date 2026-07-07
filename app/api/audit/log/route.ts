@@ -56,7 +56,9 @@ export async function POST(req: Request) {
     outcome:         'success',
     reason:          reason ?? undefined,
     ipAddress:       ip,
-    metadata:        metadata,
+    // Markeer als door de client-UI gemeld (niet server-autoritatief). Gevoelige
+    // acties (download/verzenden/advies) worden apart server-side geaudit.
+    metadata:        { ...(metadata ?? {}), origin: 'client_ui' },
   })
 
   return NextResponse.json({ ok: true })
