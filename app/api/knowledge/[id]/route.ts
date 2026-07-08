@@ -1,7 +1,7 @@
-import { NextResponse } from 'next/server'
+﻿import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { isUuid, sanitizeString } from '@/lib/validation'
-import { requireRole } from '@/lib/ai/route-guard'
+import { requireRole } from '@/lib/auth/guard'
 import { isKnowledgeDomain } from '@/lib/knowledge-domains'
 
 // PATCH  /api/knowledge/:id  — velden bijwerken (title/body/domain/status/…)

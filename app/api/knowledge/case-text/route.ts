@@ -1,7 +1,7 @@
-import { NextResponse } from 'next/server'
+﻿import { NextResponse } from 'next/server'
 import { isUuid } from '@/lib/validation'
 import { logAuditEvent } from '@/lib/audit'
-import { requireRole } from '@/lib/ai/route-guard'
+import { requireRole } from '@/lib/auth/guard'
 import { buildClientCaseText } from '@/lib/ai/case-document'
 
 // POST /api/knowledge/case-text  { clientId }

@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getSecureDeliveryProvider } from '@/lib/secure-delivery'
 import { logAuditEvent } from '@/lib/audit'
 import { isUuid } from '@/lib/validation'
+import { requireRole } from '@/lib/auth/guard'
 
 // POST /api/reports/send  { documentId }
 // Verstuurt een opgeslagen rapport (vh_client_document) beveiligd naar de
@@ -11,16 +11,8 @@ import { isUuid } from '@/lib/validation'
 // medewerkers; elke verzending wordt in de auditlog vastgelegd.
 
 export async function POST(req: Request) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Niet geautoriseerd.' }, { status: 401 })
-
-  // Rol-controle: alleen arts/leefstijlarts mag medische rapporten versturen.
-  const { data: me } = await supabase
-    .from('vh_medewerker').select('role').eq('user_id', user.id).maybeSingle()
-  if (!me || !['arts', 'leefstijlarts'].includes(me.role)) {
-    return NextResponse.json({ error: 'Alleen voor arts/leefstijlarts.' }, { status: 403 })
-  }
+  const auth = await requireRole(['arts', 'leefstijlarts'])
+  if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.status })
 
   const { documentId } = await req.json().catch(() => ({}))
   if (!isUuid(documentId)) {
@@ -83,7 +75,7 @@ export async function POST(req: Request) {
 
   // Auditlog — wie, wanneer, welke actie, op welke resource, met welk resultaat.
   await logAuditEvent({
-    actorUserId:     user.id,
+    actorUserId:     auth.userId,
     actorRole:       'medewerker_regulier',
     subjectClientId: client.id,
     resourceType:    'client_document',

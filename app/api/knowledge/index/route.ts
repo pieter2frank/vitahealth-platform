@@ -1,7 +1,7 @@
-import { NextResponse } from 'next/server'
+﻿import { NextResponse } from 'next/server'
 import { isUuid } from '@/lib/validation'
 import { getAiProvider } from '@/lib/ai'
-import { requireRole } from '@/lib/ai/route-guard'
+import { requireRole } from '@/lib/auth/guard'
 import { indexKnowledge } from '@/lib/ai/knowledge'
 
 // POST /api/knowledge/index  { knowledgeId }

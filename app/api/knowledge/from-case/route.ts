@@ -1,9 +1,9 @@
-import { NextResponse } from 'next/server'
+﻿import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { isUuid, sanitizeString } from '@/lib/validation'
 import { logAuditEvent } from '@/lib/audit'
 import { getAiProvider } from '@/lib/ai'
-import { requireRole } from '@/lib/ai/route-guard'
+import { requireRole } from '@/lib/auth/guard'
 import { indexKnowledge } from '@/lib/ai/knowledge'
 import { isKnowledgeDomain, CASE_SOURCE } from '@/lib/knowledge-domains'
 

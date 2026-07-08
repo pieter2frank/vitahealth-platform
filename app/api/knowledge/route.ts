@@ -1,7 +1,7 @@
-import { NextResponse } from 'next/server'
+﻿import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { sanitizeString } from '@/lib/validation'
-import { requireRole } from '@/lib/ai/route-guard'
+import { requireRole } from '@/lib/auth/guard'
 import { isKnowledgeDomain } from '@/lib/knowledge-domains'
 
 // POST /api/knowledge  { domain, title, body, content_type?, media_url?, source?, evidence? }

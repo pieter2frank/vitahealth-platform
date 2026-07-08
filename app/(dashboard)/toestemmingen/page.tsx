@@ -1,22 +1,14 @@
-import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { redirect } from 'next/navigation'
 import { ShieldCheck } from 'lucide-react'
 import { format } from 'date-fns'
 import { nl } from 'date-fns/locale'
+import { requireRolePage } from '@/lib/auth/guard'
 import { ConsentEditor } from './ConsentEditor'
 
 export const metadata = { title: 'Toestemmingen — Vita Health' }
 
 export default async function ToestemmingenPage() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/auth/login')
-
-  const { data: me } = await supabase
-    .from('vh_medewerker').select('role').eq('user_id', user.id).single()
-  if (me?.role !== 'admin') redirect('/dashboard')
-
+  await requireRolePage(['admin'])
   const admin = createAdminClient()
   const { data: versions } = await admin
     .from('vh_consent_version')

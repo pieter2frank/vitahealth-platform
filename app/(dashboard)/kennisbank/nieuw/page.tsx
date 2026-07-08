@@ -1,15 +1,10 @@
-import { createClient } from '@/lib/supabase/server'
-import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
-import { canManageKnowledge } from '@/lib/auth/roles'
+import { requireRolePage } from '@/lib/auth/guard'
 import { KnowledgeForm } from '../KnowledgeForm'
 
 export default async function NieuwKennisdocumentPage() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  const { data: me } = await supabase.from('vh_medewerker').select('role').eq('user_id', user?.id ?? '').maybeSingle()
-  if (!canManageKnowledge(me?.role)) redirect('/dashboard')
+  await requireRolePage(['admin', 'arts', 'leefstijlarts'])
 
   return (
     <div className="p-8 max-w-4xl">

@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { isUuid } from '@/lib/validation'
 import { logAuditEvent } from '@/lib/audit'
+import { requireRole } from '@/lib/auth/guard'
 import { pdfToPageLines } from '@/lib/reports/pdf-text'
 import { parseNightingaleReport } from '@/lib/reports/nightingale'
 
@@ -15,18 +15,10 @@ export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
 export async function POST(req: Request) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Niet geautoriseerd.' }, { status: 401 })
+  const auth = await requireRole(['arts', 'leefstijlarts'])
+  if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.status })
 
   const admin = createAdminClient()
-
-  // Rol-controle: alleen arts/leefstijlarts mag medische data verwerken.
-  const { data: me } = await admin
-    .from('vh_medewerker').select('role').eq('user_id', user.id).maybeSingle()
-  if (!me || !['arts', 'leefstijlarts'].includes(me.role)) {
-    return NextResponse.json({ error: 'Alleen voor arts/leefstijlarts.' }, { status: 403 })
-  }
 
   const { documentId } = await req.json().catch(() => ({}))
   if (!isUuid(documentId)) return NextResponse.json({ error: 'Ongeldig documentId.' }, { status: 400 })
@@ -146,7 +138,7 @@ export async function POST(req: Request) {
   if (cl && !['uitslag_bekend', 'uitslag_besproken'].includes(cl.enrollment_status)) {
     await admin.from('vh_client').update({ enrollment_status: 'uitslag_bekend' }).eq('id', doc.client_id)
     await logAuditEvent({
-      actorUserId:     user.id,
+      actorUserId:     auth.userId,
       actorRole:       'medisch_deskundige',
       subjectClientId: doc.client_id,
       resourceType:    'enrollment_status',
@@ -173,7 +165,7 @@ export async function POST(req: Request) {
       .update({ status: 'results_available', results_date: new Date().toISOString() })
       .eq('id', kitToUpdate)
     await logAuditEvent({
-      actorUserId:     user.id,
+      actorUserId:     auth.userId,
       actorRole:       'medisch_deskundige',
       subjectClientId: doc.client_id,
       resourceType:    'kit_status',
@@ -185,7 +177,7 @@ export async function POST(req: Request) {
   }
 
   await logAuditEvent({
-    actorUserId:     user.id,
+    actorUserId:     auth.userId,
     actorRole:       'medisch_deskundige',
     subjectClientId: doc.client_id,
     resourceType:    'client_document',

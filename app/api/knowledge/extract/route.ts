@@ -1,5 +1,5 @@
-import { NextResponse } from 'next/server'
-import { requireRole } from '@/lib/ai/route-guard'
+﻿import { NextResponse } from 'next/server'
+import { requireRole } from '@/lib/auth/guard'
 import { extractDocumentText, extensionOf, isSupportedExtension, SUPPORTED_EXTENSIONS } from '@/lib/knowledge/extract'
 
 // POST /api/knowledge/extract  (multipart/form-data, veld "file")

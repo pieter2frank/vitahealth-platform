@@ -1,8 +1,8 @@
-import { NextResponse } from 'next/server'
+﻿import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { isUuid } from '@/lib/validation'
 import { logAuditEvent } from '@/lib/audit'
-import { requireRole } from '@/lib/ai/route-guard'
+import { requireRole } from '@/lib/auth/guard'
 
 // PATCH  /api/advice/:id  { text?, action?: 'approve' | 'reopen' }
 //   - text: bewerk de conceptinhoud (human-in-the-loop)

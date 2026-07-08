@@ -1,16 +1,14 @@
 import { createClient } from '@/lib/supabase/server'
-import { redirect, notFound } from 'next/navigation'
+import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
-import { canManageKnowledge } from '@/lib/auth/roles'
+import { requireRolePage } from '@/lib/auth/guard'
 import { KnowledgeForm } from '../KnowledgeForm'
 
 export default async function KennisdocumentPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
+  await requireRolePage(['admin', 'arts', 'leefstijlarts'])
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  const { data: me } = await supabase.from('vh_medewerker').select('role').eq('user_id', user?.id ?? '').maybeSingle()
-  if (!canManageKnowledge(me?.role)) redirect('/dashboard')
 
   const { data: doc } = await supabase
     .from('vh_knowledge')

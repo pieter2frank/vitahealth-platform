@@ -1,8 +1,8 @@
-import { NextResponse } from 'next/server'
+﻿import { NextResponse } from 'next/server'
 import { isUuid } from '@/lib/validation'
 import { logAuditEvent } from '@/lib/audit'
 import { getAiProvider } from '@/lib/ai'
-import { requireRole } from '@/lib/ai/route-guard'
+import { requireRole } from '@/lib/auth/guard'
 import { generateAdvice } from '@/lib/ai/advice'
 
 // POST /api/advice/generate  { clientId }

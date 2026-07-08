@@ -1,18 +1,15 @@
 import { createClient } from '@/lib/supabase/server'
-import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { formatDate } from '@/lib/utils'
 import { BookOpen, Plus, Sparkles, Video, FileText, GraduationCap } from 'lucide-react'
 import { ClickableRow } from '@/components/ui/ClickableRow'
-import { canManageKnowledge } from '@/lib/auth/roles'
+import { requireRolePage } from '@/lib/auth/guard'
 import { DOMAIN_LABELS, KNOWLEDGE_STATUS_LABELS, KNOWLEDGE_STATUS_COLORS, CASE_SOURCE } from '@/lib/knowledge-domains'
 
 export default async function KennisbankPage({ searchParams }: { searchParams: Promise<{ bron?: string }> }) {
   const { bron } = await searchParams
+  await requireRolePage(['admin', 'arts', 'leefstijlarts'])
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  const { data: me } = await supabase.from('vh_medewerker').select('role').eq('user_id', user?.id ?? '').maybeSingle()
-  if (!canManageKnowledge(me?.role)) redirect('/dashboard')
 
   const { data: allDocs } = await supabase
     .from('vh_knowledge')

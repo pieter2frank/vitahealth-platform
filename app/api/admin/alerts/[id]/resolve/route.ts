@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { isUuid } from '@/lib/validation'
+import { requireRole } from '@/lib/auth/guard'
 
 export async function POST(
   _req: Request,
@@ -10,18 +10,13 @@ export async function POST(
   const { id } = await params
   if (!isUuid(id)) return NextResponse.json({ error: 'Ongeldig ID.' }, { status: 400 })
 
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Niet geautoriseerd.' }, { status: 401 })
-
-  // Controleer admin-rol
-  const { data: medewerker } = await supabase.from('vh_medewerker').select('role').eq('user_id', user.id).single()
-  if (medewerker?.role !== 'admin') return NextResponse.json({ error: 'Geen toegang.' }, { status: 403 })
+  const auth = await requireRole(['admin'])
+  if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.status })
 
   const admin = createAdminClient()
   const { error } = await admin
     .from('vh_alert')
-    .update({ resolved_at: new Date().toISOString(), resolved_by: user.id })
+    .update({ resolved_at: new Date().toISOString(), resolved_by: auth.userId })
     .eq('id', id)
     .is('resolved_at', null)
 
