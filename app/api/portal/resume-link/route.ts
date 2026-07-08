@@ -3,6 +3,7 @@ import { Resend } from 'resend'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { intakeHervattingEmail } from '@/lib/email/templates'
 import { logAuditEvent } from '@/lib/audit'
+import { getOrCreateIntakeToken } from '@/lib/intake-token'
 
 // POST /api/portal/resume-link  { email }
 // Zelf-service: stuurt een veilige hervat-link naar het GEREGISTREERDE adres als
@@ -31,14 +32,7 @@ export async function POST(req: Request) {
   if (!client?.email) return NextResponse.json({ ok: true })
 
   // Intake-token ophalen of aanmaken (het token is de secret voor veilig hervatten).
-  const { data: existing } = await admin
-    .from('vh_intake_token').select('token').eq('client_id', client.id).maybeSingle()
-  let token = existing?.token
-  if (!token) {
-    const { data: created } = await admin
-      .from('vh_intake_token').insert({ client_id: client.id }).select('token').single()
-    token = created?.token
-  }
+  const token = await getOrCreateIntakeToken(admin, client.id)
   if (!token) return NextResponse.json({ ok: true })
 
   const portalUrl = process.env.NEXT_PUBLIC_PORTAL_URL ?? ''

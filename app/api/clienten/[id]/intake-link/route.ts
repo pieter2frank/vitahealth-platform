@@ -9,6 +9,7 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { isUuid } from '@/lib/validation'
+import { getOrCreateIntakeToken } from '@/lib/intake-token'
 
 export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -23,14 +24,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
   if (!client) return NextResponse.json({ error: 'Cliënt niet gevonden.' }, { status: 404 })
 
   // Token ophalen of aanmaken (idempotent — één token per cliënt)
-  const { data: existing } = await admin
-    .from('vh_intake_token').select('token').eq('client_id', id).maybeSingle()
-  let token = existing?.token
-  if (!token) {
-    const { data: created } = await admin
-      .from('vh_intake_token').insert({ client_id: id }).select('token').single()
-    token = created?.token
-  }
+  const token = await getOrCreateIntakeToken(admin, id)
   if (!token) return NextResponse.json({ error: 'Intake-token aanmaken mislukt.' }, { status: 500 })
 
   const portalUrl = process.env.NEXT_PUBLIC_PORTAL_URL ?? ''
