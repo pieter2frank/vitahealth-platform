@@ -5,9 +5,9 @@
  * Je kunt jezelf niet on hold zetten.
  */
 import { NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { isUuid } from '@/lib/validation'
+import { requireRole } from '@/lib/auth/guard'
 import { z } from 'zod'
 
 const schema = z.object({ hold: z.boolean() })
@@ -16,12 +16,8 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   const { id } = await params
   if (!isUuid(id)) return NextResponse.json({ error: 'Ongeldig ID.' }, { status: 400 })
 
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Niet geautoriseerd.' }, { status: 401 })
-  const { data: self } = await supabase
-    .from('vh_medewerker').select('role').eq('user_id', user.id).single()
-  if (self?.role !== 'admin') return NextResponse.json({ error: 'Geen toegang.' }, { status: 403 })
+  const auth = await requireRole(['admin'])
+  if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.status })
 
   const parsed = schema.safeParse(await req.json().catch(() => null))
   if (!parsed.success) return NextResponse.json({ error: 'Ongeldige invoer.' }, { status: 400 })
@@ -31,7 +27,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     .from('vh_medewerker').select('user_id').eq('id', id).single()
   if (!target) return NextResponse.json({ error: 'Medewerker niet gevonden.' }, { status: 404 })
 
-  if (target.user_id === user.id) {
+  if (target.user_id === auth.userId) {
     return NextResponse.json({ error: 'Je kunt jezelf niet on hold zetten.' }, { status: 400 })
   }
 

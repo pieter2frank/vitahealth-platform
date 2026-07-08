@@ -5,8 +5,8 @@
  * De vorige versies blijven bewaard; de nieuwe versie wordt actief.
  */
 import { NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { requireRole } from '@/lib/auth/guard'
 import { z } from 'zod'
 
 const schema = z.object({
@@ -15,15 +15,8 @@ const schema = z.object({
 })
 
 export async function POST(req: Request) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Niet geautoriseerd.' }, { status: 401 })
-
-  const { data: me } = await supabase
-    .from('vh_medewerker').select('role').eq('user_id', user.id).single()
-  if (me?.role !== 'admin') {
-    return NextResponse.json({ error: 'Geen toegang.' }, { status: 403 })
-  }
+  const auth = await requireRole(['admin'])
+  if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.status })
 
   const body = await req.json().catch(() => null)
   const parsed = schema.safeParse(body)
@@ -59,7 +52,7 @@ export async function POST(req: Request) {
       required_texts: required,
       optional_texts: optional,
       is_active:      true,
-      created_by:     user.id,
+      created_by:     auth.userId,
     })
   if (insErr) return NextResponse.json({ error: insErr.message }, { status: 500 })
 

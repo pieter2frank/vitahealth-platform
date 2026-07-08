@@ -10,22 +10,18 @@
  * Alleen admin.
  */
 import { NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { validateDefinition } from '@/lib/questionnaire'
 import { isUuid } from '@/lib/validation'
+import { requireRole } from '@/lib/auth/guard'
 import type { QuestionnaireDefinition } from '@/types'
 
 export async function PUT(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   if (!isUuid(id)) return NextResponse.json({ error: 'Ongeldig ID.' }, { status: 400 })
 
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Niet geautoriseerd.' }, { status: 401 })
-  const { data: self } = await supabase
-    .from('vh_medewerker').select('role').eq('user_id', user.id).single()
-  if (self?.role !== 'admin') return NextResponse.json({ error: 'Geen toegang.' }, { status: 403 })
+  const auth = await requireRole(['admin'])
+  if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.status })
 
   let body: Partial<QuestionnaireDefinition>
   try { body = await req.json() } catch { return NextResponse.json({ error: 'Ongeldige aanvraag.' }, { status: 400 }) }
@@ -67,7 +63,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
 
   if (bumpVersion) {
     await admin.from('vh_questionnaire_version').insert({
-      questionnaire_id: id, version: newVersion, json_content: definition, created_by: user.id,
+      questionnaire_id: id, version: newVersion, json_content: definition, created_by: auth.userId,
     })
   } else {
     // Bestaande snapshot overschrijven (of aanmaken als die ontbreekt)
@@ -76,11 +72,11 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
       .select('id').eq('questionnaire_id', id).eq('version', newVersion).maybeSingle()
     if (existingSnap) {
       await admin.from('vh_questionnaire_version')
-        .update({ json_content: definition, created_by: user.id, created_at: new Date().toISOString() })
+        .update({ json_content: definition, created_by: auth.userId, created_at: new Date().toISOString() })
         .eq('id', existingSnap.id)
     } else {
       await admin.from('vh_questionnaire_version').insert({
-        questionnaire_id: id, version: newVersion, json_content: definition, created_by: user.id,
+        questionnaire_id: id, version: newVersion, json_content: definition, created_by: auth.userId,
       })
     }
   }

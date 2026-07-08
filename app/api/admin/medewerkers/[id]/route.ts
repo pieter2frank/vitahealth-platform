@@ -6,9 +6,9 @@
  * Je kunt jezelf niet verwijderen of je eigen rol verlagen (voorkomt lockout).
  */
 import { NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { isUuid } from '@/lib/validation'
+import { requireRole } from '@/lib/auth/guard'
 import { z } from 'zod'
 
 const patchSchema = z.object({
@@ -17,13 +17,9 @@ const patchSchema = z.object({
 })
 
 async function requireAdmin() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return { error: 'Niet geautoriseerd.', status: 401 as const }
-  const { data: self } = await supabase
-    .from('vh_medewerker').select('role').eq('user_id', user.id).single()
-  if (self?.role !== 'admin') return { error: 'Geen toegang.', status: 403 as const }
-  return { userId: user.id }
+  const auth = await requireRole(['admin'])
+  if (!auth.ok) return { error: auth.error, status: auth.status }
+  return { userId: auth.userId }
 }
 
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {

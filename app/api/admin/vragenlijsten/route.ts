@@ -6,18 +6,14 @@
  * (vh_questionnaire_version) op.
  */
 import { NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { validateDefinition, slugify } from '@/lib/questionnaire'
+import { requireRole } from '@/lib/auth/guard'
 import type { QuestionnaireDefinition } from '@/types'
 
 export async function POST(req: Request) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Niet geautoriseerd.' }, { status: 401 })
-  const { data: self } = await supabase
-    .from('vh_medewerker').select('role').eq('user_id', user.id).single()
-  if (self?.role !== 'admin') return NextResponse.json({ error: 'Geen toegang.' }, { status: 403 })
+  const auth = await requireRole(['admin'])
+  if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.status })
 
   let body: Partial<QuestionnaireDefinition> & { slug?: string }
   try { body = await req.json() } catch { return NextResponse.json({ error: 'Ongeldige aanvraag.' }, { status: 400 }) }
@@ -55,7 +51,7 @@ export async function POST(req: Request) {
     questionnaire_id: inserted.id,
     version: 1,
     json_content: definition,
-    created_by: user.id,
+    created_by: auth.userId,
   })
 
   return NextResponse.json({ ok: true, id: inserted.id })

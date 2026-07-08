@@ -5,6 +5,7 @@ import { formatDate, formatDateTime } from '@/lib/utils'
 import { ArrowLeft, ScrollText, Users, CheckCircle2, Clock, ChevronRight, Pencil } from 'lucide-react'
 import { AssignQuestionnaireForm } from './AssignQuestionnaireForm'
 import { DeleteButton } from '@/components/ui/DeleteButton'
+import { getCurrentUser } from '@/lib/auth/guard'
 import type { QuestionnaireDefinition, QuestionnaireQuestion } from '@/types'
 
 export default async function VragenlijstDetailPage({
@@ -24,11 +25,8 @@ export default async function VragenlijstDetailPage({
   if (!q) notFound()
 
   // Vragenlijsten bewerken is voorbehouden aan admins (zie de bewerken-pagina).
-  const { data: { user } } = await supabase.auth.getUser()
-  const { data: self } = user
-    ? await supabase.from('vh_medewerker').select('role').eq('user_id', user.id).maybeSingle()
-    : { data: null }
-  const isAdmin = self?.role === 'admin'
+  const me = await getCurrentUser()
+  const isAdmin = me?.role === 'admin'
 
   const [{ data: assignments }, { data: clients }] = await Promise.all([
     supabase

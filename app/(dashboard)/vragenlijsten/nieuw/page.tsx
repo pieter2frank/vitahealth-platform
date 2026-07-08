@@ -1,19 +1,13 @@
-import { createClient } from '@/lib/supabase/server'
-import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
+import { requireRolePage } from '@/lib/auth/guard'
 import { QuestionnaireBuilder } from '../QuestionnaireBuilder'
 import type { QuestionnaireDefinition } from '@/types'
 
 export const metadata = { title: 'Nieuwe vragenlijst — Vita Health' }
 
 export default async function NieuweVragenlijstPage() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/auth/login')
-  const { data: self } = await supabase
-    .from('vh_medewerker').select('role').eq('user_id', user.id).single()
-  if (self?.role !== 'admin') redirect('/vragenlijsten')
+  await requireRolePage(['admin'], '/vragenlijsten')
 
   const initial: QuestionnaireDefinition = { id: '', title: '', status: 'draft', version: 1, questions: [] }
 

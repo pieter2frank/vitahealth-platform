@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server'
 import { Resend } from 'resend'
-import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { medewerkerUitnodigingEmail } from '@/lib/email/templates'
 import { logAuditEvent } from '@/lib/audit'
+import { requireRole } from '@/lib/auth/guard'
 import { z } from 'zod'
 
 const resend = new Resend(process.env.RESEND_API_KEY)
@@ -17,15 +17,8 @@ const schema = z.object({
 
 export async function POST(req: Request) {
   // ── Auth: alleen admin ─────────────────────────────────────────────────────
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Niet geautoriseerd.' }, { status: 401 })
-
-  const { data: self } = await supabase
-    .from('vh_medewerker').select('role').eq('user_id', user.id).single()
-  if (self?.role !== 'admin') {
-    return NextResponse.json({ error: 'Geen toegang.' }, { status: 403 })
-  }
+  const auth = await requireRole(['admin'])
+  if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.status })
 
   // ── Validatie ──────────────────────────────────────────────────────────────
   const body = await req.json().catch(() => null)
@@ -38,7 +31,7 @@ export async function POST(req: Request) {
   // ── Extra waarborg: de rol 'admin' kan UITSLUITEND door een admin worden
   //    toegekend. Defense in depth — blijft gelden ook als de toegang tot dit
   //    endpoint ooit voor andere rollen wordt opengesteld.
-  if (role === 'admin' && self.role !== 'admin') {
+  if (role === 'admin' && auth.role !== 'admin') {
     return NextResponse.json(
       { error: 'Alleen een beheerder mag de admin-rol toekennen.' },
       { status: 403 },
@@ -106,7 +99,7 @@ export async function POST(req: Request) {
   })
 
   logAuditEvent({
-    actorUserId:  user.id,
+    actorUserId:  auth.userId,
     actorRole:    'admin',
     resourceType: 'medewerker',
     resourceId:   newUserId,

@@ -1,20 +1,13 @@
-import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { redirect } from 'next/navigation'
 import { Users } from 'lucide-react'
+import { requireRolePage } from '@/lib/auth/guard'
 import { UitnodigingForm } from './UitnodigingForm'
 import { MedewerkersTable, type MedewerkerRow } from './MedewerkersTable'
 
 export const metadata = { title: 'Medewerkers — Vita Health' }
 
 export default async function MedewerkersPage() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/auth/login')
-
-  const { data: self } = await supabase
-    .from('vh_medewerker').select('role').eq('user_id', user.id).single()
-  if (self?.role !== 'admin') redirect('/dashboard')
+  const { userId } = await requireRolePage(['admin'])
 
   const admin = createAdminClient()
 
@@ -39,7 +32,7 @@ export default async function MedewerkersPage() {
     userId:  m.user_id,
     email:   authMap.get(m.user_id)?.email ?? '',
     onHold:  authMap.get(m.user_id)?.onHold ?? false,
-    isSelf:  m.user_id === user.id,
+    isSelf:  m.user_id === userId,
   }))
 
   return (

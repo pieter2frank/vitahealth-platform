@@ -6,10 +6,10 @@
  */
 import { NextResponse } from 'next/server'
 import { Resend } from 'resend'
-import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { wachtwoordResetEmail } from '@/lib/email/templates'
 import { isUuid } from '@/lib/validation'
+import { requireRole } from '@/lib/auth/guard'
 
 const resend = new Resend(process.env.RESEND_API_KEY)
 
@@ -17,12 +17,8 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
   const { id } = await params
   if (!isUuid(id)) return NextResponse.json({ error: 'Ongeldig ID.' }, { status: 400 })
 
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Niet geautoriseerd.' }, { status: 401 })
-  const { data: self } = await supabase
-    .from('vh_medewerker').select('role').eq('user_id', user.id).single()
-  if (self?.role !== 'admin') return NextResponse.json({ error: 'Geen toegang.' }, { status: 403 })
+  const authz = await requireRole(['admin'])
+  if (!authz.ok) return NextResponse.json({ error: authz.error }, { status: authz.status })
 
   const admin = createAdminClient()
   const { data: target } = await admin
