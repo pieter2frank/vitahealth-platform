@@ -3,6 +3,7 @@ import { Fragment, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { BarChart3, X, Loader2 } from 'lucide-react'
 import { formatDate } from '@/lib/utils'
+import { calcBmi } from '@/lib/health-scoring'
 import type { QuestionnaireDefinition, QuestionnaireQuestion } from '@/types'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -100,13 +101,6 @@ function bmiLabel(bmi: number): string {
   if (bmi < 25)   return 'Normaal'
   if (bmi < 30)   return 'Overgewicht'
   return 'Obesitas'
-}
-
-function calcBmi(heightCm: unknown, weightKg: unknown): number | null {
-  const h = Number(heightCm)
-  const w = Number(weightKg)
-  if (!h || !w || h < 50 || w < 10) return null
-  return Math.round((w / (h / 100) ** 2) * 10) / 10
 }
 
 // ─── Types ────────────────────────────────────────────────────────────────────

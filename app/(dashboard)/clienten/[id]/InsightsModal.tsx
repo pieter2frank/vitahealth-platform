@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/client'
 import { Stethoscope, X, Loader2, AlertTriangle, Activity, Droplet, HeartPulse, CheckCircle2, Pill } from 'lucide-react'
 import { formatDate } from '@/lib/utils'
 import type { QuestionnaireQuestion } from '@/types'
+import { favorability, calcBmi, bmiLabel, markerStatus, ageFrom } from '@/lib/health-scoring'
 
 // ─── Kleuren op basis van gunstigheid (1 = ongunstig … 10 = gunstig) ───────────
 type Sev = 'red' | 'orange' | 'yellow'
@@ -13,52 +14,18 @@ const CHIP: Record<Sev, string> = {
   yellow: 'bg-yellow-300 text-gray-800',
 }
 
-// Zet een score om naar een 1–10-schaal; null als niet numeriek.
-function toTen(q: QuestionnaireQuestion, v: number): number | null {
-  if (Number.isNaN(v)) return null
-  if (q.type === 'rating_10') return v
-  if (q.type === 'scale') {
-    const min = q.min ?? 1, max = q.max ?? 5
-    return max === min ? null : ((v - min) / (max - min)) * 9 + 1
-  }
-  return null
-}
-// Gunstigheid 1–10 (rekening houdend met reversed). Lager = meer aandacht.
-function favorability(q: QuestionnaireQuestion, raw: unknown): number | null {
-  const t = toTen(q, Number(raw))
-  if (t === null) return null
-  return q.reversed ? 11 - t : t
-}
+// Gunstigheid → severity-kleur (UI-specifiek).
 function sevFromFav(fav: number): Sev | null {
   if (fav <= 2.5) return 'red'
   if (fav <= 4.5) return 'orange'
   if (fav <= 5.5) return 'yellow'
   return null           // gunstig → geen aandachtspunt
 }
-
-function calcBmi(h: unknown, w: unknown): number | null {
-  const hh = Number(h), ww = Number(w)
-  if (!hh || !ww || hh < 50 || ww < 10) return null
-  return Math.round((ww / (hh / 100) ** 2) * 10) / 10
-}
 function bmiSev(bmi: number): Sev | null {
   if (bmi < 18.5) return 'orange'
   if (bmi < 25)   return null
   if (bmi < 30)   return 'yellow'
   return 'red'
-}
-function bmiLabel(bmi: number): string {
-  if (bmi < 18.5) return 'ondergewicht'
-  if (bmi < 25)   return 'normaal'
-  if (bmi < 30)   return 'overgewicht'
-  return 'obesitas'
-}
-
-function markerStatus(value: number | null, optimal: number | null, direction: string | null): 'good' | 'attention' | 'neutral' {
-  if (value == null || optimal == null || !direction) return 'neutral'
-  if (direction === 'lower_better')  return value <= optimal ? 'good' : 'attention'
-  if (direction === 'higher_better') return value >= optimal ? 'good' : 'attention'
-  return 'neutral'
 }
 
 const DISEASE: Record<string, string> = {
@@ -88,15 +55,6 @@ interface Loaded {
   refs: RefEntry[]
 }
 interface Props { clientId: string; clientName: string; birthDate: string | null }
-
-function ageFrom(birth: string | null): number | null {
-  if (!birth) return null
-  const b = new Date(birth); if (Number.isNaN(b.getTime())) return null
-  const now = new Date()
-  let a = now.getFullYear() - b.getFullYear()
-  if (now < new Date(now.getFullYear(), b.getMonth(), b.getDate())) a--
-  return a
-}
 
 export function InsightsModal({ clientId, clientName, birthDate }: Props) {
   const [open, setOpen] = useState(false)

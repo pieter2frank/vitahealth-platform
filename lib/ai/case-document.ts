@@ -1,4 +1,5 @@
 import { createAdminClient } from '@/lib/supabase/admin'
+import { favorability, calcBmi, bmiLabel, ageFrom, markerAttention } from '@/lib/health-scoring'
 
 // Stelt een GEPSEUDONIMISEERD casusdocument samen uit het dossier: kenmerken,
 // vragenlijst-uitkomsten en biomarker-uitslag. GEEN naam/adres/e-mail/telefoon,
@@ -9,42 +10,6 @@ interface Q {
   id: string; type: string; label: string; category?: string | null
   reversed?: boolean; min?: number; max?: number; role?: string
   unit?: string; options?: { value: string; label: string }[]
-}
-
-function ageFrom(birth: string | null): number | null {
-  if (!birth) return null
-  const b = new Date(birth); if (Number.isNaN(b.getTime())) return null
-  const now = new Date()
-  let a = now.getFullYear() - b.getFullYear()
-  if (now < new Date(now.getFullYear(), b.getMonth(), b.getDate())) a--
-  return a
-}
-function toTen(q: Q, v: number): number | null {
-  if (Number.isNaN(v)) return null
-  if (q.type === 'rating_10') return v
-  if (q.type === 'scale') { const mn = q.min ?? 1, mx = q.max ?? 5; return mx === mn ? null : ((v - mn) / (mx - mn)) * 9 + 1 }
-  return null
-}
-function favorability(q: Q, raw: unknown): number | null {
-  const t = toTen(q, Number(raw)); if (t === null) return null
-  return q.reversed ? 11 - t : t
-}
-function calcBmi(h: unknown, w: unknown): number | null {
-  const hh = Number(h), ww = Number(w)
-  if (!hh || !ww || hh < 50 || ww < 10) return null
-  return Math.round((ww / (hh / 100) ** 2) * 10) / 10
-}
-function bmiLabel(bmi: number): string {
-  if (bmi < 18.5) return 'ondergewicht'
-  if (bmi < 25) return 'normaal'
-  if (bmi < 30) return 'overgewicht'
-  return 'obesitas'
-}
-function markerAttention(value: number | null, optimal: number | null, direction: string | null): boolean {
-  if (value == null || optimal == null || !direction) return false
-  if (direction === 'lower_better')  return value > optimal
-  if (direction === 'higher_better') return value < optimal
-  return false
 }
 const nl = (n: number | null | undefined) => (n == null ? '—' : String(n).replace('.', ','))
 

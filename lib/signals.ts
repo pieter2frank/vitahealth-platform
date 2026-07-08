@@ -1,32 +1,11 @@
 import { createAdminClient } from '@/lib/supabase/admin'
+import { favorability, calcBmi, markerAttention } from '@/lib/health-scoring'
 
 // Server-side signaal-profiel van een cliënt: de outliers uit de intake-
 // vragenlijst en de biomarker-uitslag, samengevat als tekst. Dit voedt zowel de
 // advies-engine (als query + context) als toekomstige weergaven.
 
 interface Q { id: string; type: string; label: string; category?: string | null; reversed?: boolean; min?: number; max?: number; role?: string; options?: { value: string; label: string }[] }
-
-function toTen(q: Q, v: number): number | null {
-  if (Number.isNaN(v)) return null
-  if (q.type === 'rating_10') return v
-  if (q.type === 'scale') { const mn = q.min ?? 1, mx = q.max ?? 5; return mx === mn ? null : ((v - mn) / (mx - mn)) * 9 + 1 }
-  return null
-}
-function favorability(q: Q, raw: unknown): number | null {
-  const t = toTen(q, Number(raw)); if (t === null) return null
-  return q.reversed ? 11 - t : t
-}
-function calcBmi(h: unknown, w: unknown): number | null {
-  const hh = Number(h), ww = Number(w)
-  if (!hh || !ww || hh < 50 || ww < 10) return null
-  return Math.round((ww / (hh / 100) ** 2) * 10) / 10
-}
-function markerAttention(value: number | null, optimal: number | null, direction: string | null): boolean {
-  if (value == null || optimal == null || !direction) return false
-  if (direction === 'lower_better')  return value > optimal
-  if (direction === 'higher_better') return value < optimal
-  return false
-}
 
 export interface ClientSignals { summaryText: string; hasData: boolean }
 
