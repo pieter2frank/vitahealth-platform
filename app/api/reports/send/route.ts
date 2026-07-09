@@ -10,6 +10,9 @@ import { requireRole } from '@/lib/auth/guard'
 // cliënt via de actieve bezorg-provider (Zivver). Alleen voor ingelogde
 // medewerkers; elke verzending wordt in de auditlog vastgelegd.
 
+export const runtime = 'nodejs'   // Zivver-provider gebruikt nodemailer (SMTP)
+export const dynamic = 'force-dynamic'
+
 export async function POST(req: Request) {
   const auth = await requireRole(['arts', 'leefstijlarts'])
   if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.status })

@@ -1,73 +1,80 @@
+import nodemailer from 'nodemailer'
 import type { SecureDeliveryProvider, SecureReportInput, SecureDeliveryResult } from './types'
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Zivver — beveiligde verzending via de Zivver REST API.
+// Zivver — beveiligde verzending via de Zivver SMTP-gateway.
 //
-// ⚠️  IN TE VULLEN: de exacte endpoint-URL, headers en veldnamen (en de manier
-//     waarop bijlagen worden meegestuurd) moeten worden geverifieerd tegen de
-//     officiële Zivver API-documentatie zodra je een zakelijk account met
-//     API-toegang + credentials hebt. Alle Zivver-specifieke logica zit bewust
-//     alléén in dit bestand, zodat de rest van het platform niet wijzigt.
+// Zivver ontvangt de mail via SMTP (smtp.zivver.com:587, STARTTLS) met een door
+// een Zivver-beheerder gegenereerde gebruikersnaam + wachtwoord, versleutelt het
+// bericht en levert het beveiligd af. Zie:
+// https://docs.zivver.com/nl/admin/smtp/connect-to-zivver-smtp-gateway.html
 //
-// Benodigde env-variabelen:
-//   ZIVVER_API_URL      (bv. https://api.zivver.com — verifieer in de docs)
-//   ZIVVER_API_KEY      (API-token van het functionele account)
-//   ZIVVER_ACCOUNT_ID   (afzender / functioneel account)
+// Vereist aan de Zivver-kant:
+//   • SMTP-credentials (gebruikersnaam/wachtwoord) uit het adminportaal;
+//   • een ACTIEF Zivver-account voor het From-adres (ZIVVER_FROM);
+//   • Zivver-DNS (SPF/DKIM) voor je domein.
+//
+// Env-variabelen:
+//   ZIVVER_SMTP_HOST   (default smtp.zivver.com)
+//   ZIVVER_SMTP_PORT   (default 587)
+//   ZIVVER_SMTP_USER   (gebruikersnaam van de gateway)
+//   ZIVVER_SMTP_PASS   (wachtwoord van de gateway)
+//   ZIVVER_FROM        (afzender, moet een actief Zivver-account zijn)
+//
+// ⚠️  De per-bericht ontvangersverificatie (SMS als 2e factor) verloopt bij de
+//     SMTP-gateway via Zivver-beleid en/of specifieke headers die op deze
+//     docpagina niet staan. Bevestig de header bij Zivver-support; zet 'm daarna
+//     hieronder (zie het gemarkeerde blok). Zonder die header wordt het bericht
+//     nog steeds beveiligd volgens je organisatie-standaard.
 // ─────────────────────────────────────────────────────────────────────────────
 
-const ZIVVER_API_URL    = process.env.ZIVVER_API_URL ?? 'https://api.zivver.com'
-const ZIVVER_API_KEY    = process.env.ZIVVER_API_KEY ?? ''
-const ZIVVER_ACCOUNT_ID = process.env.ZIVVER_ACCOUNT_ID ?? ''
+const HOST = process.env.ZIVVER_SMTP_HOST ?? 'smtp.zivver.com'
+const PORT = Number(process.env.ZIVVER_SMTP_PORT ?? 587)
+const USER = process.env.ZIVVER_SMTP_USER ?? ''
+const PASS = process.env.ZIVVER_SMTP_PASS ?? ''
+const FROM = process.env.ZIVVER_FROM ?? ''
 
 export const zivverProvider: SecureDeliveryProvider = {
   name: 'zivver',
 
   isConfigured() {
-    return Boolean(ZIVVER_API_KEY && ZIVVER_ACCOUNT_ID)
+    return Boolean(USER && PASS && FROM)
   },
 
   async sendReport(input: SecureReportInput): Promise<SecureDeliveryResult> {
     if (!this.isConfigured()) {
-      return { ok: false, error: 'Zivver niet geconfigureerd (ZIVVER_API_KEY / ZIVVER_ACCOUNT_ID ontbreken).' }
+      return { ok: false, error: 'Zivver niet geconfigureerd (ZIVVER_SMTP_USER / ZIVVER_SMTP_PASS / ZIVVER_FROM ontbreken).' }
     }
 
-    // ── SKELET — veldnamen/endpoint verifiëren tegen de Zivver API-docs ───────
-    const payload = {
-      account: ZIVVER_ACCOUNT_ID,
-      recipients: [{
-        email: input.to,
-        // Tweede factor: SMS-verificatie op het mobiele nummer als dat er is,
-        // anders verificatie via e-mail (zwakker — mobiel nummer is sterk aanbevolen).
-        verification: input.recipientPhone
-          ? { method: 'sms', phone: input.recipientPhone }
-          : { method: 'email' },
-      }],
-      subject: input.subject,
-      body: input.message,
-      attachments: [{
-        filename:    input.attachment.filename,
-        contentType: input.attachment.contentType,
-        content:     input.attachment.content.toString('base64'),
-      }],
-    }
+    const transporter = nodemailer.createTransport({
+      host:       HOST,
+      port:       PORT,
+      secure:     PORT === 465,   // 587/25 → STARTTLS (secure=false), 465 → TLS
+      requireTLS: true,
+      auth:       { user: USER, pass: PASS },
+    })
+
+    // ── Zivver-beveiligingsheaders (bevestig de exacte namen bij Zivver-support) ─
+    // Placeholder voor per-bericht instellingen zoals SMS-verificatie op het
+    // mobiele nummer. Zolang deze niet gezet zijn, geldt je org-standaard.
+    const headers: Record<string, string> = {}
+    // Voorbeeld (NAAM VERIFIËREN): SMS-verificatie op het mobiele nummer aanzetten.
+    // if (input.recipientPhone) headers['X-Zivver-...'] = input.recipientPhone
 
     try {
-      const res = await fetch(`${ZIVVER_API_URL}/api/v1/messages`, {
-        method: 'POST',
-        headers: {
-          Authorization:  `Bearer ${ZIVVER_API_KEY}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload),
+      const info = await transporter.sendMail({
+        from:    FROM,
+        to:      input.to,
+        subject: input.subject,        // bevat geen gezondheidsdata
+        text:    input.message,        // bevat geen gezondheidsdata
+        headers,
+        attachments: [{
+          filename:    input.attachment.filename,
+          content:     input.attachment.content,
+          contentType: input.attachment.contentType,
+        }],
       })
-
-      if (!res.ok) {
-        const text = await res.text().catch(() => '')
-        return { ok: false, error: `Zivver API ${res.status}: ${text.slice(0, 300)}` }
-      }
-
-      const data = await res.json().catch(() => ({} as Record<string, unknown>))
-      return { ok: true, messageId: (data.id as string | undefined) ?? undefined }
+      return { ok: true, messageId: info.messageId }
     } catch (e) {
       return { ok: false, error: e instanceof Error ? e.message : 'Onbekende fout bij Zivver-verzending.' }
     }
