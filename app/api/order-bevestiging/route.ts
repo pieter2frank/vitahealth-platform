@@ -1,7 +1,5 @@
-import { Resend } from 'resend'
 import { NextResponse } from 'next/server'
-
-const resend = new Resend(process.env.RESEND_API_KEY)
+import { sendEmail } from '@/lib/email/send'
 
 export async function POST(req: Request) {
   const { email, first_name, last_name } = await req.json()
@@ -10,17 +8,13 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Ongeldige invoer' }, { status: 400 })
   }
 
-  const { error } = await resend.emails.send({
-    from: `Vita Health <${process.env.FROM_EMAIL ?? 'noreply@vita-health.nl'}>`,
-    to: email,
+  const res = await sendEmail({
+    from:    `Vita Health <${process.env.FROM_EMAIL ?? 'noreply@vita-health.nl'}>`,
+    to:      email,
     subject: 'Bevestiging: jouw Vita Health Check aanvraag',
-    html: generateEmailHtml(first_name, last_name),
+    html:    generateEmailHtml(first_name, last_name),
   })
-
-  if (error) {
-    console.error('Resend error:', error)
-    return NextResponse.json({ error: 'E-mail kon niet worden verzonden.' }, { status: 500 })
-  }
+  if (!res.ok) return NextResponse.json({ error: res.error }, { status: 500 })
 
   return NextResponse.json({ ok: true })
 }

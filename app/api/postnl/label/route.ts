@@ -6,15 +6,13 @@
  * kit op verzonden. Geeft het label (base64 PDF) terug om te printen.
  */
 import { NextResponse } from 'next/server'
-import { Resend } from 'resend'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createShipment, splitAddress, type PostNLReceiver } from '@/lib/postnl'
 import { kitVerzondenEmail } from '@/lib/email/templates'
 import { logAuditEvent } from '@/lib/audit'
 import { isUuid } from '@/lib/validation'
-
-const resend = new Resend(process.env.RESEND_API_KEY)
+import { sendEmail } from '@/lib/email/send'
 
 export async function POST(req: Request) {
   const supabase = await createClient()
@@ -104,12 +102,7 @@ export async function POST(req: Request) {
       trackingCode: shipment.barcode,
       trackingUrl:  shipment.trackingUrl,
     })
-    await resend.emails.send({
-      from:    `Vita Health <${process.env.FROM_EMAIL ?? 'noreply@helpdesk.vita-health.nl'}>`,
-      to:      client.email,
-      subject,
-      html,
-    }).catch(e => console.error('[postnl/label] mail fout:', e))
+    await sendEmail({ to: client.email, subject, html })
   }
 
   // Auditlog

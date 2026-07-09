@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server'
-import { Resend } from 'resend'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { intakeHervattingEmail } from '@/lib/email/templates'
 import { logAuditEvent } from '@/lib/audit'
 import { getOrCreateIntakeToken } from '@/lib/intake-token'
+import { sendEmail } from '@/lib/email/send'
 
 // POST /api/portal/resume-link  { email }
 // Zelf-service: stuurt een veilige hervat-link naar het GEREGISTREERDE adres als
@@ -11,8 +11,6 @@ import { getOrCreateIntakeToken } from '@/lib/intake-token'
 // (uniform — onthult nooit of het adres bekend is; geen PII/token in de respons).
 
 export const dynamic = 'force-dynamic'
-
-const resend = new Resend(process.env.RESEND_API_KEY)
 
 export async function POST(req: Request) {
   const { email } = await req.json().catch(() => ({}))
@@ -39,12 +37,7 @@ export async function POST(req: Request) {
   const resumeUrl = `${portalUrl}/portal/aanmelden?token=${token}`
   const { subject, html } = intakeHervattingEmail({ firstName: client.first_name, vragenlijstUrl: resumeUrl })
 
-  await resend.emails.send({
-    from:    `Vita Health <${process.env.FROM_EMAIL ?? 'noreply@helpdesk.vita-health.nl'}>`,
-    to:      client.email,
-    subject,
-    html,
-  }).catch(() => {})
+  await sendEmail({ to: client.email, subject, html })
 
   logAuditEvent({
     actorUserId:     null,

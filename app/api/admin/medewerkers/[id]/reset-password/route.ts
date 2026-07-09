@@ -5,13 +5,11 @@
  * de self-service reset: generateLink recovery → /auth/confirm). Alleen admin.
  */
 import { NextResponse } from 'next/server'
-import { Resend } from 'resend'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { wachtwoordResetEmail } from '@/lib/email/templates'
 import { isUuid } from '@/lib/validation'
 import { requireRole } from '@/lib/auth/guard'
-
-const resend = new Resend(process.env.RESEND_API_KEY)
+import { sendEmail } from '@/lib/email/send'
 
 export async function POST(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -45,13 +43,8 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
   const firstName = (target.name ?? '').split(' ')[0] || 'collega'
 
   const { subject, html } = wachtwoordResetEmail({ firstName, resetUrl })
-  const { error } = await resend.emails.send({
-    from:    `Vita Health <${process.env.FROM_EMAIL ?? 'noreply@helpdesk.vita-health.nl'}>`,
-    to:      email,
-    subject,
-    html,
-  })
-  if (error) return NextResponse.json({ error: 'E-mail versturen mislukt.' }, { status: 500 })
+  const res = await sendEmail({ to: email, subject, html })
+  if (!res.ok) return NextResponse.json({ error: 'E-mail versturen mislukt.' }, { status: 500 })
 
   return NextResponse.json({ ok: true })
 }

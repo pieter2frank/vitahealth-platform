@@ -8,12 +8,11 @@
  * Privacy: lekt NIET of een e-mailadres bestaat — antwoordt altijd met ok.
  */
 import { NextResponse } from 'next/server'
-import { Resend } from 'resend'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { wachtwoordResetEmail } from '@/lib/email/templates'
+import { sendEmail } from '@/lib/email/send'
 import { z } from 'zod'
 
-const resend = new Resend(process.env.RESEND_API_KEY)
 const schema = z.object({ email: z.string().email() })
 
 export async function POST(req: Request) {
@@ -47,12 +46,7 @@ export async function POST(req: Request) {
     const firstName = (mw?.name ?? '').split(' ')[0] || 'collega'
 
     const { subject, html } = wachtwoordResetEmail({ firstName, resetUrl })
-    await resend.emails.send({
-      from:    `Vita Health <${process.env.FROM_EMAIL ?? 'noreply@helpdesk.vita-health.nl'}>`,
-      to:      email,
-      subject,
-      html,
-    })
+    await sendEmail({ to: email, subject, html })
   } catch (e) {
     console.error('[wachtwoord-reset] fout:', e)
     // toch ok teruggeven

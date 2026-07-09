@@ -1,12 +1,10 @@
 import { NextResponse } from 'next/server'
-import { Resend } from 'resend'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { medewerkerUitnodigingEmail } from '@/lib/email/templates'
 import { logAuditEvent } from '@/lib/audit'
 import { requireRole } from '@/lib/auth/guard'
+import { sendEmail } from '@/lib/email/send'
 import { z } from 'zod'
-
-const resend = new Resend(process.env.RESEND_API_KEY)
 
 const schema = z.object({
   firstName: z.string().min(1).max(80),
@@ -91,12 +89,7 @@ export async function POST(req: Request) {
   // ── Eigen uitnodigingsmail sturen via Resend ───────────────────────────────
   const { subject, html } = medewerkerUitnodigingEmail({ firstName, role, inviteUrl })
 
-  await resend.emails.send({
-    from:    `Vita Health <${process.env.FROM_EMAIL ?? 'noreply@helpdesk.vita-health.nl'}>`,
-    to:      email,
-    subject,
-    html,
-  })
+  await sendEmail({ to: email, subject, html })
 
   logAuditEvent({
     actorUserId:  auth.userId,

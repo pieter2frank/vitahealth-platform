@@ -1,4 +1,3 @@
-import { Resend } from 'resend'
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
@@ -6,8 +5,7 @@ import { reminderEmail } from '@/lib/email/templates'
 import { isUuid } from '@/lib/validation'
 import { logAuditEvent } from '@/lib/audit'
 import { getOrCreateIntakeToken } from '@/lib/intake-token'
-
-const resend = new Resend(process.env.RESEND_API_KEY)
+import { sendEmail } from '@/lib/email/send'
 
 export async function POST(req: Request) {
   // Alleen voor ingelogde medewerkers
@@ -47,17 +45,8 @@ export async function POST(req: Request) {
     stoppedAfter,
   })
 
-  const { error } = await resend.emails.send({
-    from: `Vita Health <${process.env.FROM_EMAIL ?? 'noreply@helpdesk.vita-health.nl'}>`,
-    to: client.email,
-    subject,
-    html,
-  })
-
-  if (error) {
-    console.error('[email/reminder] Resend error:', error)
-    return NextResponse.json({ error: 'E-mail kon niet worden verzonden.' }, { status: 500 })
-  }
+  const res = await sendEmail({ to: client.email, subject, html })
+  if (!res.ok) return NextResponse.json({ error: res.error }, { status: 500 })
 
   logAuditEvent({
     actorUserId:     user.id,

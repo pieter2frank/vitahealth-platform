@@ -1,11 +1,9 @@
-import { Resend } from 'resend'
 import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { bevestigingEmail } from '@/lib/email/templates'
 import { isUuid } from '@/lib/validation'
 import { getOrCreateIntakeToken } from '@/lib/intake-token'
-
-const resend = new Resend(process.env.RESEND_API_KEY)
+import { sendEmail } from '@/lib/email/send'
 
 // Publiek endpoint — aanroepen vanuit portaal EnrollmentForm na afronden intake.
 // Verificatie via clientId + assignmentId combinatie in de database.
@@ -83,16 +81,7 @@ export async function POST(req: Request) {
     consents,
   })
 
-  const { error } = await resend.emails.send({
-    from: `Vita Health <${process.env.FROM_EMAIL ?? 'noreply@helpdesk.vita-health.nl'}>`,
-    to: client.email,
-    subject,
-    html,
-  })
-
-  if (error) {
-    console.error('[email/bevestiging] Resend error:', error)
-  }
+  await sendEmail({ to: client.email, subject, html })
 
   return NextResponse.json({ ok: true, statusUrl })
 }

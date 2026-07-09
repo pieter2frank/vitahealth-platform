@@ -1,8 +1,8 @@
-import { Resend } from 'resend'
 import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { dagelijkseActiesEmail } from '@/lib/email/templates'
 import { isCronAuthorized } from '@/lib/cron'
+import { sendEmail } from '@/lib/email/send'
 
 // Dagelijkse digest met openstaande acties. Wordt aangeroepen door een planner
 // (bijv. Vercel Cron) met header `Authorization: Bearer <CRON_SECRET>`.
@@ -10,7 +10,6 @@ import { isCronAuthorized } from '@/lib/cron'
 
 export const dynamic = 'force-dynamic'
 
-const resend = new Resend(process.env.RESEND_API_KEY)
 const DEFAULT_DIGEST_EMAIL = 'info@dokterchantalle.nl'
 
 export async function GET(req: Request) {
@@ -48,17 +47,8 @@ export async function GET(req: Request) {
 
   const { subject, html } = dagelijkseActiesEmail({ nIntake: intake, nResults: results, dashboardUrl })
 
-  const { error } = await resend.emails.send({
-    from: `Vita Health <${process.env.FROM_EMAIL ?? 'noreply@helpdesk.vita-health.nl'}>`,
-    to,
-    subject,
-    html,
-  })
-
-  if (error) {
-    console.error('[cron/dagelijkse-acties] Resend error:', error)
-    return NextResponse.json({ error: 'E-mail kon niet worden verzonden.' }, { status: 500 })
-  }
+  const res = await sendEmail({ to, subject, html })
+  if (!res.ok) return NextResponse.json({ error: res.error }, { status: 500 })
 
   return NextResponse.json({ ok: true, sent: true, to, intake, results })
 }
