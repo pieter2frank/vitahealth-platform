@@ -7,9 +7,9 @@ import { cn } from '@/lib/utils'
 import type { LucideIcon } from 'lucide-react'
 import {
   LayoutDashboard, TestTube2, Users, Building2, Stethoscope,
-  Package, LogOut, CircleUserRound, ClipboardList, ScrollText, Dumbbell, Settings, ShieldCheck, UserCog, FileCheck, BookOpen,
+  Package, LogOut, CircleUserRound, ClipboardList, ScrollText, Dumbbell, Settings, ShieldCheck, UserCog, FileCheck, BookOpen, FlaskConical,
 } from 'lucide-react'
-import { isAdmin, canManageKnowledge } from '@/lib/auth/roles'
+import { isAdmin, canManageKnowledge, canSeeResults } from '@/lib/auth/roles'
 import { APP_VERSION } from '@/lib/version'
 import { createClient } from '@/lib/supabase/client'
 import { useUser } from '@/components/providers/UserProvider'
@@ -109,6 +109,25 @@ export function Sidebar({ newOrderCount = 0 }: SidebarProps) {
             </div>
           </Fragment>
         ))}
+
+        {/* Uitslagen inladen — arts/leefstijlarts (centraal, op kitnummer) */}
+        {canSeeResults(role) && (
+          <>
+            <div className="my-2.5 border-t border-[#e2e8f0]" />
+            <Link
+              href="/uitslagen"
+              className={cn(
+                'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+                pathname === '/uitslagen' || pathname.startsWith('/uitslagen/')
+                  ? 'bg-[#eef4ff] text-[#1f1683]'
+                  : 'text-[#64748b] hover:bg-[#f8fafc] hover:text-[#1e293b]'
+              )}
+            >
+              <FlaskConical size={17} className={pathname.startsWith('/uitslagen') ? 'text-[#1f1683]' : 'text-[#94a3b8]'} />
+              <span className="flex-1">Uitslagen inladen</span>
+            </Link>
+          </>
+        )}
 
         {/* Kennisbank — arts/leefstijlarts + admin (voedt het AI-advies) */}
         {canManageKnowledge(role) && (

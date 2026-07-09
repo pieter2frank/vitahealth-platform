@@ -37,8 +37,9 @@ const nextConfig: NextConfig = {
   // standalone file-tracer gemist. Expliciet meenemen per route (anders:
   // "Cannot find module .../pdf.worker.mjs").
   outputFileTracingIncludes: {
-    '/api/reports/parse':     ['./node_modules/pdfjs-dist/legacy/build/**'],
-    '/api/knowledge/extract': ['./node_modules/pdfjs-dist/legacy/build/**', './node_modules/mammoth/**'],
+    '/api/reports/parse':         ['./node_modules/pdfjs-dist/legacy/build/**'],
+    '/api/reports/upload-by-kit': ['./node_modules/pdfjs-dist/legacy/build/**'],
+    '/api/knowledge/extract':     ['./node_modules/pdfjs-dist/legacy/build/**', './node_modules/mammoth/**'],
   },
   // TypeScript checking kost te veel RAM op de build-server (2GB).
   // Types worden lokaal gecontroleerd voor elke push.
