@@ -69,15 +69,12 @@ $body =
   "----------------------------------------\n" .
   "Verzonden:   " . date('d-m-Y H:i') . "\n";
 
-$headers  = "From: Vita Health Website <$FROM>\r\n";
-$headers .= "Reply-To: $email\r\n";
-$headers .= "MIME-Version: 1.0\r\n";
-$headers .= "Content-Type: text/plain; charset=UTF-8\r\n";
-
-$ok = @mail($TO, $SUBJECT, $body, $headers);
+// Versturen via Resend (i.p.v. PHP mail()). Antwoorden gaan naar de indiener.
+require __DIR__ . '/resend-mailer.php';
+list($ok, $err) = vh_resend_send($SUBJECT, $body, $email);
 
 if ($ok) {
   respond(true, 'We nemen zo snel mogelijk contact met u op over de vervolgstappen.', $isAjax);
 } else {
-  respond(false, 'Versturen is helaas mislukt. Mail ons rechtstreeks op info@vita-health.nl.', $isAjax, 500);
+  respond(false, $err ?: 'Versturen is helaas mislukt. Mail ons rechtstreeks op info@vita-health.nl.', $isAjax, 500);
 }
