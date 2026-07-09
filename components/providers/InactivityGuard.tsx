@@ -3,7 +3,7 @@ import { useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
-const TIMEOUT_MS = 5 * 60 * 1000 // 5 minuten
+const TIMEOUT_MS = 10 * 60 * 1000 // 10 minuten
 
 const ACTIVITY_EVENTS = [
   'mousemove', 'mousedown', 'keydown',
