@@ -52,6 +52,12 @@ export const zivverProvider: SecureDeliveryProvider = {
       secure:     PORT === 465,   // 587/25 → STARTTLS (secure=false), 465 → TLS
       requireTLS: true,
       auth:       { user: USER, pass: PASS },
+      // Faal snel met een duidelijke fout i.p.v. eindeloos hangen als de
+      // uitgaande SMTP-verbinding geblokkeerd is of niet reageert.
+      connectionTimeout: 15000,
+      greetingTimeout:   15000,
+      socketTimeout:     20000,
+      tls: { minVersion: 'TLSv1.2' },
     })
 
     // ── Zivver-beveiligingsheaders (bevestig de exacte namen bij Zivver-support) ─
@@ -76,7 +82,12 @@ export const zivverProvider: SecureDeliveryProvider = {
       })
       return { ok: true, messageId: info.messageId }
     } catch (e) {
-      return { ok: false, error: e instanceof Error ? e.message : 'Onbekende fout bij Zivver-verzending.' }
+      // Log de volledige fout (incl. SMTP-code als ETIMEDOUT/ECONNREFUSED/EAUTH)
+      // zodat de oorzaak zichtbaar is in de Coolify-log.
+      console.error('[zivver] SMTP-verzending mislukt:', e)
+      const msg = e instanceof Error ? e.message : 'Onbekende fout bij Zivver-verzending.'
+      const code = (e as { code?: string })?.code
+      return { ok: false, error: code ? `${msg} (${code})` : msg }
     }
   },
 }
