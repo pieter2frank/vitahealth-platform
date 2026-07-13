@@ -21,11 +21,14 @@ import type { SecureDeliveryProvider, SecureReportInput, SecureDeliveryResult } 
 //   ZIVVER_SMTP_PASS   (wachtwoord van de gateway)
 //   ZIVVER_FROM        (afzender, moet een actief Zivver-account zijn)
 //
-// ⚠️  De per-bericht ontvangersverificatie (SMS als 2e factor) verloopt bij de
-//     SMTP-gateway via Zivver-beleid en/of specifieke headers die op deze
-//     docpagina niet staan. Bevestig de header bij Zivver-support; zet 'm daarna
-//     hieronder (zie het gemarkeerde blok). Zonder die header wordt het bericht
-//     nog steeds beveiligd volgens je organisatie-standaard.
+// Per-bericht beveiliging via Zivver-headers (zie encryption-gateway.html):
+//   • zivver-access-right: <ontvanger> sms <+31...>   → SMS-verificatie 2e factor
+//   • zivver-minimum-recipient-verification: verification-email → min. e-mailverificatie
+// We zetten SMS-verificatie als er een (internationaal genormaliseerd) mobiel
+// nummer bekend is; anders geldt je organisatie-standaard in Zivver.
+//
+// ⚠️  Zivver vereist dat je verzendende domein/IP éérst via een supportticket op
+//     de allowlist staat vóór er verbinding gemaakt kan worden (anders time-out).
 // ─────────────────────────────────────────────────────────────────────────────
 
 const HOST = process.env.ZIVVER_SMTP_HOST ?? 'smtp.zivver.com'
@@ -33,6 +36,18 @@ const PORT = Number(process.env.ZIVVER_SMTP_PORT ?? 587)
 const USER = process.env.ZIVVER_SMTP_USER ?? ''
 const PASS = process.env.ZIVVER_SMTP_PASS ?? ''
 const FROM = process.env.ZIVVER_FROM ?? ''
+
+// Zet een NL/vrij formaat mobiel nummer om naar internationaal (+31...) zoals
+// Zivver in de zivver-access-right header verwacht. Retourneert null als het
+// geen bruikbaar nummer is (dan geen SMS-header → org-standaard geldt).
+function toIntlPhone(raw?: string | null): string | null {
+  if (!raw) return null
+  const p = raw.replace(/[\s\-().]/g, '')
+  if (/^\+\d{8,15}$/.test(p)) return p
+  if (/^00\d{8,15}$/.test(p)) return '+' + p.slice(2)
+  if (/^0\d{8,12}$/.test(p)) return '+31' + p.slice(1)   // NL-default
+  return null
+}
 
 export const zivverProvider: SecureDeliveryProvider = {
   name: 'zivver',
@@ -60,12 +75,16 @@ export const zivverProvider: SecureDeliveryProvider = {
       tls: { minVersion: 'TLSv1.2' },
     })
 
-    // ── Zivver-beveiligingsheaders (bevestig de exacte namen bij Zivver-support) ─
-    // Placeholder voor per-bericht instellingen zoals SMS-verificatie op het
-    // mobiele nummer. Zolang deze niet gezet zijn, geldt je org-standaard.
+    // ── Zivver per-bericht beveiliging ──────────────────────────────────────────
+    // SMS-verificatie (2e factor) als er een bruikbaar mobiel nummer bekend is,
+    // anders alleen e-mailverificatie als minimale ondergrens.
     const headers: Record<string, string> = {}
-    // Voorbeeld (NAAM VERIFIËREN): SMS-verificatie op het mobiele nummer aanzetten.
-    // if (input.recipientPhone) headers['X-Zivver-...'] = input.recipientPhone
+    const phone = toIntlPhone(input.recipientPhone)
+    if (phone) {
+      headers['zivver-access-right'] = `${input.to} sms ${phone}`
+    } else {
+      headers['zivver-minimum-recipient-verification'] = 'verification-email'
+    }
 
     try {
       const info = await transporter.sendMail({
