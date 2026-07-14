@@ -43,6 +43,7 @@ export function EnrollmentStatusSection({ clientId, initialStatus, assignedKitId
   const [confirmReject, setConfirmReject] = useState(false)
   const [onHoldAction, setOnHoldAction]   = useState(false)
   const [error,   setError]   = useState('')
+  const [notice,  setNotice]  = useState('')  // blijvende melding (bv. hold opgeheven, mail niet verstuurd)
 
   // Externe statuswijziging (bv. na inlezen van een uitslag) live overnemen.
   useEffect(() => { setStatus(initialStatus) }, [initialStatus])
@@ -190,6 +191,15 @@ export function EnrollmentStatusSection({ clientId, initialStatus, assignedKitId
           })}
         </div>
 
+        {/* ── Blijvende melding (bv. hold opgeheven) ───────────────────────── */}
+        {notice && (
+          <div className="mt-4 flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2.5">
+            <AlertTriangle size={15} className="text-amber-500 shrink-0 mt-0.5" />
+            <p className="text-sm text-amber-800 flex-1">{notice}</p>
+            <button onClick={() => setNotice('')} className="text-xs text-amber-500 hover:text-amber-700 shrink-0">×</button>
+          </div>
+        )}
+
         {/* ── On-hold banner + acties ──────────────────────────────────────── */}
         {isOnHold && (
           <div className="mt-4 space-y-3">
@@ -267,12 +277,14 @@ export function EnrollmentStatusSection({ clientId, initialStatus, assignedKitId
                           body: JSON.stringify({ clientId }),
                         })
                         setSaving(false)
+                        const j = await res.json().catch(() => ({}))
                         if (res.ok) {
                           setStatus('toestemming_gegeven')
                           setOnHoldAction(false)
+                          setError('')
+                          setNotice(j.warning ?? 'Blokkade opgeheven. De cliënt heeft een e-mail met de vragenlijstlink ontvangen.')
                         } else {
-                          const j = await res.json()
-                          setError(j.error ?? 'Versturen mislukt.')
+                          setError(j.error ?? 'Blokkade opheffen mislukt.')
                         }
                       }}
                       disabled={saving}
