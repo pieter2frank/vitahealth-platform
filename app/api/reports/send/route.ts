@@ -66,9 +66,12 @@ export async function POST(req: Request) {
     to:             client.email,
     recipientName:  `${client.first_name} ${client.last_name}`,
     recipientPhone: client.phone,
-    subject:        'Je Vita Health rapport staat klaar',
+    subject:        'Je Vita Health Check rapportage staat klaar',
     message:        `Beste ${client.first_name}, in dit beveiligde bericht vind je je persoonlijke Vita Health rapport. ` +
-                    `Open het na verificatie. Heb je vragen, neem dan contact met ons op.`,
+                    `Dit bericht wordt via een beveiligde verbinding van Zivver opgestuurd. Heb je vragen, neem dan contact met ons op.\n\n` +
+                    `Het Vita Health team\n` +
+                    `helpdesk@vita-health.nl\n` +
+                    `https://helpdesk.vita-health.nl/`,
     attachment: {
       filename:    doc.filename ?? 'vita-health-rapport.pdf',
       content,
