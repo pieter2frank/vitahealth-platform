@@ -67,6 +67,8 @@ export const zivverProvider: SecureDeliveryProvider = {
       secure:     PORT === 465,   // 587/25 → STARTTLS (secure=false), 465 → TLS
       requireTLS: true,
       auth:       { user: USER, pass: PASS },
+      // nodemailer resolvet IPv4 eerst en houdt IPv6 als fallback; de IPv6-route
+      // naar Zivver is onbereikbaar, dus de eerste (IPv4-)poging slaagt meteen.
       // Faal snel met een duidelijke fout i.p.v. eindeloos hangen als de
       // uitgaande SMTP-verbinding geblokkeerd is of niet reageert.
       connectionTimeout: 15000,
