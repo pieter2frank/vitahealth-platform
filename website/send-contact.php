@@ -60,6 +60,12 @@ if ($voornaam === '' || $achternaam === '' || !filter_var($email, FILTER_VALIDAT
   respond(false, 'Vul je naam, een geldig e-mailadres en een bericht in.', $isAjax, 422);
 }
 
+// ── Spamfilter (bot-spam met links/marketing, omzeilt de honeypot) ───────────
+require __DIR__ . '/spam-filter.php';
+if (vh_is_spam([$voornaam, $achternaam, $bericht], $email) || vh_bad_origin('vita-health.nl')) {
+  respond(true, 'Bedankt voor je bericht!', $isAjax); // stil negeren
+}
+
 // ── E-mail opbouwen (gegevens overzichtelijk onder elkaar) ───────────────────
 $body =
   "Nieuw informatieverzoek via de website\n" .
