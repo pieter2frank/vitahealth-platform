@@ -8,6 +8,7 @@ import { LogoutButton } from './LogoutButton'
 export default async function AnnotatieLayout({ children }: { children: React.ReactNode }) {
   const user = await getCurrentUser()
   const isAdmin = user?.role === 'admin'
+  const isMedical = user?.role === 'arts' || user?.role === 'leefstijlarts'
 
   return (
     <div className="min-h-screen bg-[#f6f7fb]">
@@ -21,7 +22,10 @@ export default async function AnnotatieLayout({ children }: { children: React.Re
             <nav className="flex items-center gap-4 text-sm">
               {!isAdmin && <Link href="/" className="text-[#64748b] hover:text-[#1f1683]">Casussen</Link>}
               {isAdmin && <Link href="/admin" className="text-[#64748b] hover:text-[#1f1683]">Rondes</Link>}
-              <span className="text-[#94a3b8]">{user.name}</span>
+              <span className="flex flex-col items-end leading-tight">
+                <span className="text-[#334155]">{user.name}</span>
+                {isMedical && <span className="text-[10px] font-semibold text-[#1f1683]">Medisch Team</span>}
+              </span>
               <LogoutButton />
             </nav>
           )}
