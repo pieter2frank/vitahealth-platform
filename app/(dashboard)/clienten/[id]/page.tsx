@@ -121,7 +121,7 @@ export default async function ClientDetailPage({
       .select('code, display_name, unit, marker_group, direction, sort_order, description'),
     supabase
       .from('vh_advice')
-      .select('id, status, content, model, created_by, approved_by, approved_at, created_at')
+      .select('id, status, content, model, sources, created_by, approved_by, approved_at, created_at')
       .eq('client_id', id)
       .order('created_at', { ascending: false }),
   ])

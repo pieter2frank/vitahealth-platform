@@ -1,7 +1,7 @@
 'use client'
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { Sparkles, Wand2, Pencil, X, Save, Trash2, CheckCircle2, RotateCcw, ShieldCheck, AlertTriangle } from 'lucide-react'
+import { Sparkles, Wand2, Pencil, X, Save, Trash2, CheckCircle2, RotateCcw, ShieldCheck, AlertTriangle, BookOpen, ChevronDown, ChevronRight } from 'lucide-react'
 import { formatDateTime } from '@/lib/utils'
 import { useUser } from '@/components/providers/UserProvider'
 import { canSeeResults } from '@/lib/auth/roles'
@@ -11,6 +11,7 @@ interface Advice {
   status: string
   content: { text?: string } | null
   model: string | null
+  sources: string[] | null
   created_by: string | null
   approved_by: string | null
   approved_at: string | null
@@ -22,7 +23,7 @@ interface Props {
   initialAdvices: Advice[]
 }
 
-const SELECT = 'id, status, content, model, created_by, approved_by, approved_at, created_at'
+const SELECT = 'id, status, content, model, sources, created_by, approved_by, approved_at, created_at'
 
 const STATUS_BADGE: Record<string, string> = {
   draft:    'bg-amber-100 text-amber-700 border-amber-200',
@@ -31,6 +32,98 @@ const STATUS_BADGE: Record<string, string> = {
 }
 const STATUS_LABEL: Record<string, string> = {
   draft: 'Concept', approved: 'Goedgekeurd', sent: 'Verzonden',
+}
+
+// ─── Bronnen-paneel (provenance) ──────────────────────────────────────────────
+// Toont de exact gebruikte kennis-fragmenten waarop dit advies is gebaseerd.
+// Fragmenten worden lui geladen bij openen; verwijderde bronnen worden herkend.
+
+interface SourceChunk {
+  id:       string
+  domain:   string
+  content:  string
+  title:    string | null
+  source:   string | null
+  evidence: string | null
+  missing?: boolean
+}
+
+function SourcesPanel({ sourceIds }: { sourceIds: string[] }) {
+  const [open,    setOpen]    = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [chunks,  setChunks]  = useState<SourceChunk[] | null>(null)
+  const [error,   setError]   = useState('')
+
+  async function toggle() {
+    const next = !open
+    setOpen(next)
+    if (!next || chunks !== null) return
+
+    setLoading(true); setError('')
+    const supabase = createClient()
+    const { data, error: err } = await supabase
+      .from('vh_knowledge_chunk')
+      .select('id, domain, content, knowledge:vh_knowledge ( title, source, evidence )')
+      .in('id', sourceIds)
+    setLoading(false)
+    if (err) { setError(err.message); return }
+
+    // Behoud de volgorde uit `sources` ([1]..[N] zoals aan het model gegeven).
+    type Row = { id: string; domain: string; content: string; knowledge: { title: string | null; source: string | null; evidence: string | null } | { title: string | null; source: string | null; evidence: string | null }[] | null }
+    const byId = new Map((data as Row[] ?? []).map(r => {
+      const k = Array.isArray(r.knowledge) ? r.knowledge[0] : r.knowledge
+      return [r.id, {
+        id: r.id, domain: r.domain, content: r.content,
+        title: k?.title ?? null, source: k?.source ?? null, evidence: k?.evidence ?? null,
+      } as SourceChunk]
+    }))
+    setChunks(sourceIds.map(id => byId.get(id) ?? { id, domain: '', content: '', title: null, source: null, evidence: null, missing: true }))
+  }
+
+  return (
+    <div className="mt-3 border-t border-[#f1f5f9] pt-3">
+      <button onClick={toggle}
+        className="inline-flex items-center gap-1.5 text-xs font-medium text-[#64748b] hover:text-[#1f1683] transition-colors">
+        {open ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
+        <BookOpen size={13} />
+        Bronnen ({sourceIds.length})
+      </button>
+
+      {open && (
+        <div className="mt-2.5 space-y-2">
+          {loading && <p className="text-xs text-[#94a3b8]">Bronnen laden…</p>}
+          {error && <p className="text-xs text-red-600">{error}</p>}
+          {chunks?.map((c, i) => (
+            <div key={c.id + i} className="rounded-lg border border-[#e2e8f0] bg-[#f8fafc] px-3 py-2.5">
+              {c.missing ? (
+                <p className="text-xs text-[#94a3b8] italic flex items-center gap-1.5">
+                  <span className="font-semibold text-[#64748b]">[{i + 1}]</span>
+                  Bron niet meer beschikbaar (kennisdocument verwijderd).
+                </p>
+              ) : (
+                <>
+                  <div className="flex items-center gap-2 flex-wrap mb-1.5">
+                    <span className="text-xs font-semibold text-[#64748b]">[{i + 1}]</span>
+                    {c.domain && (
+                      <span className="inline-flex items-center rounded-full border border-[#c7d7fd] bg-[#eef4ff] px-2 py-0.5 text-[10px] font-medium text-[#1f1683]">
+                        {c.domain}
+                      </span>
+                    )}
+                    {c.title && <span className="text-xs font-medium text-[#1e293b]">{c.title}</span>}
+                    {c.evidence && <span className="text-[10px] text-[#94a3b8]">· {c.evidence}</span>}
+                  </div>
+                  <p className="text-xs text-[#475569] whitespace-pre-wrap leading-relaxed max-h-40 overflow-y-auto">
+                    {c.content}
+                  </p>
+                  {c.source && <p className="mt-1.5 text-[10px] text-[#94a3b8]">Bron: {c.source}</p>}
+                </>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
 }
 
 function AdviceCard({ advice, onChanged, onDeleted }: {
@@ -146,6 +239,9 @@ function AdviceCard({ advice, onChanged, onDeleted }: {
           <p className="text-sm text-[#1e293b] whitespace-pre-wrap leading-relaxed">
             {advice.content?.text || <span className="text-[#94a3b8] italic">Geen inhoud.</span>}
           </p>
+        )}
+        {!editing && advice.sources && advice.sources.length > 0 && (
+          <SourcesPanel sourceIds={advice.sources} />
         )}
         {error && <p className="mt-2 text-xs text-red-600">{error}</p>}
       </div>
