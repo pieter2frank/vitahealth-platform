@@ -42,6 +42,21 @@ export async function requireRole(allowed: string[]): Promise<
   return { ok: true, userId: user.id, role: me.role, name: me.name || user.email || 'Onbekend' }
 }
 
+// Annotatie-subdomein: eigen redirects omdat /dashboard daar niet bestaat.
+// Niet ingelogd → gedeelde login met terugkeer naar de wortel; verkeerde rol →
+// de "geen toegang"-pagina binnen de annotatie-tak.
+export async function requireAnnotationAccess(
+  allowed: string[],
+): Promise<{ userId: string; role: string; name: string }> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/auth/login?redirect=/')
+
+  const me = await lookupRole(user.id)
+  if (!me || !allowed.includes(me.role)) redirect('/geen-toegang')
+  return { userId: user.id, role: me.role, name: me.name || user.email || 'Onbekend' }
+}
+
 // Server-componenten: dwingt login + rol af via redirect en geeft anders de
 // gebruiker + rol terug.
 export async function requireRolePage(

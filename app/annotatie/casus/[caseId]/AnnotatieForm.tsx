@@ -1,0 +1,224 @@
+'use client'
+import { useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { FOLLOWUP_DOMAINS, type AnnotationFields } from '@/lib/annotation'
+import {
+  FileText, Save, Send, CheckCircle2, AlertTriangle, Loader2, ExternalLink,
+} from 'lucide-react'
+
+interface Props {
+  roundId:  string
+  clientId: string
+  caseText: string
+  hasPdf:   boolean
+  initial:  AnnotationFields & { status: string }
+}
+
+// ── Mini-markdownweergave van het casusdocument (##, ###, - lijst) ─────────────
+function CaseView({ text }: { text: string }) {
+  const lines = text.split('\n')
+  const out: React.ReactNode[] = []
+  let bullets: string[] = []
+  const flush = (key: string) => {
+    if (!bullets.length) return
+    out.push(
+      <ul key={key} className="my-1.5 space-y-1">
+        {bullets.map((b, i) => (
+          <li key={i} className="flex gap-1.5 text-sm text-[#334155]"><span className="text-[#cbd5e1]">•</span><span>{b}</span></li>
+        ))}
+      </ul>,
+    )
+    bullets = []
+  }
+  lines.forEach((raw, i) => {
+    const line = raw.trimEnd()
+    if (line.startsWith('### ')) { flush(`u${i}`); out.push(<h3 key={i} className="mt-4 mb-1 text-xs font-semibold uppercase tracking-wide text-[#64748b]">{line.slice(4)}</h3>) }
+    else if (line.startsWith('## ')) { flush(`u${i}`); out.push(<h2 key={i} className="mb-1 text-base font-semibold text-[#1e293b]">{line.slice(3)}</h2>) }
+    else if (line.startsWith('- ')) { bullets.push(line.slice(2)) }
+    else if (line.trim() === '') { flush(`u${i}`) }
+    else { flush(`u${i}`); out.push(<p key={i} className="text-sm text-[#334155]">{line}</p>) }
+  })
+  flush('end')
+  return <div>{out}</div>
+}
+
+function YesNo({ value, onChange }: { value: boolean | null; onChange: (v: boolean) => void }) {
+  return (
+    <div className="flex gap-2">
+      {[true, false].map(v => (
+        <button key={String(v)} type="button" onClick={() => onChange(v)}
+          className={`rounded-lg border px-5 py-1.5 text-sm font-medium transition-colors ${
+            value === v ? 'bg-[#1f1683] text-white border-[#1f1683]' : 'border-[#e2e8f0] bg-white text-[#64748b] hover:border-[#1f1683]'
+          }`}>
+          {v ? 'Ja' : 'Nee'}
+        </button>
+      ))}
+    </div>
+  )
+}
+
+export function AnnotatieForm({ roundId, clientId, caseText, hasPdf, initial }: Props) {
+  const router = useRouter()
+  const [f, setF] = useState<AnnotationFields>(initial)
+  const [status, setStatus] = useState(initial.status)
+  const [busy, setBusy]   = useState<'concept' | 'indienen' | null>(null)
+  const [pdfBusy, setPdfBusy] = useState(false)
+  const [error, setError] = useState('')
+  const [notice, setNotice] = useState('')
+
+  function upd<K extends keyof AnnotationFields>(k: K, v: AnnotationFields[K]) {
+    setF(prev => ({ ...prev, [k]: v })); setError(''); setNotice('')
+  }
+  function toggleDomain(v: string) {
+    upd('vervolg_domeinen', f.vervolg_domeinen.includes(v)
+      ? f.vervolg_domeinen.filter(x => x !== v)
+      : [...f.vervolg_domeinen, v])
+  }
+
+  async function openPdf() {
+    setPdfBusy(true); setError('')
+    try {
+      const res = await fetch(`/api/annotatie/pdf?clientId=${clientId}`)
+      const j = await res.json().catch(() => ({}))
+      if (res.ok && j.url) window.open(j.url, '_blank', 'noopener')
+      else setError(j.error ?? 'PDF kon niet worden geopend.')
+    } finally { setPdfBusy(false) }
+  }
+
+  async function save(submit: boolean) {
+    if (submit) {
+      if (!f.algemeen_beeld.trim() || !f.advies.trim() || f.verbeterpotentieel == null) {
+        setError('Vul minimaal het algemene beeld, je advies en het verbeterpotentieel in voordat je indient.')
+        return
+      }
+    }
+    setBusy(submit ? 'indienen' : 'concept'); setError(''); setNotice('')
+    const res = await fetch('/api/annotatie/annotatie', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ roundId, clientId, ...f, submit }),
+    })
+    const j = await res.json().catch(() => ({}))
+    setBusy(null)
+    if (!res.ok) { setError(j.error ?? 'Opslaan mislukt.'); return }
+    if (submit) { router.push('/'); return }
+    setStatus('concept')
+    setNotice('Concept opgeslagen.')
+  }
+
+  return (
+    <div className="grid gap-5 lg:grid-cols-2">
+      {/* ── Casusweergave ─────────────────────────────────────────────────────── */}
+      <div className="rounded-xl border border-[#e2e8f0] bg-white shadow-sm">
+        <div className="flex items-center justify-between border-b border-[#e2e8f0] px-5 py-3">
+          <h2 className="text-sm font-semibold text-[#1e293b]">Vragenlijst &amp; biomarkers</h2>
+          {hasPdf && (
+            <button onClick={openPdf} disabled={pdfBusy}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-[#e2e8f0] px-2.5 py-1.5 text-xs font-medium text-[#1f1683] hover:bg-[#f8fafc] disabled:opacity-50">
+              {pdfBusy ? <Loader2 size={12} className="animate-spin" /> : <FileText size={12} />} Open PDF <ExternalLink size={11} />
+            </button>
+          )}
+        </div>
+        <div className="max-h-[70vh] overflow-y-auto px-5 py-4">
+          <CaseView text={caseText} />
+        </div>
+      </div>
+
+      {/* ── Beoordeling ───────────────────────────────────────────────────────── */}
+      <div className="rounded-xl border border-[#e2e8f0] bg-white shadow-sm">
+        <div className="flex items-center justify-between border-b border-[#e2e8f0] px-5 py-3">
+          <h2 className="text-sm font-semibold text-[#1e293b]">Jouw beoordeling</h2>
+          {status === 'ingediend' && (
+            <span className="inline-flex items-center gap-1 rounded-full border border-green-200 bg-green-50 px-2.5 py-0.5 text-xs font-medium text-green-700">
+              <CheckCircle2 size={11} /> Ingediend
+            </span>
+          )}
+        </div>
+
+        <div className="space-y-5 px-5 py-4">
+          {/* Algemeen beeld */}
+          <div>
+            <label className="block text-sm font-medium text-[#1e293b]">Algemeen beeld <span className="text-[#94a3b8] font-normal">(korte anamnese)</span></label>
+            <textarea value={f.algemeen_beeld} onChange={e => upd('algemeen_beeld', e.target.value)} rows={4}
+              className="mt-1.5 w-full rounded-lg border border-[#e2e8f0] px-3 py-2 text-sm text-[#1e293b] focus:outline-none focus:ring-2 focus:ring-[#1f1683]/30 focus:border-[#1f1683] resize-y" />
+          </div>
+
+          {/* Bespreken in team */}
+          <div>
+            <label className="block text-sm font-medium text-[#1e293b] mb-1.5">Bespreken in medisch team?</label>
+            <YesNo value={f.bespreken_team} onChange={v => upd('bespreken_team', v)} />
+          </div>
+
+          {/* Advies */}
+          <div>
+            <label className="block text-sm font-medium text-[#1e293b]">Advies <span className="text-[#94a3b8] font-normal">(top 3)</span></label>
+            <textarea value={f.advies} onChange={e => upd('advies', e.target.value)} rows={4} placeholder={'1. …\n2. …\n3. …'}
+              className="mt-1.5 w-full rounded-lg border border-[#e2e8f0] px-3 py-2 text-sm text-[#1e293b] placeholder:text-[#cbd5e1] focus:outline-none focus:ring-2 focus:ring-[#1f1683]/30 focus:border-[#1f1683] resize-y" />
+          </div>
+
+          {/* Verbeterpotentieel */}
+          <div>
+            <label className="block text-sm font-medium text-[#1e293b] mb-2">Verwacht verbeterpotentieel</label>
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-[#94a3b8] w-12 text-right shrink-0">weinig</span>
+              <div className="flex flex-wrap gap-1">
+                {Array.from({ length: 11 }, (_, n) => (
+                  <button key={n} type="button" onClick={() => upd('verbeterpotentieel', n)}
+                    className={`h-8 w-8 rounded-lg border text-sm font-medium transition-colors ${
+                      f.verbeterpotentieel === n ? 'bg-[#1f1683] text-white border-[#1f1683]' : 'border-[#e2e8f0] bg-white text-[#64748b] hover:border-[#1f1683]'
+                    }`}>{n}</button>
+                ))}
+              </div>
+              <span className="text-xs text-[#94a3b8] w-10 shrink-0">veel</span>
+            </div>
+          </div>
+
+          {/* Vervolg-domeinen */}
+          <div>
+            <label className="block text-sm font-medium text-[#1e293b] mb-2">Op welk gebied ligt een vervolg? <span className="text-[#94a3b8] font-normal">(meerdere mogelijk)</span></label>
+            <div className="flex flex-wrap gap-2">
+              {FOLLOWUP_DOMAINS.map(d => {
+                const on = f.vervolg_domeinen.includes(d.value)
+                return (
+                  <button key={d.value} type="button" onClick={() => toggleDomain(d.value)}
+                    className={`rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
+                      on ? 'bg-[#17e4a1]/15 text-[#0d7a5f] border-[#17e4a1]' : 'border-[#e2e8f0] bg-white text-[#64748b] hover:border-[#17e4a1]'
+                    }`}>{d.label}</button>
+                )
+              })}
+            </div>
+          </div>
+
+          {/* Wearables */}
+          <div>
+            <label className="block text-sm font-medium text-[#1e293b] mb-1.5">Zijn metingen met wearables nuttig bij vervolg?</label>
+            <YesNo value={f.wearables_nuttig} onChange={v => upd('wearables_nuttig', v)} />
+          </div>
+
+          {error && (
+            <div className="flex items-start gap-2 rounded-lg bg-red-50 border border-red-200 px-3 py-2.5">
+              <AlertTriangle size={14} className="text-red-500 shrink-0 mt-0.5" />
+              <p className="text-sm text-red-600">{error}</p>
+            </div>
+          )}
+          {notice && (
+            <div className="flex items-center gap-2 rounded-lg bg-emerald-50 border border-emerald-200 px-3 py-2.5">
+              <CheckCircle2 size={14} className="text-emerald-600 shrink-0" />
+              <p className="text-sm text-emerald-700">{notice}</p>
+            </div>
+          )}
+
+          <div className="flex items-center gap-3 pt-1">
+            <button onClick={() => save(false)} disabled={busy !== null}
+              className="inline-flex items-center gap-2 rounded-lg border border-[#e2e8f0] px-4 py-2 text-sm font-medium text-[#64748b] hover:bg-[#f8fafc] disabled:opacity-50">
+              {busy === 'concept' ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />} Concept opslaan
+            </button>
+            <button onClick={() => save(true)} disabled={busy !== null}
+              className="inline-flex items-center gap-2 rounded-lg bg-[#1f1683] px-4 py-2 text-sm font-medium text-white hover:bg-[#1a1270] disabled:opacity-50">
+              {busy === 'indienen' ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />} Indienen
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}

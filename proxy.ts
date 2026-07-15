@@ -7,14 +7,39 @@ const PORTAL_HOSTNAMES = [
 ]
 
 export function proxy(request: NextRequest) {
-  const host = request.headers.get('host') ?? ''
+  const host = (request.headers.get('host') ?? '').toLowerCase()
+  const { pathname } = request.nextUrl
 
   // Portaal domein → herschrijf naar /portal/*
   if (PORTAL_HOSTNAMES.includes(host)) {
     const url = request.nextUrl.clone()
-    const path = url.pathname === '/' ? '' : url.pathname
+    const path = pathname === '/' ? '' : pathname
     url.pathname = `/portal${path}`
     return NextResponse.rewrite(url)
+  }
+
+  // Annotatie-subdomein → herschrijf de wortel naar de /annotatie-tak.
+  // Gedeelde auth/framework-paden passeren ongewijzigd.
+  if (host.startsWith('annotatie.')) {
+    const passthrough =
+      pathname.startsWith('/_next') ||
+      pathname.startsWith('/auth') ||
+      pathname === '/favicon.ico' ||
+      pathname === '/logo.svg' ||
+      pathname.startsWith('/annotatie')
+    if (!passthrough) {
+      const url = request.nextUrl.clone()
+      url.pathname = `/annotatie${pathname === '/' ? '' : pathname}`
+      return NextResponse.rewrite(url)
+    }
+    return NextResponse.next()
+  }
+
+  // Platformhost (of overig): de /annotatie-tak is alleen via het subdomein bereikbaar.
+  if (pathname.startsWith('/annotatie')) {
+    const url = request.nextUrl.clone()
+    url.pathname = '/dashboard'
+    return NextResponse.redirect(url)
   }
 
   return NextResponse.next()

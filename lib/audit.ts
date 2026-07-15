@@ -23,6 +23,8 @@ export type AuditAction =
   | 'status_change'  // expliciete statusovergang (enrollment, kit)
   | 'access_granted' // toegang verleend
   | 'access_denied'  // toegang geweigerd
+  | 'annotation_saved'      // annotatie als concept opgeslagen
+  | 'annotation_submitted'  // annotatie ingediend
 
 export type AuditResourceType =
   | 'client'
@@ -35,6 +37,7 @@ export type AuditResourceType =
   | 'kit_status'
   | 'medewerker'
   | 'client_document'
+  | 'annotation'
 
 export type AuditAccessBasis =
   | 'medewerker_regulier'
