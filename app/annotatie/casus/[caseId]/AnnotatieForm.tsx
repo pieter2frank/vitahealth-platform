@@ -2,6 +2,7 @@
 import { useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { FOLLOWUP_DOMAINS, type AnnotationFields } from '@/lib/annotation'
+import type { CaseSection, ItemStatus } from '@/lib/annotation-case'
 import {
   FileText, Save, Send, CheckCircle2, AlertTriangle, Loader2, ExternalLink,
   Highlighter, Trash2, X, GraduationCap,
@@ -12,10 +13,17 @@ interface Highlight { id: string; selected_text: string; note: string | null }
 interface Props {
   roundId:  string
   clientId: string
-  caseText: string
+  sections: CaseSection[]
   hasPdf:   boolean
   initial:  AnnotationFields & { status: string }
   initialHighlights: Highlight[]
+}
+
+const DOT: Record<ItemStatus, string> = {
+  good: 'bg-emerald-500', warn: 'bg-amber-500', alert: 'bg-red-500', neutral: 'bg-[#cbd5e1]',
+}
+const TXT: Record<ItemStatus, string> = {
+  good: 'text-emerald-800', warn: 'text-amber-800', alert: 'text-red-800', neutral: 'text-[#334155]',
 }
 
 // Wikkel exacte voorkomens van gemarkeerde tekst in <mark>. Overlappingen worden
@@ -47,33 +55,25 @@ function renderWithMarks(text: string, marks: Highlight[]): React.ReactNode {
   return out
 }
 
-// Mini-markdownweergave (##, ###, - lijst) met inline highlight-markering.
-function CaseView({ text, marks }: { text: string; marks: Highlight[] }) {
-  const lines = text.split('\n')
-  const out: React.ReactNode[] = []
-  let bullets: string[] = []
-  const flush = (key: string) => {
-    if (!bullets.length) return
-    const items = bullets
-    out.push(
-      <ul key={key} className="my-1.5 space-y-1">
-        {items.map((b, i) => (
-          <li key={i} className="flex gap-1.5 text-sm text-[#334155]"><span className="text-[#cbd5e1]">•</span><span>{renderWithMarks(b, marks)}</span></li>
-        ))}
-      </ul>,
-    )
-    bullets = []
-  }
-  lines.forEach((raw, i) => {
-    const line = raw.trimEnd()
-    if (line.startsWith('### ')) { flush(`u${i}`); out.push(<h3 key={i} className="mt-4 mb-1 text-xs font-semibold uppercase tracking-wide text-[#64748b]">{line.slice(4)}</h3>) }
-    else if (line.startsWith('## ')) { flush(`u${i}`); out.push(<h2 key={i} className="mb-1 text-base font-semibold text-[#1e293b]">{line.slice(3)}</h2>) }
-    else if (line.startsWith('- ')) { bullets.push(line.slice(2)) }
-    else if (line.trim() === '') { flush(`u${i}`) }
-    else { flush(`u${i}`); out.push(<p key={i} className="text-sm text-[#334155]">{renderWithMarks(line, marks)}</p>) }
-  })
-  flush('end')
-  return <div>{out}</div>
+// Gestructureerde weergave met kleur per item (groen/oranje/rood) + inline marks.
+function CaseView({ sections, marks }: { sections: CaseSection[]; marks: Highlight[] }) {
+  return (
+    <div className="space-y-4">
+      {sections.map((s, si) => (
+        <div key={si}>
+          <h3 className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-[#64748b]">{s.heading}</h3>
+          <ul className="space-y-1">
+            {s.items.map((it, i) => (
+              <li key={i} className="flex items-start gap-2 text-sm">
+                <span className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${DOT[it.status]}`} />
+                <span className={TXT[it.status]}>{renderWithMarks(it.text, marks)}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ))}
+    </div>
+  )
 }
 
 function YesNo({ value, onChange }: { value: boolean | null; onChange: (v: boolean) => void }) {
@@ -93,7 +93,7 @@ function YesNo({ value, onChange }: { value: boolean | null; onChange: (v: boole
 
 interface Selection { text: string; contextBefore: string; contextAfter: string; top: number; left: number }
 
-export function AnnotatieForm({ roundId, clientId, caseText, hasPdf, initial, initialHighlights }: Props) {
+export function AnnotatieForm({ roundId, clientId, sections, hasPdf, initial, initialHighlights }: Props) {
   const router = useRouter()
   const [f, setF] = useState<AnnotationFields>(initial)
   const [status, setStatus] = useState(initial.status)
@@ -229,11 +229,16 @@ export function AnnotatieForm({ roundId, clientId, caseText, hasPdf, initial, in
             </button>
           )}
         </div>
-        <div className="border-b border-[#f1f5f9] bg-[#fffdf5] px-5 py-2 text-xs text-[#8a6d3b]">
-          Selecteer een stuk tekst om er een annotatie bij te maken.
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#f1f5f9] bg-[#fffdf5] px-5 py-2 text-xs text-[#8a6d3b]">
+          <span>Selecteer een stuk tekst om er een annotatie bij te maken.</span>
+          <span className="flex items-center gap-2.5 text-[#94a3b8]">
+            <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-emerald-500" /> goed</span>
+            <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-amber-500" /> aandacht</span>
+            <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-red-500" /> alert</span>
+          </span>
         </div>
         <div ref={caseRef} onMouseUp={onCaseMouseUp} className="max-h-[60vh] overflow-y-auto px-5 py-4 selection:bg-amber-200">
-          <CaseView text={caseText} marks={highlights} />
+          <CaseView sections={sections} marks={highlights} />
         </div>
 
         {/* Highlight-lijst */}

@@ -22,9 +22,13 @@ export async function POST(req: Request) {
   const clientIds: string[] = Array.isArray(body.clientIds)
     ? [...new Set((body.clientIds as unknown[]).filter(v => typeof v === 'string' && isUuid(v)) as string[])]
     : []
+  const artsUserIds: string[] = Array.isArray(body.artsUserIds)
+    ? [...new Set((body.artsUserIds as unknown[]).filter(v => typeof v === 'string' && isUuid(v)) as string[])]
+    : []
 
   if (!title)             return NextResponse.json({ error: 'Titel ontbreekt.' }, { status: 400 })
-  if (clientIds.length === 0) return NextResponse.json({ error: 'Geen dossiers geselecteerd.' }, { status: 400 })
+  if (clientIds.length === 0)   return NextResponse.json({ error: 'Geen dossiers geselecteerd.' }, { status: 400 })
+  if (artsUserIds.length === 0) return NextResponse.json({ error: 'Geen artsen geselecteerd.' }, { status: 400 })
 
   const admin = createAdminClient()
 
@@ -47,16 +51,27 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Dossiers koppelen mislukt.' }, { status: 500 })
   }
 
-  // Artsen ophalen (e-mail zit in auth.users, niet in vh_medewerker)
+  // Toegewezen artsen koppelen (alleen geldige arts/leefstijlarts-user_ids).
   const { data: team } = await admin
     .from('vh_medewerker').select('user_id').in('role', ['arts', 'leefstijlarts'])
   const teamIds = new Set((team ?? []).map(t => t.user_id as string))
+  const assigned = artsUserIds.filter(id => teamIds.has(id))
+  if (assigned.length === 0) return NextResponse.json({ error: 'Geen geldige artsen geselecteerd.' }, { status: 400 })
+
+  const { error: aErr } = await admin
+    .from('vh_annotation_round_arts')
+    .insert(assigned.map(arts_user_id => ({ round_id: round.id, arts_user_id })))
+  if (aErr) {
+    console.error('[annotatie] artsen koppelen mislukt:', aErr)
+    return NextResponse.json({ error: 'Artsen koppelen mislukt.' }, { status: 500 })
+  }
 
   let mailed = 0
-  if (teamIds.size > 0) {
+  {
+    const assignedSet = new Set(assigned)
     const { data: list } = await admin.auth.admin.listUsers({ perPage: 200 })
     const emails = (list?.users ?? [])
-      .filter(u => teamIds.has(u.id) && u.email)
+      .filter(u => assignedSet.has(u.id) && u.email)
       .map(u => u.email as string)
 
     if (emails.length > 0) {

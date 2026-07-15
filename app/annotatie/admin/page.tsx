@@ -6,25 +6,59 @@ import { formatDate } from '@/lib/utils'
 
 export const dynamic = 'force-dynamic'
 
+const DISEASE: Record<string, string> = {
+  heart_attack: 'Hartaanval', ischemic_stroke: 'Herseninfarct', type2_diabetes: 'Diabetes type 2',
+  chronic_kidney_disease: 'Chronische nierziekte', fatty_liver_disease: 'Leververvetting',
+}
+
+interface RiskRow { disease: string; result_category: string | null }
+interface ReportRow {
+  client_id: string; metabolic_age: number | null; resilience_score: number | null; sample_date: string | null
+  vh_report_disease_risk: RiskRow[] | null
+}
+
 export default async function AdminRondesPage() {
   await requireAnnotationAccess(['admin'])
   const admin = createAdminClient()
 
   // Geschikt = dossier met zowel een ingevulde vragenlijst als een biomarkeruitslag.
   const [{ data: reps }, { data: qrs }] = await Promise.all([
-    admin.from('vh_report').select('client_id'),
+    admin.from('vh_report')
+      .select('client_id, metabolic_age, resilience_score, sample_date, vh_report_disease_risk ( disease, result_category )')
+      .order('sample_date', { ascending: false }),
     admin.from('vh_questionnaire_response').select('client_id'),
   ])
   const withQ = new Set((qrs ?? []).map(q => q.client_id))
-  const eligibleIds = [...new Set((reps ?? []).map(r => r.client_id))].filter(id => withQ.has(id))
+
+  // Meest recente rapport per cliënt (reps is aflopend op sample_date).
+  const latestReport = new Map<string, ReportRow>()
+  for (const r of (reps ?? []) as ReportRow[]) {
+    if (!latestReport.has(r.client_id)) latestReport.set(r.client_id, r)
+  }
+  const eligibleIds = [...latestReport.keys()].filter(id => withQ.has(id))
 
   const { data: clients } = eligibleIds.length
     ? await admin.from('vh_client').select('id, gender, birth_date').in('id', eligibleIds)
     : { data: [] as { id: string; gender: string | null; birth_date: string | null }[] }
 
   const options = (clients ?? [])
-    .map(c => ({ id: c.id, label: caseLabel(c.birth_date, c.gender) }))
+    .map(c => {
+      const r = latestReport.get(c.id)
+      const meta: string[] = []
+      if (r?.metabolic_age != null)    meta.push(`metabole leeftijd ${r.metabolic_age}`)
+      if (r?.resilience_score != null) meta.push(`resilience ${r.resilience_score}/100`)
+      const risks = (r?.vh_report_disease_risk ?? [])
+        .filter(x => x.result_category && x.result_category !== 'average_or_lower')
+        .map(x => DISEASE[x.disease] ?? x.disease)
+      if (risks.length) meta.push(`risico: ${risks.join(', ')}`)
+      return { id: c.id, label: caseLabel(c.birth_date, c.gender), meta: meta.join(' · ') }
+    })
     .sort((a, b) => a.label.localeCompare(b.label))
+
+  // Artsen die je kunt toewijzen.
+  const { data: team } = await admin
+    .from('vh_medewerker').select('user_id, name').in('role', ['arts', 'leefstijlarts']).order('name')
+  const artsen = (team ?? []).map(t => ({ userId: t.user_id as string, name: t.name as string }))
 
   const { data: rounds } = await admin
     .from('vh_annotation_round')
@@ -37,12 +71,11 @@ export default async function AdminRondesPage() {
       <div>
         <h1 className="text-xl font-semibold text-[#1e293b]">Annotatieronde samenstellen</h1>
         <p className="mt-0.5 text-sm text-[#64748b]">
-          Kies de dossiers waarvan zowel de vragenlijst als de biomarkeruitslag beschikbaar is.
-          Alle artsen krijgen bericht dat er casussen klaarstaan.
+          Kies de dossiers waarvan zowel de vragenlijst als de biomarkeruitslag beschikbaar is en wijs de artsen toe.
         </p>
       </div>
 
-      <RondeForm options={options} />
+      <RondeForm options={options} artsen={artsen} />
 
       {(rounds ?? []).length > 0 && (
         <section className="rounded-xl border border-[#e2e8f0] bg-white shadow-sm">

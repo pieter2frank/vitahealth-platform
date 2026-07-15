@@ -2,7 +2,7 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { requireAnnotationAccess } from '@/lib/auth/guard'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { buildClientCaseText } from '@/lib/ai/case-document'
+import { buildClientCaseStructured } from '@/lib/annotation-case'
 import { caseLabel, type AnnotationFields } from '@/lib/annotation'
 import { AnnotatieForm } from './AnnotatieForm'
 import { isUuid } from '@/lib/validation'
@@ -29,8 +29,8 @@ export default async function CasusPage({ params }: { params: Promise<{ caseId: 
   const round  = Array.isArray(caseRow.vh_annotation_round) ? caseRow.vh_annotation_round[0] : caseRow.vh_annotation_round
   const client = Array.isArray(caseRow.vh_client) ? caseRow.vh_client[0] : caseRow.vh_client
 
-  const [{ text: caseText }, { data: existing }, { data: report }] = await Promise.all([
-    buildClientCaseText(caseRow.client_id),
+  const [{ sections }, { data: existing }, { data: report }] = await Promise.all([
+    buildClientCaseStructured(caseRow.client_id),
     admin.from('vh_annotation')
       .select('id, algemeen_beeld, bespreken_team, advies, verbeterpotentieel, vervolg_domeinen, wearables_nuttig, status')
       .eq('round_id', caseRow.round_id).eq('client_id', caseRow.client_id).eq('arts_user_id', userId)
@@ -84,7 +84,7 @@ export default async function CasusPage({ params }: { params: Promise<{ caseId: 
       <AnnotatieForm
         roundId={caseRow.round_id}
         clientId={caseRow.client_id}
-        caseText={caseText}
+        sections={sections}
         hasPdf={Boolean(report?.document_id)}
         initial={initial}
         initialHighlights={highlights ?? []}

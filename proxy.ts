@@ -21,6 +21,12 @@ export function proxy(request: NextRequest) {
   // Annotatie-subdomein → herschrijf de wortel naar de /annotatie-tak.
   // Gedeelde auth/framework-paden passeren ongewijzigd.
   if (host.startsWith('annotatie.')) {
+    // Vangnet: platform-only paden (bv. login-default /dashboard) → annotatie-wortel.
+    if (pathname === '/dashboard' || pathname.startsWith('/dashboard/')) {
+      const url = request.nextUrl.clone()
+      url.pathname = '/'
+      return NextResponse.redirect(url)
+    }
     const passthrough =
       pathname.startsWith('/_next') ||
       pathname.startsWith('/auth') ||

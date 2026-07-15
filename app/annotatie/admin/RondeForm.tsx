@@ -3,13 +3,15 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Loader2, Send, CheckCircle2, AlertTriangle } from 'lucide-react'
 
-interface Option { id: string; label: string }
+interface Option { id: string; label: string; meta: string }
+interface Arts { userId: string; name: string }
 
-export function RondeForm({ options }: { options: Option[] }) {
+export function RondeForm({ options, artsen }: { options: Option[]; artsen: Arts[] }) {
   const router = useRouter()
   const [title, setTitle]     = useState('')
   const [note, setNote]       = useState('')
   const [selected, setSelected] = useState<Set<string>>(new Set())
+  const [artsSel, setArtsSel]   = useState<Set<string>>(new Set())
   const [busy, setBusy]       = useState(false)
   const [error, setError]     = useState('')
   const [done, setDone]       = useState('')
@@ -18,20 +20,25 @@ export function RondeForm({ options }: { options: Option[] }) {
     setSelected(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n })
     setError(''); setDone('')
   }
+  function toggleArts(id: string) {
+    setArtsSel(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n })
+    setError(''); setDone('')
+  }
 
   async function submit() {
     if (!title.trim()) { setError('Geef de ronde een titel.'); return }
     if (selected.size === 0) { setError('Selecteer minstens één dossier.'); return }
+    if (artsSel.size === 0) { setError('Selecteer minstens één arts.'); return }
     setBusy(true); setError(''); setDone('')
     const res = await fetch('/api/annotatie/rondes', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ title: title.trim(), note: note.trim(), clientIds: [...selected] }),
+      body: JSON.stringify({ title: title.trim(), note: note.trim(), clientIds: [...selected], artsUserIds: [...artsSel] }),
     })
     const j = await res.json().catch(() => ({}))
     setBusy(false)
     if (!res.ok) { setError(j.error ?? 'Aanmaken mislukt.'); return }
     setDone(`Ronde aangemaakt met ${j.casesCount} casus${j.casesCount === 1 ? '' : 'sen'}. ${j.mailed} arts${j.mailed === 1 ? '' : 'en'} gemaild.`)
-    setTitle(''); setNote(''); setSelected(new Set())
+    setTitle(''); setNote(''); setSelected(new Set()); setArtsSel(new Set())
     router.refresh()
   }
 
@@ -51,6 +58,30 @@ export function RondeForm({ options }: { options: Option[] }) {
           </div>
         </div>
 
+        {/* Artsen toewijzen */}
+        <div>
+          <div className="mb-1.5 flex items-center justify-between">
+            <label className="text-xs font-medium text-[#64748b]">Artsen die annoteren ({artsen.length})</label>
+            <span className="text-xs text-[#94a3b8]">{artsSel.size} geselecteerd</span>
+          </div>
+          {artsen.length === 0 ? (
+            <p className="rounded-lg border border-[#e2e8f0] bg-[#f8fafc] px-3 py-3 text-sm text-[#94a3b8]">Geen artsen gevonden.</p>
+          ) : (
+            <div className="flex flex-wrap gap-2">
+              {artsen.map(a => {
+                const on = artsSel.has(a.userId)
+                return (
+                  <button key={a.userId} type="button" onClick={() => toggleArts(a.userId)}
+                    className={`rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
+                      on ? 'bg-[#1f1683] text-white border-[#1f1683]' : 'border-[#e2e8f0] bg-white text-[#64748b] hover:border-[#1f1683]'
+                    }`}>{a.name}</button>
+                )
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* Dossiers */}
         <div>
           <div className="mb-1.5 flex items-center justify-between">
             <label className="text-xs font-medium text-[#64748b]">Geschikte dossiers ({options.length})</label>
@@ -63,10 +94,13 @@ export function RondeForm({ options }: { options: Option[] }) {
           ) : (
             <div className="max-h-72 overflow-y-auto rounded-lg border border-[#e2e8f0] divide-y divide-[#f1f5f9]">
               {options.map(o => (
-                <label key={o.id} className="flex items-center gap-2.5 px-3 py-2 hover:bg-[#f8fafc] cursor-pointer">
+                <label key={o.id} className="flex items-start gap-2.5 px-3 py-2 hover:bg-[#f8fafc] cursor-pointer">
                   <input type="checkbox" checked={selected.has(o.id)} onChange={() => toggle(o.id)}
-                    className="h-4 w-4 accent-[#1f1683]" />
-                  <span className="text-sm text-[#1e293b]">{o.label}</span>
+                    className="mt-0.5 h-4 w-4 accent-[#1f1683]" />
+                  <span className="min-w-0">
+                    <span className="block text-sm text-[#1e293b]">{o.label}</span>
+                    {o.meta && <span className="block text-xs text-[#94a3b8]">{o.meta}</span>}
+                  </span>
                 </label>
               ))}
             </div>

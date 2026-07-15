@@ -16,13 +16,23 @@ export default async function AnnotatieHome() {
 
   const admin = createAdminClient()
 
-  const { data: rounds } = await admin
+  const { data: allRounds } = await admin
     .from('vh_annotation_round')
     .select('id, title, note, created_at')
     .eq('status', 'open')
     .order('created_at', { ascending: false })
 
-  const roundIds = (rounds ?? []).map(r => r.id)
+  // Alleen rondes waaraan deze arts is toegewezen (ronde zonder toewijzing =
+  // zichtbaar voor iedereen, voor achterwaartse compatibiliteit).
+  const allRoundIds = (allRounds ?? []).map(r => r.id)
+  const { data: assigns } = allRoundIds.length
+    ? await admin.from('vh_annotation_round_arts').select('round_id, arts_user_id').in('round_id', allRoundIds)
+    : { data: [] as { round_id: string; arts_user_id: string }[] }
+  const hasAssignment = new Set((assigns ?? []).map(a => a.round_id))
+  const mineRounds = new Set((assigns ?? []).filter(a => a.arts_user_id === userId).map(a => a.round_id))
+
+  const rounds = (allRounds ?? []).filter(r => !hasAssignment.has(r.id) || mineRounds.has(r.id))
+  const roundIds = rounds.map(r => r.id)
 
   const { data: cases } = roundIds.length
     ? await admin
