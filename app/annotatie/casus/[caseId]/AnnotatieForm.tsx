@@ -1,5 +1,5 @@
 'use client'
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { FOLLOWUP_DOMAINS, type AnnotationFields } from '@/lib/annotation'
 import type { CaseSection, ItemStatus } from '@/lib/annotation-case'
@@ -107,6 +107,38 @@ export function AnnotatieForm({ roundId, clientId, sections, hasPdf, initial, in
   const [note, setNote] = useState('')
   const [hlBusy, setHlBusy] = useState(false)
   const caseRef = useRef<HTMLDivElement>(null)
+
+  // ── Beoordelingstijd: tel tijdsblokken (open → sluiten/opslaan) op ───────────
+  // De server sommeert de blokken, dus concept opslaan + later heropenen telt door.
+  const sessionStart = useRef<number>(Date.now())
+  useEffect(() => {
+    const MIN = 10 // negeer vluchtige opens (< 10s)
+    const elapsed = () => Math.floor((Date.now() - sessionStart.current) / 1000)
+    const reset = () => { sessionStart.current = Date.now() }
+    const body = (seconds: number) => JSON.stringify({ roundId, clientId, seconds })
+
+    const flushBeacon = () => {
+      const s = elapsed(); if (s < MIN) return
+      try { navigator.sendBeacon('/api/annotatie/tijd', new Blob([body(s)], { type: 'application/json' })) } catch { /* noop */ }
+      reset()
+    }
+    const flushFetch = () => {
+      const s = elapsed(); if (s < MIN) return
+      fetch('/api/annotatie/tijd', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: body(s), keepalive: true }).catch(() => {})
+      reset()
+    }
+    const onVis = () => { if (document.visibilityState === 'hidden') flushBeacon() }
+
+    document.addEventListener('visibilitychange', onVis)
+    window.addEventListener('pagehide', flushBeacon)
+    const iv = setInterval(flushFetch, 60000)
+    return () => {
+      clearInterval(iv)
+      document.removeEventListener('visibilitychange', onVis)
+      window.removeEventListener('pagehide', flushBeacon)
+      flushBeacon()
+    }
+  }, [roundId, clientId])
 
   function upd<K extends keyof AnnotationFields>(k: K, v: AnnotationFields[K]) {
     setF(prev => ({ ...prev, [k]: v })); setError(''); setNotice('')

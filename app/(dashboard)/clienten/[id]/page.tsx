@@ -18,6 +18,7 @@ import { CopyIntakeLink } from './CopyIntakeLink'
 import { ReminderButton } from './ReminderButton'
 import { InsightsModal } from './InsightsModal'
 import { AdviceSection } from './AdviceSection'
+import { AnnotationsSection } from './AnnotationsSection'
 import { TrainingDocModal } from './TrainingDocModal'
 
 const GENDER_LABELS: Record<string, string> = {
@@ -343,6 +344,9 @@ export default async function ClientDetailPage({
         clientId={client.id}
         initialAdvices={advicesRaw ?? []}
       />
+
+      {/* ── Annotaties (medisch team) — consensus + per arts ────────────────── */}
+      <AnnotationsSection clientId={client.id} viewerRole={me?.role} />
 
       {/* ── Aantekeningen arts — alleen arts/leefstijlarts ──────────────────── */}
       <ClientNotesSection
