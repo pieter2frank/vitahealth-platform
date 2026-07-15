@@ -198,12 +198,15 @@ export function Sidebar({ newOrderCount = 0 }: SidebarProps) {
       <div className="border-t border-[#e2e8f0] p-3 space-y-1">
         {(name || email) && (
           <div className="px-3 py-2.5 rounded-lg bg-[#f8fafc]">
-            <div className="flex items-center gap-2 mb-1.5">
+            <div className="flex items-center gap-2 mb-1">
               <CircleUserRound size={15} className="text-[#94a3b8] shrink-0" />
               <span className="text-sm font-medium text-[#1e293b] truncate leading-tight">
                 {name ?? email}
               </span>
             </div>
+            {canSeeResults(role) && (
+              <p className="mb-1.5 pl-[23px] text-[11px] font-semibold text-[#1f1683] leading-none">Medisch Team</p>
+            )}
             <div className="flex items-center gap-2 flex-wrap">
               {role && (
                 <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold leading-none ${ROLE_COLORS[role] ?? 'bg-gray-100 text-gray-600 border-gray-200'}`}>
