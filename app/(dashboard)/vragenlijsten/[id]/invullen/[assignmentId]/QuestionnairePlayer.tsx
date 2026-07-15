@@ -87,6 +87,15 @@ export function QuestionnairePlayer({ questions, assignmentId, questionnaireId, 
 
     if (aErr) { setSaveError(aErr.message); setSaving(false); return }
 
+    // Aanmeldstatus doorzetten na invullen intake-vragenlijst. Alleen ophogen
+    // vanuit 'toestemming_gegeven' (guard) zodat een latere status of on-hold
+    // niet wordt overschreven.
+    await supabase
+      .from('vh_client')
+      .update({ enrollment_status: 'vragenlijst_ingevuld' })
+      .eq('id', clientId)
+      .eq('enrollment_status', 'toestemming_gegeven')
+
     router.push(redirectTo)
   }
 
