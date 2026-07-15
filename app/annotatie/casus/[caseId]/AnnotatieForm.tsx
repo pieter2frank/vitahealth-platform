@@ -1,10 +1,13 @@
 'use client'
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { FOLLOWUP_DOMAINS, type AnnotationFields } from '@/lib/annotation'
 import {
   FileText, Save, Send, CheckCircle2, AlertTriangle, Loader2, ExternalLink,
+  Highlighter, Trash2, X,
 } from 'lucide-react'
+
+interface Highlight { id: string; selected_text: string; note: string | null }
 
 interface Props {
   roundId:  string
@@ -12,19 +15,50 @@ interface Props {
   caseText: string
   hasPdf:   boolean
   initial:  AnnotationFields & { status: string }
+  initialHighlights: Highlight[]
 }
 
-// ── Mini-markdownweergave van het casusdocument (##, ###, - lijst) ─────────────
-function CaseView({ text }: { text: string }) {
+// Wikkel exacte voorkomens van gemarkeerde tekst in <mark>. Overlappingen worden
+// overgeslagen (eerste wint). Klik/hover toont de bijbehorende notitie.
+function renderWithMarks(text: string, marks: Highlight[]): React.ReactNode {
+  const ranges: { start: number; end: number; m: Highlight }[] = []
+  for (const m of marks) {
+    const needle = m.selected_text
+    if (!needle) continue
+    let i = text.indexOf(needle)
+    while (i !== -1) { ranges.push({ start: i, end: i + needle.length, m }); i = text.indexOf(needle, i + needle.length) }
+  }
+  if (!ranges.length) return text
+  ranges.sort((a, b) => a.start - b.start)
+  const out: React.ReactNode[] = []
+  let cursor = 0
+  ranges.forEach((r, k) => {
+    if (r.start < cursor) return
+    if (r.start > cursor) out.push(text.slice(cursor, r.start))
+    out.push(
+      <mark key={k} title={r.m.note ?? 'Annotatie'}
+        className="rounded bg-amber-200/70 px-0.5 text-[#1e293b] cursor-help">
+        {text.slice(r.start, r.end)}
+      </mark>,
+    )
+    cursor = r.end
+  })
+  if (cursor < text.length) out.push(text.slice(cursor))
+  return out
+}
+
+// Mini-markdownweergave (##, ###, - lijst) met inline highlight-markering.
+function CaseView({ text, marks }: { text: string; marks: Highlight[] }) {
   const lines = text.split('\n')
   const out: React.ReactNode[] = []
   let bullets: string[] = []
   const flush = (key: string) => {
     if (!bullets.length) return
+    const items = bullets
     out.push(
       <ul key={key} className="my-1.5 space-y-1">
-        {bullets.map((b, i) => (
-          <li key={i} className="flex gap-1.5 text-sm text-[#334155]"><span className="text-[#cbd5e1]">•</span><span>{b}</span></li>
+        {items.map((b, i) => (
+          <li key={i} className="flex gap-1.5 text-sm text-[#334155]"><span className="text-[#cbd5e1]">•</span><span>{renderWithMarks(b, marks)}</span></li>
         ))}
       </ul>,
     )
@@ -36,7 +70,7 @@ function CaseView({ text }: { text: string }) {
     else if (line.startsWith('## ')) { flush(`u${i}`); out.push(<h2 key={i} className="mb-1 text-base font-semibold text-[#1e293b]">{line.slice(3)}</h2>) }
     else if (line.startsWith('- ')) { bullets.push(line.slice(2)) }
     else if (line.trim() === '') { flush(`u${i}`) }
-    else { flush(`u${i}`); out.push(<p key={i} className="text-sm text-[#334155]">{line}</p>) }
+    else { flush(`u${i}`); out.push(<p key={i} className="text-sm text-[#334155]">{renderWithMarks(line, marks)}</p>) }
   })
   flush('end')
   return <div>{out}</div>
@@ -57,7 +91,9 @@ function YesNo({ value, onChange }: { value: boolean | null; onChange: (v: boole
   )
 }
 
-export function AnnotatieForm({ roundId, clientId, caseText, hasPdf, initial }: Props) {
+interface Selection { text: string; contextBefore: string; contextAfter: string; top: number; left: number }
+
+export function AnnotatieForm({ roundId, clientId, caseText, hasPdf, initial, initialHighlights }: Props) {
   const router = useRouter()
   const [f, setF] = useState<AnnotationFields>(initial)
   const [status, setStatus] = useState(initial.status)
@@ -66,6 +102,12 @@ export function AnnotatieForm({ roundId, clientId, caseText, hasPdf, initial }: 
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
 
+  const [highlights, setHighlights] = useState<Highlight[]>(initialHighlights)
+  const [sel, setSel] = useState<Selection | null>(null)
+  const [note, setNote] = useState('')
+  const [hlBusy, setHlBusy] = useState(false)
+  const caseRef = useRef<HTMLDivElement>(null)
+
   function upd<K extends keyof AnnotationFields>(k: K, v: AnnotationFields[K]) {
     setF(prev => ({ ...prev, [k]: v })); setError(''); setNotice('')
   }
@@ -73,6 +115,53 @@ export function AnnotatieForm({ roundId, clientId, caseText, hasPdf, initial }: 
     upd('vervolg_domeinen', f.vervolg_domeinen.includes(v)
       ? f.vervolg_domeinen.filter(x => x !== v)
       : [...f.vervolg_domeinen, v])
+  }
+
+  // ── Tekstselectie in de casusweergave ────────────────────────────────────────
+  function onCaseMouseUp() {
+    const s = window.getSelection()
+    if (!s || s.isCollapsed) { setSel(null); return }
+    const text = s.toString().trim()
+    if (text.length < 3) { setSel(null); return }
+    const range = s.getRangeAt(0)
+    if (!caseRef.current?.contains(range.commonAncestorContainer)) return
+    const rect = range.getBoundingClientRect()
+    const full = caseRef.current.textContent ?? ''
+    const idx = full.indexOf(text)
+    setSel({
+      text,
+      contextBefore: idx > 0 ? full.slice(Math.max(0, idx - 40), idx) : '',
+      contextAfter:  idx >= 0 ? full.slice(idx + text.length, idx + text.length + 40) : '',
+      top:  rect.bottom + 6,
+      left: Math.max(8, rect.left),
+    })
+    setNote('')
+  }
+
+  async function saveHighlight() {
+    if (!sel) return
+    setHlBusy(true); setError('')
+    const res = await fetch('/api/annotatie/highlight', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        roundId, clientId, selected_text: sel.text,
+        context_before: sel.contextBefore, context_after: sel.contextAfter, note,
+      }),
+    })
+    const j = await res.json().catch(() => ({}))
+    setHlBusy(false)
+    if (!res.ok || !j.highlight) { setError(j.error ?? 'Highlight opslaan mislukt.'); return }
+    setHighlights(prev => [...prev, j.highlight])
+    setSel(null); setNote('')
+    window.getSelection()?.removeAllRanges()
+  }
+
+  async function deleteHighlight(id: string) {
+    setHighlights(prev => prev.filter(h => h.id !== id))
+    await fetch('/api/annotatie/highlight', {
+      method: 'DELETE', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ highlightId: id }),
+    }).catch(() => {})
   }
 
   async function openPdf() {
@@ -118,9 +207,36 @@ export function AnnotatieForm({ roundId, clientId, caseText, hasPdf, initial }: 
             </button>
           )}
         </div>
-        <div className="max-h-[70vh] overflow-y-auto px-5 py-4">
-          <CaseView text={caseText} />
+        <div className="border-b border-[#f1f5f9] bg-[#fffdf5] px-5 py-2 text-xs text-[#8a6d3b]">
+          Selecteer een stuk tekst om er een annotatie bij te maken.
         </div>
+        <div ref={caseRef} onMouseUp={onCaseMouseUp} className="max-h-[60vh] overflow-y-auto px-5 py-4 selection:bg-amber-200">
+          <CaseView text={caseText} marks={highlights} />
+        </div>
+
+        {/* Highlight-lijst */}
+        {highlights.length > 0 && (
+          <div className="border-t border-[#e2e8f0] px-5 py-3">
+            <p className="mb-2 flex items-center gap-1.5 text-xs font-semibold text-[#64748b]">
+              <Highlighter size={13} /> Annotaties ({highlights.length})
+            </p>
+            <ul className="space-y-2">
+              {highlights.map(h => (
+                <li key={h.id} className="rounded-lg border border-amber-200 bg-amber-50/60 px-3 py-2">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <p className="truncate text-xs italic text-[#8a6d3b]">&ldquo;{h.selected_text}&rdquo;</p>
+                      {h.note && <p className="mt-0.5 text-sm text-[#334155]">{h.note}</p>}
+                    </div>
+                    <button onClick={() => deleteHighlight(h.id)} className="shrink-0 text-[#cbd5e1] hover:text-red-500" title="Verwijderen">
+                      <Trash2 size={13} />
+                    </button>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
       </div>
 
       {/* ── Beoordeling ───────────────────────────────────────────────────────── */}
@@ -219,6 +335,28 @@ export function AnnotatieForm({ roundId, clientId, caseText, hasPdf, initial }: 
           </div>
         </div>
       </div>
+
+      {/* ── Selectie-popover ──────────────────────────────────────────────────── */}
+      {sel && (
+        <div className="fixed z-50 w-72 rounded-xl border border-[#e2e8f0] bg-white p-3 shadow-lg"
+          style={{ top: sel.top, left: sel.left }}>
+          <div className="mb-2 flex items-start justify-between gap-2">
+            <p className="text-xs italic text-[#8a6d3b] line-clamp-2">&ldquo;{sel.text}&rdquo;</p>
+            <button onClick={() => { setSel(null); window.getSelection()?.removeAllRanges() }} className="shrink-0 text-[#cbd5e1] hover:text-[#64748b]">
+              <X size={14} />
+            </button>
+          </div>
+          <textarea value={note} onChange={e => setNote(e.target.value)} rows={3} autoFocus
+            placeholder="Wat valt je op bij dit stuk?"
+            className="w-full rounded-lg border border-[#e2e8f0] px-2.5 py-1.5 text-sm text-[#1e293b] placeholder:text-[#cbd5e1] focus:outline-none focus:ring-2 focus:ring-[#1f1683]/30 focus:border-[#1f1683] resize-y" />
+          <div className="mt-2 flex justify-end">
+            <button onClick={saveHighlight} disabled={hlBusy}
+              className="inline-flex items-center gap-1.5 rounded-lg bg-[#1f1683] px-3 py-1.5 text-xs font-medium text-white hover:bg-[#1a1270] disabled:opacity-50">
+              {hlBusy ? <Loader2 size={12} className="animate-spin" /> : <Highlighter size={12} />} Annotatie opslaan
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

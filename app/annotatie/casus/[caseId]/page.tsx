@@ -6,6 +6,7 @@ import { buildClientCaseText } from '@/lib/ai/case-document'
 import { caseLabel, type AnnotationFields } from '@/lib/annotation'
 import { AnnotatieForm } from './AnnotatieForm'
 import { isUuid } from '@/lib/validation'
+import { logAuditEvent } from '@/lib/audit'
 import { ArrowLeft } from 'lucide-react'
 
 export const dynamic = 'force-dynamic'
@@ -31,12 +32,31 @@ export default async function CasusPage({ params }: { params: Promise<{ caseId: 
   const [{ text: caseText }, { data: existing }, { data: report }] = await Promise.all([
     buildClientCaseText(caseRow.client_id),
     admin.from('vh_annotation')
-      .select('algemeen_beeld, bespreken_team, advies, verbeterpotentieel, vervolg_domeinen, wearables_nuttig, status')
+      .select('id, algemeen_beeld, bespreken_team, advies, verbeterpotentieel, vervolg_domeinen, wearables_nuttig, status')
       .eq('round_id', caseRow.round_id).eq('client_id', caseRow.client_id).eq('arts_user_id', userId)
       .maybeSingle(),
     admin.from('vh_report').select('document_id').eq('client_id', caseRow.client_id)
       .order('sample_date', { ascending: false }).limit(1).maybeSingle(),
   ])
+
+  // Bestaande highlights van deze arts bij deze casus.
+  const { data: highlights } = existing?.id
+    ? await admin.from('vh_annotation_highlight')
+        .select('id, selected_text, note').eq('annotation_id', existing.id)
+        .order('created_at', { ascending: true })
+    : { data: [] as { id: string; selected_text: string; note: string | null }[] }
+
+  // AVG: het inzien van een casus (gezondheidsdata) vastleggen.
+  logAuditEvent({
+    actorUserId:     userId,
+    actorRole:       'medisch_deskundige',
+    subjectClientId: caseRow.client_id,
+    resourceType:    'annotation',
+    resourceId:      caseRow.id,
+    action:          'view',
+    outcome:         'success',
+    reason:          'Casus geopend in annotatiemodule',
+  }).catch(() => {})
 
   const initial: AnnotationFields & { status: string } = {
     algemeen_beeld:     existing?.algemeen_beeld ?? '',
@@ -67,6 +87,7 @@ export default async function CasusPage({ params }: { params: Promise<{ caseId: 
         caseText={caseText}
         hasPdf={Boolean(report?.document_id)}
         initial={initial}
+        initialHighlights={highlights ?? []}
       />
     </div>
   )
