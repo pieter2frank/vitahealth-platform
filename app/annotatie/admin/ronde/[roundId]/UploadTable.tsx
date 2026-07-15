@@ -1,7 +1,7 @@
 'use client'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { GraduationCap, CheckCircle2, Clock, Loader2, AlertTriangle } from 'lucide-react'
+import { GraduationCap, CheckCircle2, Clock, Loader2, AlertTriangle, Timer } from 'lucide-react'
 
 export interface Row {
   annotationId: string
@@ -9,6 +9,15 @@ export interface Row {
   artsName:     string
   status:       string
   uploaded:     boolean
+  timeSeconds:  number
+}
+
+function fmtDuur(sec: number): string {
+  if (!sec || sec < 60) return sec > 0 ? '< 1 min' : '—'
+  const m = Math.round(sec / 60)
+  if (m < 60) return `${m} min`
+  const u = Math.floor(m / 60), r = m % 60
+  return r ? `${u} u ${r} min` : `${u} u`
 }
 
 export function UploadTable({ rows }: { rows: Row[] }) {
@@ -78,6 +87,7 @@ export function UploadTable({ rows }: { rows: Row[] }) {
               </th>
               <th className="px-4 py-3 text-left font-medium text-[#64748b]">Dossier</th>
               <th className="px-4 py-3 text-left font-medium text-[#64748b]">Arts</th>
+              <th className="px-4 py-3 text-left font-medium text-[#64748b]">Tijd</th>
               <th className="px-4 py-3 text-left font-medium text-[#64748b]">Status</th>
               <th className="px-4 py-3 text-left font-medium text-[#64748b]">Training</th>
               <th className="px-4 py-3" />
@@ -92,6 +102,9 @@ export function UploadTable({ rows }: { rows: Row[] }) {
                 </td>
                 <td className="px-4 py-3 font-medium text-[#1e293b]">{r.clientLabel}</td>
                 <td className="px-4 py-3 text-[#334155]">{r.artsName}</td>
+                <td className="px-4 py-3 text-[#64748b]">
+                  <span className="inline-flex items-center gap-1"><Timer size={12} className="text-[#94a3b8]" /> {fmtDuur(r.timeSeconds)}</span>
+                </td>
                 <td className="px-4 py-3">
                   {r.status === 'ingediend' ? (
                     <span className="inline-flex items-center gap-1 rounded-full border border-green-200 bg-green-50 px-2.5 py-0.5 text-xs font-medium text-green-700"><CheckCircle2 size={11} /> Ingediend</span>

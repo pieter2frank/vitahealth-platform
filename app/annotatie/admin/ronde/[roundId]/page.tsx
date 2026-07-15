@@ -25,7 +25,7 @@ export default async function RondeDetail({ params }: { params: Promise<{ roundI
   const [{ data: cases }, { data: anns }] = await Promise.all([
     admin.from('vh_annotation_case').select('client_id, vh_client ( gender, birth_date )').eq('round_id', roundId),
     admin.from('vh_annotation')
-      .select('id, client_id, arts_user_id, status, training_uploaded_at')
+      .select('id, client_id, arts_user_id, status, training_uploaded_at, time_spent_seconds')
       .eq('round_id', roundId),
   ])
 
@@ -48,6 +48,7 @@ export default async function RondeDetail({ params }: { params: Promise<{ roundI
       artsName:     nameByArts.get(a.arts_user_id) ?? '—',
       status:       a.status as string,
       uploaded:     Boolean(a.training_uploaded_at),
+      timeSeconds:  (a.time_spent_seconds as number | null) ?? 0,
     }))
     .sort((x, y) => x.clientLabel.localeCompare(y.clientLabel) || x.artsName.localeCompare(y.artsName))
 
