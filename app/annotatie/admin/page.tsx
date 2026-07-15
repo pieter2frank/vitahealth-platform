@@ -1,8 +1,10 @@
+import Link from 'next/link'
 import { requireAnnotationAccess } from '@/lib/auth/guard'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { caseLabel } from '@/lib/annotation'
 import { RondeForm } from './RondeForm'
 import { formatDate } from '@/lib/utils'
+import { ChevronRight } from 'lucide-react'
 
 export const dynamic = 'force-dynamic'
 
@@ -81,20 +83,24 @@ export default async function AdminRondesPage() {
         <section className="rounded-xl border border-[#e2e8f0] bg-white shadow-sm">
           <div className="border-b border-[#e2e8f0] px-5 py-3.5">
             <h2 className="text-sm font-semibold text-[#1e293b]">Recente rondes</h2>
+            <p className="mt-0.5 text-xs text-[#94a3b8]">Open een ronde om annotaties naar de trainingsmodule te zetten.</p>
           </div>
           <ul className="divide-y divide-[#f1f5f9]">
             {(rounds ?? []).map(r => {
               const count = Array.isArray(r.vh_annotation_case) ? r.vh_annotation_case.length : 0
               return (
-                <li key={r.id} className="flex items-center justify-between px-5 py-3 text-sm">
-                  <span className="font-medium text-[#1e293b]">{r.title}</span>
-                  <span className="flex items-center gap-3 text-xs text-[#94a3b8]">
-                    <span>{count} casus{count === 1 ? '' : 'sen'}</span>
-                    <span>{formatDate(r.created_at)}</span>
-                    <span className={`rounded-full border px-2 py-0.5 font-medium ${r.status === 'open' ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-slate-200 bg-slate-50 text-slate-500'}`}>
-                      {r.status === 'open' ? 'Open' : 'Gesloten'}
+                <li key={r.id}>
+                  <Link href={`/admin/ronde/${r.id}`} className="flex items-center justify-between px-5 py-3 text-sm hover:bg-[#f8fafc] transition-colors">
+                    <span className="font-medium text-[#1e293b]">{r.title}</span>
+                    <span className="flex items-center gap-3 text-xs text-[#94a3b8]">
+                      <span>{count} casus{count === 1 ? '' : 'sen'}</span>
+                      <span>{formatDate(r.created_at)}</span>
+                      <span className={`rounded-full border px-2 py-0.5 font-medium ${r.status === 'open' ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-slate-200 bg-slate-50 text-slate-500'}`}>
+                        {r.status === 'open' ? 'Open' : 'Gesloten'}
+                      </span>
+                      <ChevronRight size={14} className="text-[#cbd5e1]" />
                     </span>
-                  </span>
+                  </Link>
                 </li>
               )
             })}

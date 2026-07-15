@@ -5,7 +5,7 @@ import { FOLLOWUP_DOMAINS, type AnnotationFields } from '@/lib/annotation'
 import type { CaseSection, ItemStatus } from '@/lib/annotation-case'
 import {
   FileText, Save, Send, CheckCircle2, AlertTriangle, Loader2, ExternalLink,
-  Highlighter, Trash2, X, GraduationCap,
+  Highlighter, Trash2, X,
 } from 'lucide-react'
 
 interface Highlight { id: string; selected_text: string; note: string | null }
@@ -97,7 +97,7 @@ export function AnnotatieForm({ roundId, clientId, sections, hasPdf, initial, in
   const router = useRouter()
   const [f, setF] = useState<AnnotationFields>(initial)
   const [status, setStatus] = useState(initial.status)
-  const [busy, setBusy]   = useState<'concept' | 'indienen' | 'training' | null>(null)
+  const [busy, setBusy]   = useState<'concept' | 'indienen' | null>(null)
   const [pdfBusy, setPdfBusy] = useState(false)
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
@@ -199,21 +199,6 @@ export function AnnotatieForm({ roundId, clientId, sections, hasPdf, initial, in
     if (submit) { router.push('/'); return }
     setStatus('concept')
     setNotice('Concept opgeslagen.')
-  }
-
-  // Sla eerst de huidige stand op en voeg de casus dan toe aan de trainingsmodule.
-  async function uploadTraining() {
-    setBusy('training'); setError(''); setNotice('')
-    if (!await persist(false)) { setBusy(null); return }
-    const res = await fetch('/api/annotatie/naar-training', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ roundId, clientId }),
-    })
-    const j = await res.json().catch(() => ({}))
-    setBusy(null)
-    if (!res.ok) { setError(j.error ?? 'Uploaden mislukt.'); return }
-    setStatus(prev => (prev === 'ingediend' ? prev : 'concept'))
-    setNotice('Toegevoegd aan de trainingsmodule (concept). Controleer en indexeer het in de kennisbank.')
   }
 
   return (
@@ -359,16 +344,6 @@ export function AnnotatieForm({ roundId, clientId, sections, hasPdf, initial, in
               className="inline-flex items-center gap-2 rounded-lg bg-[#1f1683] px-4 py-2 text-sm font-medium text-white hover:bg-[#1a1270] disabled:opacity-50">
               {busy === 'indienen' ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />} Indienen
             </button>
-          </div>
-
-          <div className="border-t border-[#f1f5f9] pt-3">
-            <button onClick={uploadTraining} disabled={busy !== null}
-              className="inline-flex items-center gap-2 rounded-lg border border-[#17e4a1] bg-[#17e4a1]/10 px-4 py-2 text-sm font-medium text-[#0d7a5f] hover:bg-[#17e4a1]/20 disabled:opacity-50">
-              {busy === 'training' ? <Loader2 size={14} className="animate-spin" /> : <GraduationCap size={15} />} Naar trainingsmodule
-            </button>
-            <p className="mt-1.5 text-xs text-[#94a3b8]">
-              Voegt deze casus + jouw beoordeling gepseudonimiseerd als concept toe aan de kennisbank.
-            </p>
           </div>
         </div>
       </div>

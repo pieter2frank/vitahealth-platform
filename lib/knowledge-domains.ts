@@ -24,6 +24,13 @@ export function isKnowledgeDomain(v: unknown): v is KnowledgeDomain {
 // Bron-markering voor kennisdocumenten die uit een cliëntcasus zijn gemaakt.
 export const CASE_SOURCE = 'Casus (arts)'
 
+// Bron-prefix voor geannoteerde casussen uit de annotatiemodule
+// (bijv. "Geannoteerde casus — Ronde juli").
+export const ANNOTATED_CASE_PREFIX = 'Geannoteerde casus'
+export function isAnnotatedCaseSource(source: string | null): boolean {
+  return typeof source === 'string' && source.startsWith(ANNOTATED_CASE_PREFIX)
+}
+
 // Statuslabels + pill-kleuren voor kennisdocumenten.
 export const KNOWLEDGE_STATUS_LABELS: Record<string, string> = {
   draft:    'Concept',

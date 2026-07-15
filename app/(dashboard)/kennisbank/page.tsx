@@ -1,10 +1,10 @@
 import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
 import { formatDate } from '@/lib/utils'
-import { BookOpen, Plus, Sparkles, Video, FileText, GraduationCap } from 'lucide-react'
+import { BookOpen, Plus, Sparkles, Video, FileText, GraduationCap, Highlighter } from 'lucide-react'
 import { ClickableRow } from '@/components/ui/ClickableRow'
 import { requireRolePage } from '@/lib/auth/guard'
-import { DOMAIN_LABELS, KNOWLEDGE_STATUS_LABELS, KNOWLEDGE_STATUS_COLORS, CASE_SOURCE } from '@/lib/knowledge-domains'
+import { DOMAIN_LABELS, KNOWLEDGE_STATUS_LABELS, KNOWLEDGE_STATUS_COLORS, CASE_SOURCE, isAnnotatedCaseSource } from '@/lib/knowledge-domains'
 
 export default async function KennisbankPage({ searchParams }: { searchParams: Promise<{ bron?: string }> }) {
   const { bron } = await searchParams
@@ -17,20 +17,26 @@ export default async function KennisbankPage({ searchParams }: { searchParams: P
     .order('created_at', { ascending: false })
 
   const isCase = (source: string | null) => source === CASE_SOURCE
+  const isAnnotated = (source: string | null) => isAnnotatedCaseSource(source)
   const caseCount = (allDocs ?? []).filter(d => isCase(d.source)).length
+  const annotatedCount = (allDocs ?? []).filter(d => isAnnotated(d.source)).length
   const totalCount = (allDocs ?? []).length
 
   const docs = (allDocs ?? []).filter(d =>
-    bron === 'casus' ? isCase(d.source) : bron === 'overig' ? !isCase(d.source) : true)
+    bron === 'casus'       ? isCase(d.source)
+      : bron === 'geannoteerd' ? isAnnotated(d.source)
+      : bron === 'overig'      ? (!isCase(d.source) && !isAnnotated(d.source))
+      : true)
 
   const { data: chunks } = await supabase.from('vh_knowledge_chunk').select('knowledge_id')
   const chunkCount: Record<string, number> = {}
   for (const c of chunks ?? []) chunkCount[c.knowledge_id] = (chunkCount[c.knowledge_id] ?? 0) + 1
 
   const filters = [
-    { key: '',      label: 'Alle',      count: totalCount },
-    { key: 'casus', label: 'Casussen',  count: caseCount },
-    { key: 'overig', label: 'Overige',  count: totalCount - caseCount },
+    { key: '',            label: 'Alle',         count: totalCount },
+    { key: 'casus',       label: 'Casussen',     count: caseCount },
+    { key: 'geannoteerd', label: 'Geannoteerd',  count: annotatedCount },
+    { key: 'overig',      label: 'Overige',      count: totalCount - caseCount - annotatedCount },
   ]
 
   return (
@@ -66,6 +72,7 @@ export default async function KennisbankPage({ searchParams }: { searchParams: P
                 }`}
               >
                 {f.key === 'casus' && <GraduationCap size={12} />}
+                {f.key === 'geannoteerd' && <Highlighter size={12} />}
                 {f.label}
                 <span className={active ? 'text-[#1f1683]' : 'text-[#94a3b8]'}>{f.count}</span>
               </Link>
@@ -118,6 +125,11 @@ export default async function KennisbankPage({ searchParams }: { searchParams: P
                         {isCase(d.source) && (
                           <span className="inline-flex items-center gap-1 rounded-full border border-[#c7d7fd] bg-[#eef4ff] px-1.5 py-0.5 text-[10px] font-medium text-[#1f1683]">
                             <GraduationCap size={10} /> Casus
+                          </span>
+                        )}
+                        {isAnnotated(d.source) && (
+                          <span className="inline-flex items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-1.5 py-0.5 text-[10px] font-medium text-amber-700">
+                            <Highlighter size={10} /> Geannoteerd
                           </span>
                         )}
                       </p>
