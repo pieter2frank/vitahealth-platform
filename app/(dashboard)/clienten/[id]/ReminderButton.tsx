@@ -8,7 +8,10 @@ interface Props {
   enrollmentStatus: string
 }
 
-const REMINDER_STATUSES = ['aangemeld', 'toestemming_gegeven']
+// Intake nog niet af → intake-herinnering; kit verstuurd maar nog niet retour →
+// herinnering om de kit terug te sturen. De route kiest de juiste e-mail op basis
+// van dezelfde status.
+const REMINDER_STATUSES = ['aangemeld', 'toestemming_gegeven', 'kit_opgestuurd']
 
 export function ReminderButton({ clientId, clientEmail, enrollmentStatus }: Props) {
   const [sending, setSending] = useState(false)
@@ -16,6 +19,12 @@ export function ReminderButton({ clientId, clientEmail, enrollmentStatus }: Prop
   const [error,   setError]   = useState('')
 
   if (!clientEmail || !REMINDER_STATUSES.includes(enrollmentStatus)) return null
+
+  const isKit = enrollmentStatus === 'kit_opgestuurd'
+  const label = isKit ? 'Herinner aan retour' : 'Reminder versturen'
+  const hint  = isKit
+    ? 'Stuur een herinnering om de testkit terug te sturen'
+    : 'Stuur een herinnering om de intake af te ronden'
 
   async function handleSend() {
     setSending(true)
@@ -44,7 +53,7 @@ export function ReminderButton({ clientId, clientEmail, enrollmentStatus }: Prop
       <button
         onClick={handleSend}
         disabled={sending || sent}
-        title="Stuur een herinnering om de intake af te ronden"
+        title={hint}
         className={`inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-sm font-medium transition-colors disabled:cursor-not-allowed ${
           sent
             ? 'border-green-200 bg-green-50 text-green-700'
@@ -58,7 +67,7 @@ export function ReminderButton({ clientId, clientEmail, enrollmentStatus }: Prop
         ) : (
           <Bell size={14} />
         )}
-        {sent ? 'Reminder verstuurd' : 'Reminder versturen'}
+        {sent ? 'Reminder verstuurd' : label}
       </button>
       {error && (
         <p className="text-xs text-red-600">{error}</p>

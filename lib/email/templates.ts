@@ -444,6 +444,40 @@ export function reminderEmail(opts: {
   }
 }
 
+// ─── 6b. Reminder: kit nog niet retour ────────────────────────────────────────
+
+export function kitRetourReminderEmail(opts: {
+  firstName: string
+}): { subject: string; html: string } {
+  const body = `
+    ${greeting(opts.firstName)}
+    ${p('Een tijdje geleden is je <strong style="color:#1e293b;">Vita Health Check testkit</strong> bezorgd. We hebben je monster nog niet retour ontvangen — misschien is het er even bij ingeschoten?')}
+
+    <!-- Retourinstructie -->
+    <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:18px 22px;margin:0 0 24px;">
+      <p style="margin:0 0 8px;font-size:13px;font-weight:700;color:#166534;">Terugsturen is heel eenvoudig</p>
+      <p style="margin:0;font-size:13px;color:#475569;line-height:1.6;">
+        Volg de instructies in de kit voor de vingerprik. Op de doos zit al een
+        <strong>retouretiket met antwoordnummer</strong>: doe na de afname
+        <strong>de doos zelf (zonder envelop) gewoon in de brievenbus</strong> — een postzegel is niet nodig.
+      </p>
+    </div>
+
+    <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:16px 22px;margin-bottom:28px;">
+      <p style="margin:0;font-size:13px;color:#92400e;line-height:1.6;">
+        <strong>Tip:</strong> stuur de kit op een dag waarop je hem ook echt post — zo blijft je monster
+        vers en kunnen we je uitslag betrouwbaar bepalen.
+      </p>
+    </div>
+
+    ${p('Kit kwijt, beschadigd of lukt de afname niet? Laat het ons weten via de <a href="https://helpdesk.vita-health.nl" style="color:#1f1683;">helpdesk</a> — we sturen je graag een nieuwe.', 'font-size:12px;color:#94a3b8;')}
+  `
+  return {
+    subject: 'Herinnering: je testkit is nog niet retour',
+    html: shell('Je testkit wacht nog op je', body),
+  }
+}
+
 // ─── Dagelijkse actie-mail (interne digest) ───────────────────────────────────
 
 export function dagelijkseActiesEmail(opts: {

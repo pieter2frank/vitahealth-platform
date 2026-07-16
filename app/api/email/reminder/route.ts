@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { reminderEmail } from '@/lib/email/templates'
+import { reminderEmail, kitRetourReminderEmail } from '@/lib/email/templates'
 import { isUuid } from '@/lib/validation'
 import { logAuditEvent } from '@/lib/audit'
 import { getOrCreateIntakeToken } from '@/lib/intake-token'
@@ -29,21 +29,25 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Cliënt niet gevonden of geen e-mailadres.' }, { status: 404 })
   }
 
-  // Token ophalen of aanmaken
-  const token = await getOrCreateIntakeToken(admin, clientId)
-  if (!token) return NextResponse.json({ error: 'Token aanmaken mislukt.' }, { status: 500 })
+  // Welke herinnering? Kit verstuurd maar nog niet retour → retour-herinnering;
+  // anders de intake-herinnering (die een hervat-token nodig heeft).
+  const isKitReminder = client.enrollment_status === 'kit_opgestuurd'
+  let subject: string, html: string
 
-  const portalUrl = process.env.NEXT_PUBLIC_PORTAL_URL ?? ''
-  const intakeUrl = `${portalUrl}/portal/aanmelden?token=${token}`
+  if (isKitReminder) {
+    ;({ subject, html } = kitRetourReminderEmail({ firstName: client.first_name }))
+  } else {
+    const token = await getOrCreateIntakeToken(admin, clientId)
+    if (!token) return NextResponse.json({ error: 'Token aanmaken mislukt.' }, { status: 500 })
 
-  const stoppedAfter: 'adresgegevens' | 'toestemmingen' =
-    client.enrollment_status === 'toestemming_gegeven' ? 'toestemmingen' : 'adresgegevens'
+    const portalUrl = process.env.NEXT_PUBLIC_PORTAL_URL ?? ''
+    const intakeUrl = `${portalUrl}/portal/aanmelden?token=${token}`
 
-  const { subject, html } = reminderEmail({
-    firstName: client.first_name,
-    intakeUrl,
-    stoppedAfter,
-  })
+    const stoppedAfter: 'adresgegevens' | 'toestemmingen' =
+      client.enrollment_status === 'toestemming_gegeven' ? 'toestemmingen' : 'adresgegevens'
+
+    ;({ subject, html } = reminderEmail({ firstName: client.first_name, intakeUrl, stoppedAfter }))
+  }
 
   const res = await sendEmail({ to: client.email, subject, html })
   if (!res.ok) return NextResponse.json({ error: res.error }, { status: 500 })
@@ -56,7 +60,7 @@ export async function POST(req: Request) {
     resourceId:      clientId,
     action:          'email_sent',
     outcome:         'success',
-    reason:          'Herinnering verstuurd',
+    reason:          isKitReminder ? 'Herinnering kit retour verstuurd' : 'Herinnering intake verstuurd',
   }).catch(() => {})
 
   return NextResponse.json({ ok: true })
