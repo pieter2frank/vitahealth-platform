@@ -5,6 +5,7 @@ import { ageFrom } from '@/lib/health-scoring'
 // De acht vervolg-domeinen (tags) die een arts kan aanvinken.
 export const FOLLOWUP_DOMAINS = [
   { value: 'medicatie',          label: 'Medicatie' },
+  { value: 'suppletie',          label: 'Suppletie' },
   { value: 'beweging',           label: 'Beweging' },
   { value: 'stressbeheersing',   label: 'Stressbeheersing' },
   { value: 'slaap',              label: 'Slaap' },
