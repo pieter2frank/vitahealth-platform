@@ -5,6 +5,7 @@ import { FileText, Plus, Pencil, X, Save, ClipboardList, Trash2 } from 'lucide-r
 import { formatDateTime } from '@/lib/utils'
 import { useUser } from '@/components/providers/UserProvider'
 import { canSeeResults } from '@/lib/auth/roles'
+import { CollapsibleCard } from '@/components/ui/CollapsibleCard'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -333,16 +334,11 @@ export function ClientNotesSection({ clientId, initialNotes }: Props) {
   const createdBy = name ?? email ?? 'Onbekend'
 
   return (
-    <div className="mt-4 rounded-xl border border-[#e2e8f0] bg-white shadow-sm">
-      {/* Header */}
-      <div className="flex items-center justify-between border-b border-[#e2e8f0] px-5 py-4">
-        <h2 className="text-sm font-semibold text-[#1e293b] flex items-center gap-2">
-          <FileText size={15} className="text-[#94a3b8]" />
-          Aantekeningen arts
-          {notes.length > 0 && (
-            <span className="text-xs font-normal text-[#94a3b8]">({notes.length})</span>
-          )}
-        </h2>
+    <CollapsibleCard
+      className="mt-4"
+      icon={<FileText size={15} className="shrink-0 text-[#94a3b8]" />}
+      title={<>Aantekeningen arts {notes.length > 0 && <span className="text-xs font-normal text-[#94a3b8]">({notes.length})</span>}</>}
+      actions={
         <button
           onClick={() => setShowNewForm(v => !v)}
           className="inline-flex items-center gap-1.5 text-xs text-[#1f1683] hover:underline"
@@ -351,8 +347,8 @@ export function ClientNotesSection({ clientId, initialNotes }: Props) {
             ? <><X size={12} /> Sluiten</>
             : <><Plus size={12} /> Nieuwe aantekening</>}
         </button>
-      </div>
-
+      }
+    >
       {/* Nieuw-formulier */}
       {showNewForm && (
         <NewNoteForm
@@ -389,6 +385,6 @@ export function ClientNotesSection({ clientId, initialNotes }: Props) {
           ))}
         </div>
       )}
-    </div>
+    </CollapsibleCard>
   )
 }

@@ -9,6 +9,7 @@ import { canSeeBirthDate } from '@/lib/auth/roles'
 import { EditClientForm } from './EditClientForm'
 import { TestkitLinker } from '@/components/testkits/TestkitLinker'
 import { DeleteButton } from '@/components/ui/DeleteButton'
+import { CollapsibleCard } from '@/components/ui/CollapsibleCard'
 import { ClientQuestionnaireSection } from './ClientQuestionnaireSection'
 import { ClientNotesSection } from './ClientNotesSection'
 import { ClientDocumentsSection } from './ClientDocumentsSection'
@@ -203,13 +204,14 @@ export default async function ClientDetailPage({
         const mogelijk = screenerResp.declaration === 'mogelijk_van_toepassing'
         const criteria = (screenerResp.criteria_text as string[] | null) ?? []
         return (
-          <div className={`mb-5 rounded-xl border shadow-sm overflow-hidden ${mogelijk ? 'border-orange-200' : 'border-[#e2e8f0]'}`}>
-            <div className={`flex items-center gap-2 border-b px-5 py-3 ${mogelijk ? 'border-orange-100 bg-orange-50' : 'border-[#f1f5f9] bg-[#f8fafc]'}`}>
-              {mogelijk
-                ? <ShieldAlert size={15} className="text-orange-600" />
-                : <ShieldCheck size={15} className="text-emerald-600" />}
-              <h2 className="text-sm font-semibold text-[#1e293b]">Geschiktheidsverklaring deelnemer</h2>
-            </div>
+          <CollapsibleCard
+            className={`mb-5 ${mogelijk ? 'border-orange-200' : ''}`}
+            headerClassName={mogelijk ? 'bg-orange-50' : 'bg-[#f8fafc]'}
+            icon={mogelijk
+              ? <ShieldAlert size={15} className="shrink-0 text-orange-600" />
+              : <ShieldCheck size={15} className="shrink-0 text-emerald-600" />}
+            title="Geschiktheidsverklaring deelnemer"
+          >
             <div className="px-5 py-4 space-y-2">
               <p className={`text-sm font-medium ${mogelijk ? 'text-orange-800' : 'text-emerald-700'}`}>
                 {SCREENER_DECLARATION_LABEL[screenerResp.declaration as keyof typeof SCREENER_DECLARATION_LABEL]}
@@ -226,7 +228,7 @@ export default async function ClientDetailPage({
                 </ul>
               </details>
             </div>
-          </div>
+          </CollapsibleCard>
         )
       })()}
 

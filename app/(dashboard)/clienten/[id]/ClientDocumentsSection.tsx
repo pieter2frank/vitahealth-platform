@@ -6,6 +6,7 @@ import { FileText, Trash2, ExternalLink, Loader2, AlertTriangle, ShieldCheck, Sc
 import { formatDateTime } from '@/lib/utils'
 import { useUser } from '@/components/providers/UserProvider'
 import { canSeeResults } from '@/lib/auth/roles'
+import { CollapsibleCard } from '@/components/ui/CollapsibleCard'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -227,25 +228,19 @@ export function ClientDocumentsSection({ clientId, initialDocuments }: Props) {
   const totalUploading = uploading.filter(u => !u.error).length
 
   return (
-    <div className="mt-4 rounded-xl border border-[#e2e8f0] bg-white shadow-sm overflow-hidden">
-
-      {/* Header */}
-      <div className="flex items-center justify-between border-b border-[#e2e8f0] px-5 py-4">
-        <h2 className="text-sm font-semibold text-[#1e293b] flex items-center gap-2">
-          <FileText size={15} className="text-[#94a3b8]" />
-          Uitslagen
-          {documents.length > 0 && (
-            <span className="text-xs font-normal text-[#94a3b8]">({documents.length})</span>
-          )}
-        </h2>
-        {totalUploading > 0 && (
+    <CollapsibleCard
+      className="mt-4"
+      icon={<FileText size={15} className="shrink-0 text-[#94a3b8]" />}
+      title={<>Uitslagen {documents.length > 0 && <span className="text-xs font-normal text-[#94a3b8]">({documents.length})</span>}</>}
+      actions={
+        totalUploading > 0 ? (
           <span className="inline-flex items-center gap-1.5 text-xs text-[#64748b]">
             <Loader2 size={12} className="animate-spin" />
             {totalUploading} bezig met uploaden…
           </span>
-        )}
-      </div>
-
+        ) : null
+      }
+    >
       {/* Body: twee kolommen */}
       <div className="flex min-h-[180px]">
 
@@ -420,6 +415,6 @@ export function ClientDocumentsSection({ clientId, initialDocuments }: Props) {
         </div>
 
       </div>
-    </div>
+    </CollapsibleCard>
   )
 }

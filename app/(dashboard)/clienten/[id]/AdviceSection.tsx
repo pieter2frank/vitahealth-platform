@@ -5,6 +5,7 @@ import { Sparkles, Wand2, Pencil, X, Save, Trash2, CheckCircle2, RotateCcw, Shie
 import { formatDateTime } from '@/lib/utils'
 import { useUser } from '@/components/providers/UserProvider'
 import { canSeeResults } from '@/lib/auth/roles'
+import { CollapsibleCard } from '@/components/ui/CollapsibleCard'
 
 interface Advice {
   id: string
@@ -279,21 +280,19 @@ export function AdviceSection({ clientId, initialAdvices }: Props) {
   }
 
   return (
-    <div className="mt-4 rounded-xl border border-[#e2e8f0] bg-white shadow-sm">
-      <div className="flex items-center justify-between border-b border-[#e2e8f0] px-5 py-4">
-        <h2 className="text-sm font-semibold text-[#1e293b] flex items-center gap-2">
-          <Sparkles size={15} className="text-[#17e4a1]" />
-          AI-advies (concept)
-          {advices.length > 0 && <span className="text-xs font-normal text-[#94a3b8]">({advices.length})</span>}
-        </h2>
+    <CollapsibleCard
+      className="mt-4"
+      icon={<Sparkles size={15} className="shrink-0 text-[#17e4a1]" />}
+      title={<>AI-advies (concept) {advices.length > 0 && <span className="text-xs font-normal text-[#94a3b8]">({advices.length})</span>}</>}
+      actions={
         <button onClick={handleGenerate} disabled={generating}
           className="inline-flex items-center gap-1.5 rounded-lg bg-[#1f1683] px-3 py-1.5 text-xs font-medium text-white hover:bg-[#1a1270] transition-colors disabled:opacity-50">
           {generating
             ? <><span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" /> Genereren…</>
             : <><Wand2 size={13} /> Genereer advies</>}
         </button>
-      </div>
-
+      }
+    >
       <div className="px-5 py-3 border-b border-[#f1f5f9] bg-[#fffdf5]">
         <p className="text-xs text-[#8a6d3b] flex items-start gap-1.5">
           <AlertTriangle size={12} className="shrink-0 mt-0.5 text-amber-500" />
@@ -326,6 +325,6 @@ export function AdviceSection({ clientId, initialAdvices }: Props) {
           ))}
         </div>
       )}
-    </div>
+    </CollapsibleCard>
   )
 }

@@ -1,7 +1,8 @@
 import { createAdminClient } from '@/lib/supabase/admin'
 import { canSeeResults } from '@/lib/auth/roles'
 import { FOLLOWUP_DOMAINS } from '@/lib/annotation'
-import { ClipboardList, CheckCircle2, Clock, ShieldCheck, Timer } from 'lucide-react'
+import { CollapsibleCard } from '@/components/ui/CollapsibleCard'
+import { ClipboardList, Clock, ShieldCheck, Timer } from 'lucide-react'
 
 const DOM: Record<string, string> = Object.fromEntries(FOLLOWUP_DOMAINS.map(d => [d.value, d.label]))
 
@@ -55,13 +56,11 @@ export async function AnnotationsSection({ clientId, viewerRole }: { clientId: s
   const orderedRounds = [...byRound.keys()].sort((x, y) => (roundOrder.get(y) ?? '').localeCompare(roundOrder.get(x) ?? ''))
 
   return (
-    <div className="mt-4 rounded-xl border border-[#e2e8f0] bg-white shadow-sm">
-      <div className="flex items-center gap-2 border-b border-[#e2e8f0] px-5 py-4">
-        <ClipboardList size={15} className="text-[#94a3b8]" />
-        <h2 className="text-sm font-semibold text-[#1e293b]">Annotaties</h2>
-        <span className="text-xs text-[#94a3b8]">({anns.length})</span>
-      </div>
-
+    <CollapsibleCard
+      className="mt-4"
+      icon={<ClipboardList size={15} className="shrink-0 text-[#94a3b8]" />}
+      title={<>Annotaties <span className="text-xs font-normal text-[#94a3b8]">({anns.length})</span></>}
+    >
       <div className="divide-y divide-[#f1f5f9]">
         {orderedRounds.map(rid => {
           const list = byRound.get(rid)!.slice().sort((a, b) => (artsName.get(a.arts_user_id) ?? '').localeCompare(artsName.get(b.arts_user_id) ?? ''))
@@ -197,6 +196,6 @@ export async function AnnotationsSection({ clientId, viewerRole }: { clientId: s
           )
         })}
       </div>
-    </div>
+    </CollapsibleCard>
   )
 }
