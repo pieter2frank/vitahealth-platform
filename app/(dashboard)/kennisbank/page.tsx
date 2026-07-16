@@ -1,10 +1,9 @@
 import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
-import { formatDate } from '@/lib/utils'
-import { BookOpen, Plus, Sparkles, Video, FileText, GraduationCap, Highlighter } from 'lucide-react'
-import { ClickableRow } from '@/components/ui/ClickableRow'
+import { BookOpen, Plus, GraduationCap, Highlighter } from 'lucide-react'
 import { requireRolePage } from '@/lib/auth/guard'
-import { DOMAIN_LABELS, KNOWLEDGE_STATUS_LABELS, KNOWLEDGE_STATUS_COLORS, CASE_SOURCE, isAnnotatedCaseSource } from '@/lib/knowledge-domains'
+import { CASE_SOURCE, isAnnotatedCaseSource } from '@/lib/knowledge-domains'
+import { KnowledgeTable } from './KnowledgeTable'
 
 export default async function KennisbankPage({ searchParams }: { searchParams: Promise<{ bron?: string }> }) {
   const { bron } = await searchParams
@@ -81,8 +80,8 @@ export default async function KennisbankPage({ searchParams }: { searchParams: P
         </div>
       )}
 
-      <div className="rounded-xl border border-[#e2e8f0] bg-white shadow-sm overflow-hidden">
-        {!docs || docs.length === 0 ? (
+      {docs.length === 0 ? (
+        <div className="rounded-xl border border-[#e2e8f0] bg-white shadow-sm overflow-hidden">
           <div className="px-5 py-16 text-center">
             <BookOpen size={32} className="text-[#cbd5e1] mx-auto mb-3" />
             <p className="text-sm font-medium text-[#94a3b8]">
@@ -99,67 +98,10 @@ export default async function KennisbankPage({ searchParams }: { searchParams: P
               {totalCount > 0 ? 'Nieuw document' : 'Eerste document maken'}
             </Link>
           </div>
-        ) : (
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-[#e2e8f0] bg-[#f8fafc]">
-                <th className="px-4 py-3 text-left font-medium text-[#64748b]">Titel</th>
-                <th className="px-4 py-3 text-left font-medium text-[#64748b]">Domein</th>
-                <th className="px-4 py-3 text-left font-medium text-[#64748b]">Geïndexeerd</th>
-                <th className="px-4 py-3 text-left font-medium text-[#64748b]">Status</th>
-                <th className="px-4 py-3 text-left font-medium text-[#64748b]">Toegevoegd</th>
-                <th className="px-4 py-3" />
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-[#f1f5f9]">
-              {docs.map((d) => {
-                const count = chunkCount[d.id] ?? 0
-                return (
-                  <ClickableRow key={d.id} href={`/kennisbank/${d.id}`} className="hover:bg-[#f8fafc] transition-colors">
-                    <td className="px-4 py-3">
-                      <p className="font-medium text-[#1e293b] flex items-center gap-1.5">
-                        {d.content_type === 'video'
-                          ? <Video size={13} className="text-[#94a3b8] shrink-0" />
-                          : <FileText size={13} className="text-[#94a3b8] shrink-0" />}
-                        {d.title}
-                        {isCase(d.source) && (
-                          <span className="inline-flex items-center gap-1 rounded-full border border-[#c7d7fd] bg-[#eef4ff] px-1.5 py-0.5 text-[10px] font-medium text-[#1f1683]">
-                            <GraduationCap size={10} /> Casus
-                          </span>
-                        )}
-                        {isAnnotated(d.source) && (
-                          <span className="inline-flex items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-1.5 py-0.5 text-[10px] font-medium text-amber-700">
-                            <Highlighter size={10} /> Geannoteerd
-                          </span>
-                        )}
-                      </p>
-                      {d.source && <p className="text-xs text-[#94a3b8] mt-0.5">{d.source}</p>}
-                    </td>
-                    <td className="px-4 py-3 text-[#64748b]">{DOMAIN_LABELS[d.domain] ?? d.domain}</td>
-                    <td className="px-4 py-3">
-                      {count > 0 ? (
-                        <span className="inline-flex items-center gap-1.5 text-[#64748b]">
-                          <Sparkles size={13} className="text-[#17e4a1]" />
-                          {count}
-                        </span>
-                      ) : (
-                        <span className="text-[#cbd5e1]">—</span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium ${KNOWLEDGE_STATUS_COLORS[d.status] ?? ''}`}>
-                        {KNOWLEDGE_STATUS_LABELS[d.status] ?? d.status}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-[#64748b]">{formatDate(d.created_at)}</td>
-                    <td className="px-4 py-3 text-right text-[#94a3b8] text-xs">→</td>
-                  </ClickableRow>
-                )
-              })}
-            </tbody>
-          </table>
-        )}
-      </div>
+        </div>
+      ) : (
+        <KnowledgeTable docs={docs} chunkCount={chunkCount} />
+      )}
     </div>
   )
 }
