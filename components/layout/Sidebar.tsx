@@ -7,7 +7,7 @@ import { cn } from '@/lib/utils'
 import type { LucideIcon } from 'lucide-react'
 import {
   LayoutDashboard, TestTube2, Users, Building2, Stethoscope,
-  Package, LogOut, CircleUserRound, ClipboardList, ScrollText, Dumbbell, Settings, ShieldCheck, UserCog, FileCheck, BookOpen, FlaskConical,
+  Package, LogOut, CircleUserRound, ClipboardList, ScrollText, Dumbbell, Settings, ShieldCheck, UserCog, FileCheck, BookOpen, FlaskConical, Sparkles,
 } from 'lucide-react'
 import { isAdmin, canManageKnowledge, canSeeResults } from '@/lib/auth/roles'
 import { APP_VERSION } from '@/lib/version'
@@ -144,6 +144,18 @@ export function Sidebar({ newOrderCount = 0 }: SidebarProps) {
             >
               <BookOpen size={17} className={pathname.startsWith('/kennisbank') ? 'text-[#1f1683]' : 'text-[#94a3b8]'} />
               <span className="flex-1">Kennisbank</span>
+            </Link>
+            <Link
+              href="/ai-eval"
+              className={cn(
+                'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+                pathname === '/ai-eval' || pathname.startsWith('/ai-eval/')
+                  ? 'bg-[#eef4ff] text-[#1f1683]'
+                  : 'text-[#64748b] hover:bg-[#f8fafc] hover:text-[#1e293b]'
+              )}
+            >
+              <Sparkles size={17} className={pathname.startsWith('/ai-eval') ? 'text-[#1f1683]' : 'text-[#94a3b8]'} />
+              <span className="flex-1">AI-eval</span>
             </Link>
           </>
         )}
