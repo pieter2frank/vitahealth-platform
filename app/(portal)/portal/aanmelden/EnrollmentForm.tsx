@@ -324,7 +324,11 @@ export function EnrollmentForm({
     setResumeInfo(null)
 
     // Hervat bij de eerst-nog-te-doen stap, op basis van wat is opgeslagen.
-    const consentDone = info.status === 'toestemming_gegeven' || info.status === 'intake_on_hold'
+    // Geboortedatum = kernsignaal dat stap 1 (persoonsgegevens) echt is doorlopen.
+    // Een betaalde cliënt heeft al naam + adres, maar nog geen geboortedatum: die
+    // start dus op stap 1 met naam/adres voorgevuld, i.p.v. stap 1-2 over te slaan.
+    const consentDone    = info.status === 'toestemming_gegeven' || info.status === 'intake_on_hold'
+    const personaliaDone = Boolean(info.birthDate)
 
     if (consentDone && info.assignmentId !== null) {
       // Toestemmingen gegeven → naar de vragenlijst (stap 4). Sla de
@@ -333,14 +337,14 @@ export function EnrollmentForm({
       if (info.screenerChoice === 'ok') setScreeningChoice('ok')
       else if (info.screenerChoice === 'hold' || info.status === 'intake_on_hold') setScreeningChoice('hold')
       setStep(4)
-    } else if (info.hasAddress) {
-      // Adres opgeslagen, toestemmingen nog niet → stap 3.
+    } else if (personaliaDone && info.hasAddress) {
+      // Persoonsgegevens én adres al ingevuld, toestemmingen nog niet → stap 3.
       setStep(3)
-    } else if (info.phone || info.birthDate) {
+    } else if (personaliaDone) {
       // Persoonsgegevens ingevuld, adres nog niet → stap 2.
       setStep(2)
     } else {
-      // Nog niets ingevuld → stap 1 (naam/e-mail zijn al voorgevuld).
+      // Nog geen geboortedatum → stap 1 (naam/e-mail/adres zijn al voorgevuld).
       setStep(1)
     }
     window.scrollTo({ top: 0, behavior: 'smooth' })

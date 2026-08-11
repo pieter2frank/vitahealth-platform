@@ -45,13 +45,31 @@ export function AfrondenClient() {
       <CheckCircle2 size={26} className="text-emerald-500" />,
       'Betaling geslaagd',
       <>
-        <p>Je betaling is ontvangen — je ontvangt een bevestiging per e-mail. Rond nu je aanmelding af.</p>
+        <p>Bedankt! Je betaling is ontvangen en je factuur staat in je e-mail.</p>
+        <p className="mt-2">Nu volgt de <strong>intake</strong>. We nemen je stap voor stap mee — dit duurt ongeveer 5 minuten:</p>
+
+        <ol className="mx-auto mt-3 max-w-xs space-y-2 text-left">
+          {[
+            ['1', 'Je gegevens', 'Controleer je naam en adres en vul je geboortedatum aan — zodat we de kit naar het juiste adres sturen en je uitslag correct kunnen duiden.'],
+            ['2', 'Toestemming', 'Je geeft toestemming voor het verwerken van je gezondheidsgegevens. We leggen precies uit waarvoor.'],
+            ['3', 'Vragenlijst', 'Een korte leefstijlvragenlijst, zodat de arts je uitslag in context kan beoordelen.'],
+          ].map(([n, t, d]) => (
+            <li key={n} className="flex gap-2.5">
+              <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#eef4ff] text-[11px] font-bold text-[#1f1683]">{n}</span>
+              <span><span className="font-semibold text-[#1e293b]">{t}</span> <span className="text-[#64748b]">— {d}</span></span>
+            </li>
+          ))}
+        </ol>
+
         {intakeUrl ? (
-          <a href={intakeUrl} className="mt-4 inline-flex items-center gap-2 rounded-lg bg-[#1f1683] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#1a1270]">
-            Ga naar de intake <ArrowRight size={15} />
-          </a>
+          <>
+            <a href={intakeUrl} className="mt-5 inline-flex items-center gap-2 rounded-lg bg-[#1f1683] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#1a1270]">
+              Start de intake <ArrowRight size={15} />
+            </a>
+            <p className="mt-3 text-xs text-[#94a3b8]">Komt het nu niet uit? Geen probleem — de link staat ook in je e-mail en blijft geldig.</p>
+          </>
         ) : (
-          <p className="mt-3 text-xs text-[#94a3b8]">De intakelink wordt klaargezet — check je e-mail als hij hier niet verschijnt.</p>
+          <p className="mt-4 text-xs text-[#94a3b8]">De intakelink wordt klaargezet — check je e-mail als hij hier niet verschijnt.</p>
         )}
       </>,
     )
