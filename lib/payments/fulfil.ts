@@ -57,14 +57,18 @@ export async function settleOrderPaid(admin: Admin, orderId: string): Promise<{ 
       .eq('id', orderId)
   }
 
-  // Factuur genereren + mailen — best-effort en idempotent; een fout hier mag de
-  // (geldige) betaling en de intake-overdracht nooit blokkeren.
-  try { await issueInvoiceAndEmail(admin, orderId, 'invoice') }
+  // Intake-hervat-link klaarzetten (ook meegestuurd in de factuurmail).
+  let intakeUrl: string | null = null
+  if (clientId) {
+    const token = await getOrCreateIntakeToken(admin, clientId)
+    const base = process.env.NEXT_PUBLIC_PORTAL_URL ?? ''
+    intakeUrl = token ? `${base}/portal/aanmelden?token=${token}` : null
+  }
+
+  // Factuur genereren + mailen (met intake-link) — best-effort en idempotent; een
+  // fout hier mag de (geldige) betaling en de intake-overdracht nooit blokkeren.
+  try { await issueInvoiceAndEmail(admin, orderId, 'invoice', intakeUrl) }
   catch (e) { console.error('[payments] factuur genereren/mailen mislukt:', e) }
 
-  if (!clientId) return { intakeUrl: null }
-
-  const token = await getOrCreateIntakeToken(admin, clientId)
-  const base = process.env.NEXT_PUBLIC_PORTAL_URL ?? ''
-  return { intakeUrl: token ? `${base}/portal/aanmelden?token=${token}` : null }
+  return { intakeUrl }
 }

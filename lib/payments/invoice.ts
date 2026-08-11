@@ -149,18 +149,29 @@ export async function createInvoiceForOrder(
 }
 
 // Maakt de factuur (indien nieuw) en mailt hem als bijlage. Best-effort.
-export async function issueInvoiceAndEmail(admin: Admin, orderId: string, type: 'invoice' | 'credit' = 'invoice'): Promise<void> {
+// Bij een gewone factuur wordt de intake-link meegestuurd, zodat de klant later
+// via de mail alsnog verder kan als hij de intake nu niet meteen doet.
+export async function issueInvoiceAndEmail(
+  admin: Admin, orderId: string, type: 'invoice' | 'credit' = 'invoice', intakeUrl?: string | null,
+): Promise<void> {
   const { created, number, pdf, email } = await createInvoiceForOrder(admin, orderId, type)
   if (!created || !pdf || !email) return
 
   const isCredit = type === 'credit'
   const subject = isCredit ? `Creditfactuur ${number} — Vita Health` : `Factuur ${number} — Vita Health`
+
+  const intakeBlock = !isCredit && intakeUrl ? `
+      <p>Rond wanneer het jou uitkomt je aanmelding af — je hoeft dit niet meteen te doen. Klik hieronder om verder te gaan; deze link blijft geldig.</p>
+      <p><a href="${intakeUrl}" style="display:inline-block;background:#1f1683;color:#fff;padding:11px 20px;border-radius:8px;text-decoration:none;font-weight:600">Ga naar de intake</a></p>
+      <p style="color:#94a3b8;font-size:12px">Werkt de knop niet? Kopieer deze link: <br>${intakeUrl}</p>` : ''
+
   const html = `
     <div style="font-family:system-ui,sans-serif;color:#1e293b;line-height:1.6">
       <p>Beste,</p>
       <p>${isCredit
         ? `In de bijlage vind je de creditfactuur <strong>${number}</strong> voor je terugbetaling.`
         : `Bedankt voor je bestelling. In de bijlage vind je je factuur <strong>${number}</strong>.`}</p>
+      ${intakeBlock}
       <p style="color:#64748b;font-size:13px">Vragen? Bezoek onze <a href="https://helpdesk.vita-health.nl" style="color:#1f1683">helpdesk</a>.</p>
       <p style="color:#94a3b8;font-size:13px">Vita Health</p>
     </div>`
