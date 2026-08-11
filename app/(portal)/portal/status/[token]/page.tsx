@@ -31,6 +31,17 @@ interface StatusData {
   kit_status: string | null
   kit_retour_date: string | null
   kit_results_date: string | null
+  has_order?: boolean
+  paid?: boolean
+  paid_at?: string | null
+}
+
+// Betaalstap (alleen getoond als er een order is). Staat vóór de intakestappen.
+const PAYMENT_STEP: Step = {
+  key: 'betaling' as StepKey,
+  label: 'Betaling voldaan',
+  description: 'Je bestelling is betaald. De factuur staat in je e-mail.',
+  getDate: d => d.paid_at,
 }
 
 const STEPS: Step[] = [
@@ -112,7 +123,10 @@ export default async function StatusPage({
   if (error || !data?.exists) notFound()
 
   const d = data as StatusData
-  const currentIdx = statusIndex(d.enrollment_status)
+  const hasOrder = Boolean(d.has_order)
+  // Betaalstap vooraan als er een order is; de intakestappen schuiven dan één op.
+  const steps = hasOrder ? [PAYMENT_STEP, ...STEPS] : STEPS
+  const currentIdx = statusIndex(d.enrollment_status) + (hasOrder ? 1 : 0)
   const isAfgewezen = d.enrollment_status === 'intake_afgewezen'
 
   return (
@@ -150,12 +164,12 @@ export default async function StatusPage({
             <p className="text-xs font-semibold uppercase tracking-widest text-[#94a3b8]">Voortgang</p>
           </div>
           <div className="px-6 py-5 space-y-0">
-            {STEPS.map((step, i) => {
+            {steps.map((step, i) => {
               const stepIdx      = i
               const isDone       = stepIdx < currentIdx && !isAfgewezen
               const isCurrent    = stepIdx === currentIdx && !isAfgewezen
               const isFuture     = stepIdx > currentIdx || isAfgewezen
-              const isLast       = i === STEPS.length - 1
+              const isLast       = i === steps.length - 1
               const date         = fmt(step.getDate?.(d))
 
               return (

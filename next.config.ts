@@ -32,7 +32,7 @@ const securityHeaders = [
 const nextConfig: NextConfig = {
   output: 'standalone',
   // Niet bundelen — server-side uit node_modules geladen (pdf-parser + docx-extractie).
-  serverExternalPackages: ['pdfjs-dist', 'mammoth', 'nodemailer'],
+  serverExternalPackages: ['pdfjs-dist', 'mammoth', 'nodemailer', 'pdf-lib'],
   // Dynamisch geïmporteerde bestanden (pdfjs-worker, mammoth) worden door de
   // standalone file-tracer gemist. Expliciet meenemen per route (anders:
   // "Cannot find module .../pdf.worker.mjs").

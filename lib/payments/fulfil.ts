@@ -1,5 +1,6 @@
 import type { createAdminClient } from '@/lib/supabase/admin'
 import { getOrCreateIntakeToken } from '@/lib/intake-token'
+import { issueInvoiceAndEmail } from '@/lib/payments/invoice'
 
 type Admin = ReturnType<typeof createAdminClient>
 
@@ -55,6 +56,11 @@ export async function settleOrderPaid(admin: Admin, orderId: string): Promise<{ 
       .update({ status: 'paid', paid_at: order.paid_at ?? now, updated_at: now })
       .eq('id', orderId)
   }
+
+  // Factuur genereren + mailen — best-effort en idempotent; een fout hier mag de
+  // (geldige) betaling en de intake-overdracht nooit blokkeren.
+  try { await issueInvoiceAndEmail(admin, orderId, 'invoice') }
+  catch (e) { console.error('[payments] factuur genereren/mailen mislukt:', e) }
 
   if (!clientId) return { intakeUrl: null }
 

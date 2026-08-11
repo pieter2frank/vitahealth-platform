@@ -13,6 +13,7 @@ export async function sendEmail(opts: {
   html: string
   from?: string
   replyTo?: string
+  attachments?: { filename: string; content: Buffer }[]
 }): Promise<{ ok: boolean; error?: string }> {
   const { error } = await resend.emails.send({
     from:    opts.from ?? DEFAULT_FROM,
@@ -20,6 +21,7 @@ export async function sendEmail(opts: {
     subject: opts.subject,
     html:    opts.html,
     ...(opts.replyTo ? { replyTo: opts.replyTo } : {}),
+    ...(opts.attachments?.length ? { attachments: opts.attachments } : {}),
   })
   if (error) {
     console.error('[email] Resend error:', error)
