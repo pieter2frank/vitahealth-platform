@@ -58,9 +58,9 @@ export async function generateInvoicePdf(d: InvoiceData): Promise<Buffer> {
   if (d.buyerAddress)    { t(d.buyerAddress, M, y, 10, font, INK); y -= 13 }
   if (d.buyerPostalCity) { t(d.buyerPostalCity, M, y, 10, font, INK); y -= 13 }
   t(d.buyerEmail, M, y, 10, font, MUTED)
+  y -= 42   // ruimte vóór de tabel — dynamisch onder het adresblok (voorkomt overlap)
 
   // Tabel
-  y = 648
   const cols = { desc: M, excl: 320, rate: 388, vat: 440, incl: W - M }
   page.drawRectangle({ x: M, y: y - 6, width: W - 2 * M, height: 22, color: rgb(0.97, 0.98, 0.99) })
   t('Omschrijving', cols.desc + 6, y, 9, bold, MUTED)
