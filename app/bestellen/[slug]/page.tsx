@@ -1,4 +1,4 @@
-import { notFound } from 'next/navigation'
+import { redirect } from 'next/navigation'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { priceFor, discountError, type Package, type DiscountCode } from '@/lib/payments/pricing'
 import { mollieConfigured } from '@/lib/payments/mollie'
@@ -21,7 +21,8 @@ export default async function BestellenPage({ params, searchParams }: Props) {
     .from('vh_package')
     .select('id, slug, name, description, price_cents, vat_rate, includes_consult')
     .eq('slug', slug).eq('active', true).maybeSingle()
-  if (!pkg) notFound()
+  // Onbekend/inactief pakket → naar het overzicht met een nette melding.
+  if (!pkg) redirect(`/bestellen?onbekend=${encodeURIComponent(slug)}`)
 
   // Meegegeven kortingscode (bijv. uit een uitnodiging) direct valideren, zodat
   // de klant de korting meteen ziet.
