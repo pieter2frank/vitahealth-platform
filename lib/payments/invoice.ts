@@ -20,7 +20,8 @@ function dateNL(iso: string): string {
 
 interface InvoiceData {
   number: string; issuedAt: string; type: 'invoice' | 'credit'
-  buyerEmail: string; packageName: string
+  buyerEmail: string; buyerName?: string; buyerAddress?: string; buyerPostalCity?: string
+  packageName: string
   netCents: number; vatCents: number; grossCents: number; vatRate: number
   paidAt: string | null
 }
@@ -52,8 +53,11 @@ export async function generateInvoicePdf(d: InvoiceData): Promise<Buffer> {
 
   // Aan
   y = 700
-  t('Factuur aan', M, y, 9, bold, MUTED); y -= 14
-  t(d.buyerEmail, M, y, 11, font, INK)
+  t('Factuur aan', M, y, 9, bold, MUTED); y -= 15
+  if (d.buyerName)       { t(d.buyerName, M, y, 11, bold, INK); y -= 14 }
+  if (d.buyerAddress)    { t(d.buyerAddress, M, y, 10, font, INK); y -= 13 }
+  if (d.buyerPostalCity) { t(d.buyerPostalCity, M, y, 10, font, INK); y -= 13 }
+  t(d.buyerEmail, M, y, 10, font, MUTED)
 
   // Tabel
   y = 648
@@ -106,7 +110,7 @@ export async function createInvoiceForOrder(
 ): Promise<{ created: boolean; number: string; pdf: Buffer | null; email: string }> {
   const { data: order } = await admin
     .from('vh_order')
-    .select('id, email, package_name, amount_cents, vat_cents, vat_rate, paid_at')
+    .select('id, email, package_name, amount_cents, vat_cents, vat_rate, paid_at, buyer_first_name, buyer_last_name, buyer_address, buyer_postal_code, buyer_city')
     .eq('id', orderId).single()
   if (!order) throw new Error('Order niet gevonden.')
 
@@ -128,9 +132,14 @@ export async function createInvoiceForOrder(
   const number = `${year}-${String(seq).padStart(4, '0')}`
   const issuedAt = new Date().toISOString()
 
+  const buyerName = [order.buyer_first_name, order.buyer_last_name].filter(Boolean).join(' ').trim()
+  const postalCity = [order.buyer_postal_code, order.buyer_city].filter(Boolean).join(' ').trim()
   const pdf = await generateInvoicePdf({
     number, issuedAt, type,
     buyerEmail: order.email as string,
+    buyerName: buyerName || undefined,
+    buyerAddress: (order.buyer_address as string | null) || undefined,
+    buyerPostalCity: postalCity || undefined,
     packageName: order.package_name as string,
     netCents: net, vatCents: vat, grossCents: gross, vatRate: rate,
     paidAt: (order.paid_at as string | null) ?? null,

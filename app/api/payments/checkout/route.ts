@@ -10,10 +10,22 @@ export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
 export async function POST(req: Request) {
-  const { slug, email, code } = await req.json().catch(() => ({}))
+  const body = await req.json().catch(() => ({}))
+  const { slug, email, code } = body
   if (typeof slug !== 'string') return NextResponse.json({ error: 'Ongeldig pakket.' }, { status: 400 })
   if (typeof email !== 'string' || !email.includes('@')) {
     return NextResponse.json({ error: 'Voer een geldig e-mailadres in.' }, { status: 400 })
+  }
+
+  // Factuur-/klantgegevens (verplicht voor een complete factuur + kitverzending).
+  const str = (v: unknown, max = 120) => (typeof v === 'string' ? v.trim().slice(0, max) : '')
+  const firstName  = str(body.firstName)
+  const lastName   = str(body.lastName)
+  const address    = str(body.address, 200)
+  const postalCode = str(body.postalCode, 16)
+  const city       = str(body.city)
+  if (!firstName || !lastName || !address || !postalCode || !city) {
+    return NextResponse.json({ error: 'Vul je naam en adresgegevens volledig in.' }, { status: 400 })
   }
 
   const admin = createAdminClient()
@@ -36,14 +48,19 @@ export async function POST(req: Request) {
   const price = priceFor(pkg as Package, dc)
 
   const { data: order, error } = await admin.from('vh_order').insert({
-    package_id:     pkg.id,
-    package_name:   pkg.name,
-    email:          email.trim(),
-    amount_cents:   price.amount_cents,
-    vat_cents:      price.vat_cents,
-    vat_rate:       price.vat_rate,
-    discount_code:  dc ? dc.code : null,
-    discount_cents: price.discount_cents,
+    package_id:      pkg.id,
+    package_name:    pkg.name,
+    email:           email.trim(),
+    buyer_first_name: firstName,
+    buyer_last_name:  lastName,
+    buyer_address:    address,
+    buyer_postal_code: postalCode,
+    buyer_city:       city,
+    amount_cents:    price.amount_cents,
+    vat_cents:       price.vat_cents,
+    vat_rate:        price.vat_rate,
+    discount_code:   dc ? dc.code : null,
+    discount_cents:  price.discount_cents,
   }).select('id').single()
   if (error || !order) {
     console.error('[payments] order aanmaken mislukt:', error)

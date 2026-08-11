@@ -13,6 +13,11 @@ export function PaywallForm({ pkg, initialPrice, initialCode, initialEmail, moll
   mollieReady: boolean
 }) {
   const [email, setEmail] = useState(initialEmail)
+  const [firstName, setFirstName]   = useState('')
+  const [lastName, setLastName]     = useState('')
+  const [address, setAddress]       = useState('')
+  const [postalCode, setPostalCode] = useState('')
+  const [city, setCity]             = useState('')
   const [code, setCode]   = useState(initialCode)
   const [price, setPrice] = useState(initialPrice)
   const [applied, setApplied] = useState(Boolean(initialCode))
@@ -39,10 +44,17 @@ export function PaywallForm({ pkg, initialPrice, initialCode, initialEmail, moll
 
   async function pay() {
     if (!email.trim() || !email.includes('@')) { setError('Voer een geldig e-mailadres in.'); return }
+    if (!firstName.trim() || !lastName.trim() || !address.trim() || !postalCode.trim() || !city.trim()) {
+      setError('Vul je naam en adresgegevens volledig in.'); return
+    }
     setPaying(true); setError('')
     const res = await fetch('/api/payments/checkout', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ slug: pkg.slug, email: email.trim(), code: applied ? code : '' }),
+      body: JSON.stringify({
+        slug: pkg.slug, email: email.trim(), code: applied ? code : '',
+        firstName: firstName.trim(), lastName: lastName.trim(),
+        address: address.trim(), postalCode: postalCode.trim(), city: city.trim(),
+      }),
     })
     const j = await res.json().catch(() => ({}))
     if (!res.ok) { setPaying(false); setError(j.error ?? 'Er ging iets mis.'); return }
@@ -78,8 +90,30 @@ export function PaywallForm({ pkg, initialPrice, initialCode, initialEmail, moll
         <p className="pt-0.5 text-xs text-[#94a3b8]">waarvan {Number(price.vat_rate)}% btw: {formatEuro(price.vat_cents)}</p>
       </div>
 
+      {/* Naam- en adresgegevens (voor de factuur + verzending van de kit) */}
+      <p className="mt-5 text-xs font-semibold uppercase tracking-wide text-[#94a3b8]">Jouw gegevens</p>
+      <div className="mt-2 grid grid-cols-2 gap-2">
+        <input value={firstName} onChange={e => { setFirstName(e.target.value); setError('') }}
+          placeholder="Voornaam" autoComplete="given-name"
+          className="rounded-lg border border-[#e2e8f0] px-3 py-2.5 text-sm text-[#1e293b] focus:outline-none focus:ring-2 focus:ring-[#1f1683]/30 focus:border-[#1f1683]" />
+        <input value={lastName} onChange={e => { setLastName(e.target.value); setError('') }}
+          placeholder="Achternaam" autoComplete="family-name"
+          className="rounded-lg border border-[#e2e8f0] px-3 py-2.5 text-sm text-[#1e293b] focus:outline-none focus:ring-2 focus:ring-[#1f1683]/30 focus:border-[#1f1683]" />
+      </div>
+      <input value={address} onChange={e => { setAddress(e.target.value); setError('') }}
+        placeholder="Straat en huisnummer" autoComplete="street-address"
+        className="mt-2 w-full rounded-lg border border-[#e2e8f0] px-3 py-2.5 text-sm text-[#1e293b] focus:outline-none focus:ring-2 focus:ring-[#1f1683]/30 focus:border-[#1f1683]" />
+      <div className="mt-2 grid grid-cols-[1fr_1.6fr] gap-2">
+        <input value={postalCode} onChange={e => { setPostalCode(e.target.value); setError('') }}
+          placeholder="Postcode" autoComplete="postal-code"
+          className="rounded-lg border border-[#e2e8f0] px-3 py-2.5 text-sm text-[#1e293b] focus:outline-none focus:ring-2 focus:ring-[#1f1683]/30 focus:border-[#1f1683]" />
+        <input value={city} onChange={e => { setCity(e.target.value); setError('') }}
+          placeholder="Plaats" autoComplete="address-level2"
+          className="rounded-lg border border-[#e2e8f0] px-3 py-2.5 text-sm text-[#1e293b] focus:outline-none focus:ring-2 focus:ring-[#1f1683]/30 focus:border-[#1f1683]" />
+      </div>
+
       {/* E-mail */}
-      <label className="mt-5 block text-sm font-medium text-[#1e293b]">E-mailadres</label>
+      <label className="mt-4 block text-sm font-medium text-[#1e293b]">E-mailadres</label>
       <input type="email" value={email} onChange={e => { setEmail(e.target.value); setError('') }}
         placeholder="naam@voorbeeld.nl" autoComplete="email"
         className="mt-1.5 w-full rounded-lg border border-[#e2e8f0] px-3 py-2.5 text-sm text-[#1e293b] focus:outline-none focus:ring-2 focus:ring-[#1f1683]/30 focus:border-[#1f1683]" />

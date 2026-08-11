@@ -13,7 +13,7 @@ export async function settleOrderPaid(admin: Admin, orderId: string): Promise<{ 
 
   const { data: order } = await admin
     .from('vh_order')
-    .select('id, status, client_id, email, discount_code, paid_at')
+    .select('id, status, client_id, email, discount_code, paid_at, buyer_first_name, buyer_last_name, buyer_address, buyer_postal_code, buyer_city')
     .eq('id', orderId).single()
   if (!order) throw new Error('Order niet gevonden.')
 
@@ -29,8 +29,17 @@ export async function settleOrderPaid(admin: Admin, orderId: string): Promise<{ 
     if (existing?.id) {
       clientId = existing.id as string
     } else {
+      // Cliënt aanmaken met de op de paywall opgegeven naam + adres; de intake
+      // vult deze voorgevuld aan (en voegt geboortedatum/telefoon/toestemmingen toe).
       const { data: created } = await admin
-        .from('vh_client').insert({ first_name: '', last_name: '', email }).select('id').single()
+        .from('vh_client').insert({
+          first_name:  (order.buyer_first_name as string | null) ?? '',
+          last_name:   (order.buyer_last_name as string | null) ?? '',
+          email,
+          address:     (order.buyer_address as string | null) ?? null,
+          postal_code: (order.buyer_postal_code as string | null) ?? null,
+          city:        (order.buyer_city as string | null) ?? null,
+        }).select('id').single()
       clientId = (created?.id as string | undefined) ?? null
     }
 
