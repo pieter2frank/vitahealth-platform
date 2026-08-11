@@ -24,10 +24,22 @@ export async function settleOrderPaid(admin: Admin, orderId: string): Promise<{ 
   if (!clientId) {
     const email = (order.email as string).trim()
     const { data: existing } = await admin
-      .from('vh_client').select('id').ilike('email', email).maybeSingle()
+      .from('vh_client').select('id, first_name, last_name, address, postal_code, city')
+      .ilike('email', email).maybeSingle()
 
     if (existing?.id) {
       clientId = existing.id as string
+      // Lege naam/adresvelden bijvullen met de op de paywall opgegeven gegevens
+      // (bv. een eerder leeg aangemaakte cliënt of een terugkerende klant zonder
+      // deze velden). Bestaande, gevulde gegevens overschrijven we niet.
+      const blank = (v: unknown) => !(((v as string | null) ?? '').trim())
+      const patch: Record<string, string> = {}
+      if (blank(existing.first_name)  && order.buyer_first_name)  patch.first_name  = order.buyer_first_name as string
+      if (blank(existing.last_name)   && order.buyer_last_name)   patch.last_name   = order.buyer_last_name as string
+      if (blank(existing.address)     && order.buyer_address)     patch.address     = order.buyer_address as string
+      if (blank(existing.postal_code) && order.buyer_postal_code) patch.postal_code = order.buyer_postal_code as string
+      if (blank(existing.city)        && order.buyer_city)        patch.city        = order.buyer_city as string
+      if (Object.keys(patch).length) await admin.from('vh_client').update(patch).eq('id', existing.id)
     } else {
       // Cliënt aanmaken met de op de paywall opgegeven naam + adres; de intake
       // vult deze voorgevuld aan (en voegt geboortedatum/telefoon/toestemmingen toe).

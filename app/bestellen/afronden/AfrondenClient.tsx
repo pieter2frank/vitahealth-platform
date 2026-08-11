@@ -46,7 +46,7 @@ export function AfrondenClient() {
       'Betaling geslaagd',
       <>
         <p>Bedankt! Je betaling is ontvangen en je factuur staat in je e-mail.</p>
-        <p className="mt-2">Nu volgt de <strong>intake</strong>. We nemen je stap voor stap mee — dit duurt ongeveer 5 minuten:</p>
+        <p className="mt-2">Nu volgt de <strong>intake</strong>. We nemen je stap voor stap mee — dit duurt ongeveer 10 minuten:</p>
 
         <ol className="mx-auto mt-3 max-w-xs space-y-2 text-left">
           {[
