@@ -1,8 +1,9 @@
 import { createClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
-import { CheckCircle2, Clock, Circle, AlertCircle } from 'lucide-react'
+import { CheckCircle2, Clock, Circle, AlertCircle, Ban } from 'lucide-react'
 import { format } from 'date-fns'
 import { nl } from 'date-fns/locale'
+import { StopRequestButton } from './StopRequestButton'
 
 // ─── Statusstappen (publieksvriendelijke teksten) ─────────────────────────────
 
@@ -34,6 +35,9 @@ interface StatusData {
   has_order?: boolean
   paid?: boolean
   paid_at?: string | null
+  order_status?: string | null
+  stop_requested?: boolean
+  refunded_at?: string | null
 }
 
 // Betaalstap (alleen getoond als er een order is). Staat vóór de intakestappen.
@@ -127,7 +131,12 @@ export default async function StatusPage({
   // Betaalstap vooraan als er een order is; de intakestappen schuiven dan één op.
   const steps = hasOrder ? [PAYMENT_STEP, ...STEPS] : STEPS
   const currentIdx = statusIndex(d.enrollment_status) + (hasOrder ? 1 : 0)
-  const isAfgewezen = d.enrollment_status === 'intake_afgewezen'
+  const isAfgewezen   = d.enrollment_status === 'intake_afgewezen'
+  const isGeannuleerd = d.enrollment_status === 'geannuleerd'
+  const refundedOn    = fmt(d.refunded_at)
+  // Stoppen kan alleen bij een lopend, betaald traject.
+  const canRequestStop = Boolean(d.paid) && !isGeannuleerd && !isAfgewezen
+  const stopRequested  = Boolean(d.stop_requested)
 
   return (
     <main className="min-h-screen bg-[#f8fafc] py-10 px-4">
@@ -158,7 +167,21 @@ export default async function StatusPage({
           </div>
         )}
 
+        {/* Traject beëindigd (terugbetaald) */}
+        {isGeannuleerd && (
+          <div className="rounded-xl border border-[#e2e8f0] bg-white p-5 mb-6 flex items-start gap-3">
+            <Ban size={18} className="text-[#64748b] shrink-0 mt-0.5" />
+            <div>
+              <p className="text-sm font-semibold text-[#1e293b]">Traject beëindigd</p>
+              <p className="text-xs text-[#64748b] mt-0.5 leading-relaxed">
+                Je aanmelding is stopgezet en je betaling is teruggestort{refundedOn ? ` op ${refundedOn}` : ''}. De creditfactuur staat in je e-mail. Wil je later alsnog een test doen? Je bent altijd welkom om je opnieuw aan te melden.
+              </p>
+            </div>
+          </div>
+        )}
+
         {/* Tijdlijn */}
+        {!isGeannuleerd && (
         <div className="rounded-2xl border border-[#e2e8f0] bg-white shadow-sm overflow-hidden">
           <div className="border-b border-[#f1f5f9] px-6 py-4">
             <p className="text-xs font-semibold uppercase tracking-widest text-[#94a3b8]">Voortgang</p>
@@ -226,6 +249,24 @@ export default async function StatusPage({
             })}
           </div>
         </div>
+        )}
+
+        {/* Stopverzoek: lopend verzoek melden, anders de zelf-service knop tonen */}
+        {canRequestStop && (
+          stopRequested ? (
+            <div className="mt-6 rounded-xl border border-amber-200 bg-amber-50 p-5 flex items-start gap-3">
+              <Clock size={18} className="text-amber-600 shrink-0 mt-0.5" />
+              <div>
+                <p className="text-sm font-semibold text-amber-800">Stopverzoek in behandeling</p>
+                <p className="text-xs text-amber-700 mt-0.5 leading-relaxed">
+                  We hebben je verzoek om te stoppen ontvangen. Een medewerker verwerkt de terugbetaling; je ontvangt hierover bericht per e-mail.
+                </p>
+              </div>
+            </div>
+          ) : (
+            <StopRequestButton token={token} />
+          )
+        )}
 
         {/* Contactblok */}
         <div className="mt-6 rounded-xl border border-[#e2e8f0] bg-white p-5 text-center">

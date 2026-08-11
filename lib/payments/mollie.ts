@@ -58,6 +58,27 @@ export async function getMolliePayment(id: string): Promise<MolliePayment> {
   return call(`/payments/${id}`)
 }
 
+// Maakt een terugbetaling voor een eerdere betaling. Mollie verwerkt de restitutie
+// asynchroon; de aangemaakte refund heeft doorgaans status 'pending'/'queued' — het
+// aanmaken slaagt is voor ons het signaal dat de terugbetaling in gang is gezet.
+export async function createMollieRefund(
+  paymentId: string, amountCents: number, description: string,
+): Promise<{ id: string; status: string }> {
+  const res = await fetch(`${API}/payments/${paymentId}/refunds`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${KEY}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      amount:      { currency: 'EUR', value: toAmountString(amountCents) },
+      description,
+    }),
+  })
+  const json = await res.json().catch(() => ({}))
+  if (!res.ok) {
+    throw new Error(`Mollie refund ${res.status}: ${json?.detail ?? JSON.stringify(json).slice(0, 200)}`)
+  }
+  return { id: json.id as string, status: json.status as string }
+}
+
 // Mollie-status → onze order-status.
 export function mapMollieStatus(status: string): 'paid' | 'failed' | 'expired' | 'canceled' | 'open' {
   switch (status) {

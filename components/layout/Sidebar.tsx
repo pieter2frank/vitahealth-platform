@@ -7,7 +7,7 @@ import { cn } from '@/lib/utils'
 import type { LucideIcon } from 'lucide-react'
 import {
   LayoutDashboard, TestTube2, Users, Building2, Stethoscope,
-  Package, LogOut, CircleUserRound, ClipboardList, ScrollText, Dumbbell, Settings, ShieldCheck, UserCog, FileCheck, BookOpen, FlaskConical, Sparkles,
+  Package, LogOut, CircleUserRound, ClipboardList, ScrollText, Dumbbell, Settings, ShieldCheck, UserCog, FileCheck, BookOpen, FlaskConical, Sparkles, Receipt,
 } from 'lucide-react'
 import { isAdmin, canManageKnowledge, canSeeResults } from '@/lib/auth/roles'
 import { APP_VERSION } from '@/lib/version'
@@ -26,6 +26,7 @@ const NAV_GROUPS: NavItem[][] = [
     { href: '/dashboard',    label: 'Dashboard',    icon: LayoutDashboard, badgeKey: null },
     { href: '/testkits',     label: 'Testkits',      icon: TestTube2,       badgeKey: null },
     { href: '/aanvragen',    label: 'Aanvragen',     icon: ClipboardList,   badgeKey: 'newOrders' },
+    { href: '/bestellingen', label: 'Bestellingen',  icon: Receipt,         badgeKey: null },
     { href: '/clienten',     label: 'Cliënten',      icon: Users,           badgeKey: null },
     { href: '/bedrijven',    label: 'Bedrijven',     icon: Building2,       badgeKey: null },
     { href: '/arbodiensten', label: 'Arbodiensten',  icon: Stethoscope,     badgeKey: null },

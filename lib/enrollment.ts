@@ -27,6 +27,7 @@ export const ENROLLMENT_LABELS: Record<string, string> = {
   kit_retour:           'Kit retour',
   uitslag_bekend:       'Uitslag bekend',
   uitslag_besproken:    'Uitslag besproken',
+  geannuleerd:          'Geannuleerd',
 }
 
 // ─── Kleuren (badge) ──────────────────────────────────────────────────────────
@@ -42,6 +43,7 @@ export const ENROLLMENT_COLORS: Record<string, string> = {
   kit_retour:           'bg-orange-50 text-orange-700 border-orange-200',
   uitslag_bekend:       'bg-green-100 text-green-800 border-green-300',
   uitslag_besproken:    'bg-green-50 text-green-700 border-green-200',
+  geannuleerd:          'bg-slate-100 text-slate-500 border-slate-300',
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
