@@ -3,22 +3,15 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { isUuid } from '@/lib/validation'
 import { requireRole } from '@/lib/auth/guard'
 import { refundOrder } from '@/lib/payments/refund'
-import type { AuditAccessBasis } from '@/lib/audit'
 
 // POST /api/payments/refund  { orderId, reason? }
-// Medewerker-actie: betaalt een bestelling terug (Mollie), beëindigt het traject
-// en genereert een creditfactuur. Alleen voor personeel; idempotent.
+// Admin-actie: betaalt een bestelling terug (Mollie), beëindigt het traject
+// en genereert een creditfactuur. Alleen admin; idempotent.
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
-function auditRole(role: string): AuditAccessBasis {
-  if (role === 'admin') return 'admin'
-  if (role === 'arts' || role === 'leefstijlarts') return 'medisch_deskundige'
-  return 'medewerker_regulier'
-}
-
 export async function POST(req: Request) {
-  const auth = await requireRole(['admin', 'arts', 'leefstijlarts', 'medewerker'])
+  const auth = await requireRole(['admin'])
   if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.status })
 
   const body = await req.json().catch(() => ({}))
@@ -30,7 +23,7 @@ export async function POST(req: Request) {
     const admin = createAdminClient()
     const result = await refundOrder(admin, orderId, {
       actorUserId: auth.userId,
-      actorRole:   auditRole(auth.role),
+      actorRole:   'admin',
       reason:      reason || undefined,
     })
     return NextResponse.json({ ok: true, alreadyDone: result.alreadyDone })

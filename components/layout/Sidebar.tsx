@@ -129,21 +129,6 @@ export function Sidebar({ newOrderCount = 0 }: SidebarProps) {
           </>
         )}
 
-        {/* Bestellingen — betalingen, stopverzoeken en terugbetalingen (alle medewerkers) */}
-        <div className="my-2.5 border-t border-[#e2e8f0]" />
-        <Link
-          href="/bestellingen"
-          className={cn(
-            'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
-            pathname === '/bestellingen' || pathname.startsWith('/bestellingen/')
-              ? 'bg-[#eef4ff] text-[#1f1683]'
-              : 'text-[#64748b] hover:bg-[#f8fafc] hover:text-[#1e293b]'
-          )}
-        >
-          <Receipt size={17} className={pathname.startsWith('/bestellingen') ? 'text-[#1f1683]' : 'text-[#94a3b8]'} />
-          <span className="flex-1">Bestellingen</span>
-        </Link>
-
         {/* Kennisbank — arts/leefstijlarts + admin (voedt het AI-advies) */}
         {canManageKnowledge(role) && (
           <>
@@ -216,6 +201,19 @@ export function Sidebar({ newOrderCount = 0 }: SidebarProps) {
           >
             <ShieldCheck size={17} className={pathname.startsWith('/auditlog') ? 'text-[#1f1683]' : 'text-[#94a3b8]'} />
             <span className="flex-1">Auditlog</span>
+            <span className="text-[9px] font-semibold uppercase tracking-wide text-[#94a3b8] border border-[#e2e8f0] rounded px-1">Admin</span>
+          </Link>
+          <Link
+            href="/bestellingen"
+            className={cn(
+              'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+              pathname.startsWith('/bestellingen')
+                ? 'bg-[#eef4ff] text-[#1f1683]'
+                : 'text-[#94a3b8] hover:bg-[#f8fafc] hover:text-[#1e293b]'
+            )}
+          >
+            <Receipt size={17} className={pathname.startsWith('/bestellingen') ? 'text-[#1f1683]' : 'text-[#94a3b8]'} />
+            <span className="flex-1">Bestellingen</span>
             <span className="text-[9px] font-semibold uppercase tracking-wide text-[#94a3b8] border border-[#e2e8f0] rounded px-1">Admin</span>
           </Link>
           <Link

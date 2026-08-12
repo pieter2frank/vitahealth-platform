@@ -7,7 +7,7 @@ import { OrdersTable, type OrderRow } from './OrdersTable'
 // Bestellingen-beheer: overzicht van orders met status, stopverzoeken en de
 // terugbetaal-actie. Voor personeel (admin, arts, leefstijlarts, medewerker).
 export default async function BestellingenPage() {
-  await requireRolePage(['admin', 'arts', 'leefstijlarts', 'medewerker'])
+  await requireRolePage(['admin'])
 
   const admin = createAdminClient()
   const { data } = await admin
