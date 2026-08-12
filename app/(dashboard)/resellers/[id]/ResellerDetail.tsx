@@ -3,7 +3,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { format } from 'date-fns'
 import { nl } from 'date-fns/locale'
-import { Loader2, XCircle, Plus, Trash2, Power, Save } from 'lucide-react'
+import { Loader2, XCircle, Plus, Trash2, Power, Save, Link2, Check } from 'lucide-react'
 import { formatEuro } from '@/lib/payments/pricing'
 
 export interface PackageOption { id: string; name: string }
@@ -25,6 +25,16 @@ export function ResellerDetail({ data, codes, packages }: { data: ResellerData; 
   const pkgName = new Map(packages.map(p => [p.id, p.name]))
   const [showCodeForm, setShowCodeForm] = useState(false)
   const [busyId, setBusyId] = useState<string | null>(null)
+  const [copiedId, setCopiedId] = useState<string | null>(null)
+
+  // Deelbare bestellink die de code vooraf invult; de reseller deelt deze met klanten.
+  function shareUrl(code: string) {
+    const base = process.env.NEXT_PUBLIC_PLATFORM_URL || (typeof window !== 'undefined' ? window.location.origin : '')
+    return `${base}/bestellen?code=${encodeURIComponent(code)}`
+  }
+  async function copyLink(c: ResellerCode) {
+    try { await navigator.clipboard.writeText(shareUrl(c.code)); setCopiedId(c.id); setTimeout(() => setCopiedId(null), 1800) } catch { /* clipboard geblokkeerd */ }
+  }
 
   async function toggleCode(c: ResellerCode) {
     setBusyId(c.id)
@@ -84,6 +94,9 @@ export function ResellerDetail({ data, codes, packages }: { data: ResellerData; 
                     </td>
                     <td className="py-2.5">
                       <div className="flex items-center justify-end gap-1">
+                        <button onClick={() => copyLink(c)} title="Deel-link kopiëren" className={`rounded-lg border border-[#e2e8f0] p-1.5 hover:bg-[#f8fafc] ${copiedId === c.id ? 'text-emerald-600' : 'text-[#64748b]'}`}>
+                          {copiedId === c.id ? <Check size={14} /> : <Link2 size={14} />}
+                        </button>
                         <button onClick={() => toggleCode(c)} disabled={busyId === c.id} title={c.active ? 'Deactiveren' : 'Activeren'} className="rounded-lg border border-[#e2e8f0] p-1.5 text-[#64748b] hover:bg-[#f8fafc] disabled:opacity-50">
                           {busyId === c.id ? <Loader2 size={14} className="animate-spin" /> : <Power size={14} />}
                         </button>

@@ -27,6 +27,13 @@ export async function POST(req: Request) {
     if (codeError) dc = null
   }
 
+  // Reseller achter een geldige code (voor de melding "verstrekt door …").
+  let resellerName: string | null = null
+  if (dc?.reseller_id) {
+    const { data: r } = await admin.from('vh_reseller').select('name, active').eq('id', dc.reseller_id).maybeSingle()
+    if (r?.active) resellerName = r.name as string
+  }
+
   const price = priceFor(pkg as Package, dc)
-  return NextResponse.json({ ok: true, price, codeApplied: Boolean(dc), codeError })
+  return NextResponse.json({ ok: true, price, codeApplied: Boolean(dc), codeError, resellerName })
 }

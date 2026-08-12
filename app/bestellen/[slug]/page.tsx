@@ -28,10 +28,16 @@ export default async function BestellenPage({ params, searchParams }: Props) {
   // de klant de korting meteen ziet.
   let dc: DiscountCode | null = null
   let appliedCode = ''
+  let resellerName = ''
   if (typeof code === 'string' && code.trim()) {
     const codeStr = code.trim().toUpperCase()
     const { data } = await admin.from('vh_discount_code').select('*').eq('code', codeStr).maybeSingle()
     if (data && !discountError(data as DiscountCode, pkg as Package)) { dc = data as DiscountCode; appliedCode = codeStr }
+  }
+  // Reseller achter een geldige code (voor de melding op de paywall).
+  if (dc?.reseller_id) {
+    const { data: r } = await admin.from('vh_reseller').select('name, active').eq('id', dc.reseller_id).maybeSingle()
+    if (r?.active) resellerName = r.name as string
   }
 
   const price = priceFor(pkg as Package, dc)
@@ -43,6 +49,7 @@ export default async function BestellenPage({ params, searchParams }: Props) {
           pkg={{ slug: pkg.slug, name: pkg.name, description: pkg.description, includesConsult: pkg.includes_consult, vatRate: pkg.vat_rate }}
           initialPrice={price}
           initialCode={appliedCode}
+          initialResellerName={resellerName}
           initialEmail={typeof email === 'string' ? email : ''}
           mollieReady={mollieConfigured()}
         />

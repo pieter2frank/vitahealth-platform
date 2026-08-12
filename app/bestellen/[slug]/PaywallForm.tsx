@@ -1,14 +1,15 @@
 'use client'
 import { useState } from 'react'
 import { formatEuro, type PriceBreakdown } from '@/lib/payments/pricing'
-import { Loader2, ShieldCheck, Tag, AlertTriangle, CheckCircle2, Stethoscope, Lock } from 'lucide-react'
+import { Loader2, ShieldCheck, Tag, AlertTriangle, CheckCircle2, Stethoscope, Lock, Store } from 'lucide-react'
 
 interface Pkg { slug: string; name: string; description: string | null; includesConsult: boolean; vatRate: number }
 
-export function PaywallForm({ pkg, initialPrice, initialCode, initialEmail, mollieReady }: {
+export function PaywallForm({ pkg, initialPrice, initialCode, initialResellerName, initialEmail, mollieReady }: {
   pkg: Pkg
   initialPrice: PriceBreakdown
   initialCode: string
+  initialResellerName: string
   initialEmail: string
   mollieReady: boolean
 }) {
@@ -21,6 +22,7 @@ export function PaywallForm({ pkg, initialPrice, initialCode, initialEmail, moll
   const [code, setCode]   = useState(initialCode)
   const [price, setPrice] = useState(initialPrice)
   const [applied, setApplied] = useState(Boolean(initialCode))
+  const [resellerName, setResellerName] = useState(initialResellerName)
   const [codeMsg, setCodeMsg] = useState('')
   const [applying, setApplying] = useState(false)
   const [paying, setPaying] = useState(false)
@@ -38,8 +40,8 @@ export function PaywallForm({ pkg, initialPrice, initialCode, initialEmail, moll
     setApplying(false)
     if (!res.ok) { setError(j.error ?? 'Controle mislukt.'); return }
     setPrice(j.price)
-    if (j.codeApplied) { setApplied(true); setCodeMsg('Kortingscode toegepast.') }
-    else { setApplied(false); setCodeMsg(j.codeError ?? 'Kortingscode niet geldig.') }
+    if (j.codeApplied) { setApplied(true); setCodeMsg('Kortingscode toegepast.'); setResellerName(j.resellerName ?? '') }
+    else { setApplied(false); setCodeMsg(j.codeError ?? 'Kortingscode niet geldig.'); setResellerName('') }
   }
 
   async function pay() {
@@ -124,7 +126,7 @@ export function PaywallForm({ pkg, initialPrice, initialCode, initialEmail, moll
       <div className="mt-1.5 flex gap-2">
         <div className="relative flex-1">
           <Tag size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#94a3b8]" />
-          <input value={code} onChange={e => { setCode(e.target.value.toUpperCase()); setApplied(false); setCodeMsg('') }}
+          <input value={code} onChange={e => { setCode(e.target.value.toUpperCase()); setApplied(false); setCodeMsg(''); setResellerName('') }}
             placeholder="CODE"
             className="w-full rounded-lg border border-[#e2e8f0] py-2.5 pl-9 pr-3 text-sm uppercase tracking-wide text-[#1e293b] focus:outline-none focus:ring-2 focus:ring-[#1f1683]/30 focus:border-[#1f1683]" />
         </div>
@@ -136,6 +138,11 @@ export function PaywallForm({ pkg, initialPrice, initialCode, initialEmail, moll
       {codeMsg && (
         <p className={`mt-1.5 flex items-center gap-1 text-xs ${applied ? 'text-emerald-600' : 'text-amber-600'}`}>
           {applied ? <CheckCircle2 size={12} /> : <AlertTriangle size={12} />} {codeMsg}
+        </p>
+      )}
+      {applied && resellerName && (
+        <p className="mt-1.5 flex items-center gap-1.5 rounded-lg bg-[#eef4ff] px-2.5 py-1.5 text-xs text-[#1f1683]">
+          <Store size={12} /> Deze code is verstrekt door <strong>{resellerName}</strong>.
         </p>
       )}
 

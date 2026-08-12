@@ -1,21 +1,35 @@
 import Link from 'next/link'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { formatEuro } from '@/lib/payments/pricing'
-import { ShieldCheck, Stethoscope, ArrowRight, AlertTriangle } from 'lucide-react'
+import { ShieldCheck, Stethoscope, ArrowRight, AlertTriangle, Store } from 'lucide-react'
 
 export const dynamic = 'force-dynamic'
 export const metadata = { title: 'Pakketten — Vita Health' }
 
-interface Props { searchParams: Promise<{ onbekend?: string }> }
+interface Props { searchParams: Promise<{ onbekend?: string; code?: string }> }
 
 export default async function PakkettenPage({ searchParams }: Props) {
-  const { onbekend } = await searchParams
+  const { onbekend, code } = await searchParams
   const admin = createAdminClient()
   const { data: packages } = await admin
     .from('vh_package')
     .select('slug, name, description, price_cents, includes_consult')
     .eq('active', true)
     .order('sort_order', { ascending: true })
+
+  // Meegegeven kortingscode (deelbare reseller-link) meenemen naar het pakket, en
+  // de reseller tonen als de code geldig en actief is.
+  const codeStr = typeof code === 'string' ? code.trim().toUpperCase() : ''
+  const codeQuery = codeStr ? `?code=${encodeURIComponent(codeStr)}` : ''
+  let resellerName = ''
+  if (codeStr) {
+    const { data: dc } = await admin
+      .from('vh_discount_code').select('active, reseller_id').eq('code', codeStr).maybeSingle()
+    if (dc?.active && dc.reseller_id) {
+      const { data: r } = await admin.from('vh_reseller').select('name, active').eq('id', dc.reseller_id).maybeSingle()
+      if (r?.active) resellerName = r.name as string
+    }
+  }
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-gradient-to-br from-[#f8fafc] to-[#eef4ff] px-4 py-10">
@@ -34,6 +48,15 @@ export default async function PakkettenPage({ searchParams }: Props) {
           </div>
         )}
 
+        {resellerName && (
+          <div className="mb-5 flex items-center gap-2 rounded-xl border border-[#c7d7fd] bg-[#eef4ff] px-4 py-3">
+            <Store size={16} className="shrink-0 text-[#1f1683]" />
+            <p className="text-sm text-[#1f1683]">
+              Je bestelt met een kortingscode van <strong>{resellerName}</strong> — het voordeel wordt bij de betaling verrekend.
+            </p>
+          </div>
+        )}
+
         {(packages ?? []).length === 0 ? (
           <div className="rounded-2xl border border-[#e2e8f0] bg-white p-10 text-center text-sm text-[#94a3b8] shadow-sm">
             Er zijn op dit moment geen pakketten beschikbaar.
@@ -41,7 +64,7 @@ export default async function PakkettenPage({ searchParams }: Props) {
         ) : (
           <div className="grid gap-4 sm:grid-cols-2">
             {(packages ?? []).map(p => (
-              <Link key={p.slug} href={`/bestellen/${p.slug}`}
+              <Link key={p.slug} href={`/bestellen/${p.slug}${codeQuery}`}
                 className="group flex flex-col rounded-2xl border border-[#e2e8f0] bg-white p-5 shadow-sm transition-colors hover:border-[#1f1683]">
                 <h2 className="text-base font-semibold text-[#1e293b]">{p.name}</h2>
                 {p.description && <p className="mt-1 flex-1 text-sm text-[#64748b]">{p.description}</p>}
