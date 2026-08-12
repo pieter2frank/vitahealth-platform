@@ -22,5 +22,7 @@ Plaats de bijbehorende documenten in de juiste map. Elke map bevat een README me
 
 | Document | Omschrijving |
 |----------|--------------|
-| [`betaalmuur-vita-health-v1.0.md`](betaalmuur-vita-health-v1.0.md) | Betaalmuur & facturatie — functioneel en technisch ontwerp (markdown) |
-| [`../betaalmuur-vita-health-v1.0.docx`](../betaalmuur-vita-health-v1.0.docx) | Zelfde document als Word-versie |
+| [`betaalmuur-vita-health-v1.1.md`](betaalmuur-vita-health-v1.1.md) | Betaalmuur & facturatie — functioneel en technisch ontwerp (markdown, actueel) |
+| [`../betaalmuur-vita-health-v1.1.docx`](../betaalmuur-vita-health-v1.1.docx) | Zelfde document als Word-versie |
+
+_Historie: v1.0 (`betaalmuur-vita-health-v1.0.md` / `.docx`)._
