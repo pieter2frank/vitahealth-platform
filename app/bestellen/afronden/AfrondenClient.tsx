@@ -66,7 +66,7 @@ export function AfrondenClient() {
             <a href={intakeUrl} className="mt-5 inline-flex items-center gap-2 rounded-lg bg-[#1f1683] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#1a1270]">
               Start de intake <ArrowRight size={15} />
             </a>
-            <p className="mt-3 text-xs text-[#94a3b8]">Komt het nu niet uit? Geen probleem — de link staat ook in je e-mail en blijft geldig.</p>
+            <p className="mt-3 text-xs text-[#94a3b8]">Als je de intake later wilt afronden, kan deze link worden gebruikt — hij staat ook in je e-mail.</p>
           </>
         ) : (
           <p className="mt-4 text-xs text-[#94a3b8]">De intakelink wordt klaargezet — check je e-mail als hij hier niet verschijnt.</p>

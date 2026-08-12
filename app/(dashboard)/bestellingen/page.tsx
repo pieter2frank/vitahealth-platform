@@ -1,7 +1,7 @@
 import { createAdminClient } from '@/lib/supabase/admin'
 import { requireRolePage } from '@/lib/auth/guard'
 import { formatEuro } from '@/lib/payments/pricing'
-import { Receipt, CheckCircle2, Ban, Clock } from 'lucide-react'
+import { Receipt, CheckCircle2, Ban, Wallet } from 'lucide-react'
 import { OrdersTable, type OrderRow } from './OrdersTable'
 
 // Bestellingen-beheer: overzicht van orders met status, stopverzoeken en de
@@ -12,7 +12,7 @@ export default async function BestellingenPage() {
   const admin = createAdminClient()
   const { data } = await admin
     .from('vh_order')
-    .select('id, created_at, package_name, buyer_first_name, buyer_last_name, email, amount_cents, status, paid_at, refunded_at, stop_requested_at, mollie_payment_id')
+    .select('id, created_at, package_name, buyer_first_name, buyer_last_name, email, amount_cents, status, paid_at, refunded_at')
     .order('created_at', { ascending: false })
     .limit(500)
 
@@ -26,17 +26,16 @@ export default async function BestellingenPage() {
     status:            (o.status as string) ?? 'open',
     paidAt:            (o.paid_at as string | null) ?? null,
     refundedAt:        (o.refunded_at as string | null) ?? null,
-    stopRequestedAt:   (o.stop_requested_at as string | null) ?? null,
   }))
 
-  const paid       = orders.filter(o => o.status === 'paid')
-  const refunded   = orders.filter(o => o.status === 'refunded')
-  const stopOpen   = paid.filter(o => o.stopRequestedAt)
+  const paid        = orders.filter(o => o.status === 'paid')
+  const refunded    = orders.filter(o => o.status === 'refunded')
   const paidRevenue = paid.reduce((s, o) => s + o.amountCents, 0)
+  const refundedTotal = refunded.reduce((s, o) => s + o.amountCents, 0)
 
   const stats = [
     { icon: CheckCircle2, label: 'Betaald', value: `${paid.length}`, sub: formatEuro(paidRevenue), color: 'text-emerald-600' },
-    { icon: Clock,        label: 'Openstaand stopverzoek', value: `${stopOpen.length}`, sub: 'te verwerken', color: 'text-amber-600' },
+    { icon: Wallet,       label: 'Netto-omzet', value: formatEuro(paidRevenue - refundedTotal), sub: 'na terugbetalingen', color: 'text-[#1f1683]' },
     { icon: Ban,          label: 'Terugbetaald', value: `${refunded.length}`, sub: 'geannuleerd', color: 'text-slate-500' },
   ]
 

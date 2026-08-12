@@ -3,7 +3,6 @@ import { notFound } from 'next/navigation'
 import { CheckCircle2, Clock, Circle, AlertCircle, Ban } from 'lucide-react'
 import { format } from 'date-fns'
 import { nl } from 'date-fns/locale'
-import { StopRequestButton } from './StopRequestButton'
 
 // ─── Statusstappen (publieksvriendelijke teksten) ─────────────────────────────
 
@@ -35,8 +34,6 @@ interface StatusData {
   has_order?: boolean
   paid?: boolean
   paid_at?: string | null
-  order_status?: string | null
-  stop_requested?: boolean
   refunded_at?: string | null
 }
 
@@ -134,9 +131,6 @@ export default async function StatusPage({
   const isAfgewezen   = d.enrollment_status === 'intake_afgewezen'
   const isGeannuleerd = d.enrollment_status === 'geannuleerd'
   const refundedOn    = fmt(d.refunded_at)
-  // Stoppen kan alleen bij een lopend, betaald traject.
-  const canRequestStop = Boolean(d.paid) && !isGeannuleerd && !isAfgewezen
-  const stopRequested  = Boolean(d.stop_requested)
 
   return (
     <main className="min-h-screen bg-[#f8fafc] py-10 px-4">
@@ -249,23 +243,6 @@ export default async function StatusPage({
             })}
           </div>
         </div>
-        )}
-
-        {/* Stopverzoek: lopend verzoek melden, anders de zelf-service knop tonen */}
-        {canRequestStop && (
-          stopRequested ? (
-            <div className="mt-6 rounded-xl border border-amber-200 bg-amber-50 p-5 flex items-start gap-3">
-              <Clock size={18} className="text-amber-600 shrink-0 mt-0.5" />
-              <div>
-                <p className="text-sm font-semibold text-amber-800">Stopverzoek in behandeling</p>
-                <p className="text-xs text-amber-700 mt-0.5 leading-relaxed">
-                  We hebben je verzoek om te stoppen ontvangen. Een medewerker verwerkt de terugbetaling; je ontvangt hierover bericht per e-mail.
-                </p>
-              </div>
-            </div>
-          ) : (
-            <StopRequestButton token={token} />
-          )
         )}
 
         {/* Contactblok */}

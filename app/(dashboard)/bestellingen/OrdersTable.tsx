@@ -3,7 +3,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { format } from 'date-fns'
 import { nl } from 'date-fns/locale'
-import { Loader2, XCircle, AlertTriangle } from 'lucide-react'
+import { Loader2, XCircle } from 'lucide-react'
 import { formatEuro } from '@/lib/payments/pricing'
 
 export interface OrderRow {
@@ -16,13 +16,11 @@ export interface OrderRow {
   status: string
   paidAt: string | null
   refundedAt: string | null
-  stopRequestedAt: string | null
 }
 
 const FILTERS = [
   { key: 'all',      label: 'Alle' },
   { key: 'paid',     label: 'Betaald' },
-  { key: 'stop',     label: 'Stopverzoek' },
   { key: 'refunded', label: 'Terugbetaald' },
   { key: 'other',    label: 'Overig' },
 ] as const
@@ -56,7 +54,6 @@ export function OrdersTable({ orders }: { orders: OrderRow[] }) {
     if (filter === 'all') return true
     if (filter === 'paid') return o.status === 'paid'
     if (filter === 'refunded') return o.status === 'refunded'
-    if (filter === 'stop') return o.status === 'paid' && o.stopRequestedAt
     return !['paid', 'refunded'].includes(o.status)
   })
 
@@ -106,26 +103,15 @@ export function OrdersTable({ orders }: { orders: OrderRow[] }) {
                   <td className="px-4 py-3 text-[#64748b]">{o.packageName}</td>
                   <td className="whitespace-nowrap px-4 py-3 text-right font-medium text-[#1e293b]">{formatEuro(o.amountCents)}</td>
                   <td className="px-4 py-3">
-                    <div className="flex flex-col gap-1">
-                      <span className={`inline-flex w-fit items-center rounded-full border px-2 py-0.5 text-xs font-medium ${STATUS_BADGE[o.status] ?? 'bg-slate-50 text-slate-500 border-slate-200'}`}>
-                        {STATUS_LABEL[o.status] ?? o.status}
-                      </span>
-                      {o.status === 'paid' && o.stopRequestedAt && (
-                        <span className="inline-flex w-fit items-center gap-1 text-[11px] font-medium text-amber-600">
-                          <AlertTriangle size={11} /> Stop gevraagd
-                        </span>
-                      )}
-                    </div>
+                    <span className={`inline-flex w-fit items-center rounded-full border px-2 py-0.5 text-xs font-medium ${STATUS_BADGE[o.status] ?? 'bg-slate-50 text-slate-500 border-slate-200'}`}>
+                      {STATUS_LABEL[o.status] ?? o.status}
+                    </span>
                   </td>
                   <td className="px-4 py-3 text-right">
                     {o.status === 'paid' ? (
                       <button
                         onClick={() => setRefundTarget(o)}
-                        className={`rounded-lg border px-3 py-1.5 text-xs font-semibold transition-colors ${
-                          o.stopRequestedAt
-                            ? 'border-red-200 bg-red-50 text-red-600 hover:bg-red-100'
-                            : 'border-[#e2e8f0] text-[#64748b] hover:bg-[#fff1f1] hover:text-red-600'
-                        }`}
+                        className="rounded-lg border border-[#e2e8f0] px-3 py-1.5 text-xs font-semibold text-[#64748b] transition-colors hover:bg-[#fff1f1] hover:text-red-600"
                       >
                         Terugbetalen
                       </button>

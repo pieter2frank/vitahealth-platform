@@ -317,7 +317,7 @@ export function factuurEmail(opts: {
   const intakeBlock = opts.intakeUrl ? `
     <div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:10px;padding:18px 22px;margin:0 0 8px;">
       <p style="margin:0 0 8px;font-size:13px;font-weight:700;color:#0369a1;">Rond je aanmelding af</p>
-      <p style="margin:0;font-size:13px;color:#475569;line-height:1.6;">In de intake vul je je gegevens aan, geef je toestemming en doorloop je een korte vragenlijst. Dit hoeft niet meteen — de onderstaande link blijft geldig.</p>
+      <p style="margin:0;font-size:13px;color:#475569;line-height:1.6;">In de intake vul je je gegevens aan, geef je toestemming en doorloop je een korte vragenlijst. Als je de intake later wilt afronden, kan onderstaande link worden gebruikt.</p>
     </div>
     ${btn(opts.intakeUrl, 'Ga naar de intake')}` : ''
 
