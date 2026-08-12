@@ -18,6 +18,7 @@ export async function POST(req: Request) {
   const type = b.type === 'fixed' ? 'fixed' : b.type === 'percent' ? 'percent' : ''
   const value = Number(b.value)
   const packageId = typeof b.packageId === 'string' && b.packageId ? b.packageId : null
+  const resellerId = typeof b.resellerId === 'string' && b.resellerId ? b.resellerId : null
   const maxUses = b.maxUses === null || b.maxUses === undefined || b.maxUses === '' ? null : Number(b.maxUses)
   const validUntil = typeof b.validUntil === 'string' && b.validUntil ? b.validUntil : null
   const note = typeof b.note === 'string' ? b.note.trim().slice(0, 200) : ''
@@ -28,11 +29,13 @@ export async function POST(req: Request) {
   if (type === 'percent' && value > 100) return NextResponse.json({ error: 'Een percentage kan niet hoger zijn dan 100.' }, { status: 400 })
   if (maxUses !== null && (!Number.isInteger(maxUses) || maxUses <= 0)) return NextResponse.json({ error: 'Max. gebruik moet een positief getal zijn.' }, { status: 400 })
   if (packageId && !isUuid(packageId)) return NextResponse.json({ error: 'Ongeldig pakket.' }, { status: 400 })
+  if (resellerId && !isUuid(resellerId)) return NextResponse.json({ error: 'Ongeldige reseller.' }, { status: 400 })
 
   const admin = createAdminClient()
   const { data, error } = await admin.from('vh_discount_code').insert({
     code, type, value: Math.round(value),
     package_id: packageId,
+    reseller_id: resellerId,
     max_uses: maxUses,
     valid_until: validUntil,
     note: note || null,

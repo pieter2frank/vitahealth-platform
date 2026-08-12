@@ -61,6 +61,9 @@ export async function POST(req: Request) {
     vat_rate:        price.vat_rate,
     discount_code:   dc ? dc.code : null,
     discount_cents:  price.discount_cents,
+    // Reseller-attributie vastleggen op de order (blijft kloppen ook als de code
+    // later wijzigt of verdwijnt).
+    reseller_id:     dc?.reseller_id ?? null,
   }).select('id').single()
   if (error || !order) {
     console.error('[payments] order aanmaken mislukt:', error)

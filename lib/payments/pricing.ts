@@ -10,6 +10,7 @@ export interface DiscountCode {
   id: string; code: string; type: 'percent' | 'fixed'; value: number
   package_id: string | null; max_uses: number | null; used_count: number
   valid_until: string | null; active: boolean
+  reseller_id?: string | null
 }
 
 export interface PriceBreakdown {

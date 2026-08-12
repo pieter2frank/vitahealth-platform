@@ -7,7 +7,7 @@ import { cn } from '@/lib/utils'
 import type { LucideIcon } from 'lucide-react'
 import {
   LayoutDashboard, TestTube2, Users, Building2, Stethoscope,
-  Package, LogOut, CircleUserRound, ClipboardList, ScrollText, Dumbbell, Settings, ShieldCheck, UserCog, FileCheck, BookOpen, FlaskConical, Sparkles, Receipt, TrendingUp, BadgePercent, Shield, ChevronDown,
+  Package, LogOut, CircleUserRound, ClipboardList, ScrollText, Dumbbell, Settings, ShieldCheck, UserCog, FileCheck, BookOpen, FlaskConical, Sparkles, Receipt, TrendingUp, BadgePercent, Shield, ChevronDown, Store,
 } from 'lucide-react'
 import { isAdmin, canManageKnowledge, canSeeResults } from '@/lib/auth/roles'
 import { APP_VERSION } from '@/lib/version'
@@ -46,6 +46,7 @@ const ADMIN_ITEMS: { href: string; label: string; icon: LucideIcon }[] = [
   { href: '/bestellingen',  label: 'Bestellingen',  icon: Receipt },
   { href: '/omzet',         label: 'Omzet',         icon: TrendingUp },
   { href: '/kortingscodes', label: 'Kortingscodes', icon: BadgePercent },
+  { href: '/resellers',     label: 'Resellers',     icon: Store },
 ]
 
 const ROLE_LABELS: Record<string, string> = {

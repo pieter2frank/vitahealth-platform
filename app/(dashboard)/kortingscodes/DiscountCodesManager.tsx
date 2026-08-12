@@ -14,6 +14,7 @@ export interface CodeRow {
   value: number
   packageId: string | null
   packageName: string | null
+  resellerName?: string | null
   maxUses: number | null
   usedCount: number
   validUntil: string | null
@@ -91,6 +92,11 @@ export function DiscountCodesManager({ rows, packages }: { rows: CodeRow[]; pack
                 <tr key={r.id} className="border-b border-[#f1f5f9] last:border-0 hover:bg-[#fafbfc]">
                   <td className="px-4 py-3">
                     <span className="font-mono font-semibold text-[#1e293b]">{r.code}</span>
+                    {r.resellerName && (
+                      <div className="mt-0.5 inline-flex items-center rounded-full border border-[#c7d7fd] bg-[#eef4ff] px-2 py-0.5 text-[10px] font-medium text-[#1f1683]">
+                        Reseller: {r.resellerName}
+                      </div>
+                    )}
                     {r.note && <div className="text-xs text-[#94a3b8]">{r.note}</div>}
                   </td>
                   <td className="px-4 py-3 font-medium text-[#1e293b]">{discountLabel(r.type, r.value)}</td>
