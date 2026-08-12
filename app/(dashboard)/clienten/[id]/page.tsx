@@ -45,7 +45,7 @@ export default async function ClientDetailPage({
 
   const { data: client } = await supabase
     .from('vh_client')
-    .select('id, first_name, last_name, email, phone, birth_date, gender, address, city, postal_code, created_at, enrollment_status')
+    .select('id, subject_ref, first_name, last_name, email, phone, birth_date, gender, address, city, postal_code, created_at, enrollment_status')
     .eq('id', id)
     .single()
 

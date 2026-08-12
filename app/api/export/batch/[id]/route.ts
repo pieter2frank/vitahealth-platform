@@ -55,12 +55,12 @@ export async function GET(
   // 2. Kits in deze batch met cliëntgegevens
   const { data: kits } = await supabase
     .from('vh_testkit')
-    .select('id, barcode, sample_date, vh_client(id, birth_date, gender)')
+    .select('id, barcode, sample_date, vh_client(id, subject_ref, birth_date, gender)')
     .eq('batch_id', id)
     .order('barcode', { ascending: true })
 
   const clientIds = (kits ?? [])
-    .map(k => (k.vh_client as unknown as Pick<Client, 'id' | 'birth_date' | 'gender'> | null)?.id)
+    .map(k => (k.vh_client as unknown as Pick<Client, 'id' | 'subject_ref' | 'birth_date' | 'gender'> | null)?.id)
     .filter((cid): cid is string => !!cid)
 
   // 3. Meest recente vragenlijstrespons per cliënt
@@ -81,7 +81,7 @@ export async function GET(
 
   // 4. Rijen opbouwen
   const rows = (kits ?? []).map(kit => {
-    const client    = kit.vh_client as unknown as Pick<Client, 'id' | 'birth_date' | 'gender'> | null
+    const client    = kit.vh_client as unknown as Pick<Client, 'id' | 'subject_ref' | 'birth_date' | 'gender'> | null
     const resp      = client ? responseMap.get(client.id) : null
     // Geslacht primair uit het cliëntrecord, anders uit de vragenlijst
     const genderRaw = (client?.gender ?? (resp?.d1_geslacht as string | undefined)) || ''
@@ -89,6 +89,9 @@ export async function GET(
     return {
       'Batch ID':                  batch.badge_id,
       'Kit ID':                    kit.barcode,
+      // Pseudoniem persoon-ID: stabiel per cliënt, waarmee Nightingale herhaaltests
+      // van dezelfde persoon kan koppelen en vergelijken (geen PII).
+      'Subject ID':                client?.subject_ref ?? '',
       'Date of Sample Collection': formatDob((kit.sample_date as string | null) ?? null),
       'Date of Birth':             formatDob(client?.birth_date ?? null),
       'Biological Sex':            genderRaw ? (GENDER_CODE[genderRaw] ?? 'other') : '',
@@ -100,6 +103,7 @@ export async function GET(
   ws['!cols'] = [
     { wch: 20 }, // Batch ID
     { wch: 20 }, // Kit ID
+    { wch: 38 }, // Subject ID
     { wch: 26 }, // Date of Sample Collection
     { wch: 14 }, // Date of Birth
     { wch: 14 }, // Biological Sex
