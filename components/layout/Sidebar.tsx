@@ -26,7 +26,6 @@ const NAV_GROUPS: NavItem[][] = [
     { href: '/dashboard',    label: 'Dashboard',    icon: LayoutDashboard, badgeKey: null },
     { href: '/testkits',     label: 'Testkits',      icon: TestTube2,       badgeKey: null },
     { href: '/aanvragen',    label: 'Aanvragen',     icon: ClipboardList,   badgeKey: 'newOrders' },
-    { href: '/bestellingen', label: 'Bestellingen',  icon: Receipt,         badgeKey: null },
     { href: '/clienten',     label: 'Cliënten',      icon: Users,           badgeKey: null },
     { href: '/bedrijven',    label: 'Bedrijven',     icon: Building2,       badgeKey: null },
     { href: '/arbodiensten', label: 'Arbodiensten',  icon: Stethoscope,     badgeKey: null },
@@ -129,6 +128,21 @@ export function Sidebar({ newOrderCount = 0 }: SidebarProps) {
             </Link>
           </>
         )}
+
+        {/* Bestellingen — betalingen, stopverzoeken en terugbetalingen (alle medewerkers) */}
+        <div className="my-2.5 border-t border-[#e2e8f0]" />
+        <Link
+          href="/bestellingen"
+          className={cn(
+            'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+            pathname === '/bestellingen' || pathname.startsWith('/bestellingen/')
+              ? 'bg-[#eef4ff] text-[#1f1683]'
+              : 'text-[#64748b] hover:bg-[#f8fafc] hover:text-[#1e293b]'
+          )}
+        >
+          <Receipt size={17} className={pathname.startsWith('/bestellingen') ? 'text-[#1f1683]' : 'text-[#94a3b8]'} />
+          <span className="flex-1">Bestellingen</span>
+        </Link>
 
         {/* Kennisbank — arts/leefstijlarts + admin (voedt het AI-advies) */}
         {canManageKnowledge(role) && (

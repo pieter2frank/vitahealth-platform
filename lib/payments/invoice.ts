@@ -2,6 +2,7 @@ import { PDFDocument, StandardFonts, rgb } from 'pdf-lib'
 import type { createAdminClient } from '@/lib/supabase/admin'
 import { COMPANY } from '@/lib/company'
 import { sendEmail } from '@/lib/email/send'
+import { factuurEmail, creditfactuurEmail } from '@/lib/email/templates'
 
 type Admin = ReturnType<typeof createAdminClient>
 
@@ -107,17 +108,19 @@ export async function generateInvoicePdf(d: InvoiceData): Promise<Buffer> {
 // opslaan in de bucket, record wegschrijven. `created` is false als hij al bestond.
 export async function createInvoiceForOrder(
   admin: Admin, orderId: string, type: 'invoice' | 'credit' = 'invoice',
-): Promise<{ created: boolean; number: string; pdf: Buffer | null; email: string }> {
+): Promise<{ created: boolean; number: string; pdf: Buffer | null; email: string; firstName: string | null }> {
   const { data: order } = await admin
     .from('vh_order')
     .select('id, email, package_name, amount_cents, vat_cents, vat_rate, paid_at, buyer_first_name, buyer_last_name, buyer_address, buyer_postal_code, buyer_city')
     .eq('id', orderId).single()
   if (!order) throw new Error('Order niet gevonden.')
 
+  const firstName = (order.buyer_first_name as string | null) || null
+
   const { data: existing } = await admin
     .from('vh_invoice').select('number').eq('order_id', orderId).eq('type', type).maybeSingle()
   if (existing?.number) {
-    return { created: false, number: existing.number as string, pdf: null, email: order.email as string }
+    return { created: false, number: existing.number as string, pdf: null, email: order.email as string, firstName }
   }
 
   const sign = type === 'credit' ? -1 : 1
@@ -154,7 +157,7 @@ export async function createInvoiceForOrder(
     storage_path: storagePath, issued_at: issuedAt,
   })
 
-  return { created: true, number, pdf, email: order.email as string }
+  return { created: true, number, pdf, email: order.email as string, firstName }
 }
 
 // Maakt de factuur (indien nieuw) en mailt hem als bijlage. Best-effort.
@@ -163,27 +166,12 @@ export async function createInvoiceForOrder(
 export async function issueInvoiceAndEmail(
   admin: Admin, orderId: string, type: 'invoice' | 'credit' = 'invoice', intakeUrl?: string | null,
 ): Promise<void> {
-  const { created, number, pdf, email } = await createInvoiceForOrder(admin, orderId, type)
+  const { created, number, pdf, email, firstName } = await createInvoiceForOrder(admin, orderId, type)
   if (!created || !pdf || !email) return
 
-  const isCredit = type === 'credit'
-  const subject = isCredit ? `Creditfactuur ${number} — Vita Health` : `Factuur ${number} — Vita Health`
-
-  const intakeBlock = !isCredit && intakeUrl ? `
-      <p>Rond wanneer het jou uitkomt je aanmelding af — je hoeft dit niet meteen te doen. Klik hieronder om verder te gaan; deze link blijft geldig.</p>
-      <p><a href="${intakeUrl}" style="display:inline-block;background:#1f1683;color:#fff;padding:11px 20px;border-radius:8px;text-decoration:none;font-weight:600">Ga naar de intake</a></p>
-      <p style="color:#94a3b8;font-size:12px">Werkt de knop niet? Kopieer deze link: <br>${intakeUrl}</p>` : ''
-
-  const html = `
-    <div style="font-family:system-ui,sans-serif;color:#1e293b;line-height:1.6">
-      <p>Beste,</p>
-      <p>${isCredit
-        ? `In de bijlage vind je de creditfactuur <strong>${number}</strong> voor je terugbetaling.`
-        : `Bedankt voor je bestelling. In de bijlage vind je je factuur <strong>${number}</strong>.`}</p>
-      ${intakeBlock}
-      <p style="color:#64748b;font-size:13px">Vragen? Bezoek onze <a href="https://helpdesk.vita-health.nl" style="color:#1f1683">helpdesk</a>.</p>
-      <p style="color:#94a3b8;font-size:13px">Vita Health</p>
-    </div>`
+  const { subject, html } = type === 'credit'
+    ? creditfactuurEmail({ firstName, number })
+    : factuurEmail({ firstName, number, intakeUrl })
 
   await sendEmail({ to: email, subject, html, attachments: [{ filename: `${number}.pdf`, content: pdf }] })
 }

@@ -303,6 +303,62 @@ export function intakeHervattingEmail(opts: {
   }
 }
 
+// ─── Factuur (na betaling) ────────────────────────────────────────────────────
+
+export function factuurEmail(opts: {
+  firstName?: string | null
+  number: string
+  intakeUrl?: string | null
+}): { subject: string; html: string } {
+  const hi = opts.firstName
+    ? greeting(opts.firstName)
+    : `<p style="margin:0 0 20px;color:#1e293b;font-size:15px;font-weight:600;">Beste,</p>`
+
+  const intakeBlock = opts.intakeUrl ? `
+    <div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:10px;padding:18px 22px;margin:0 0 8px;">
+      <p style="margin:0 0 8px;font-size:13px;font-weight:700;color:#0369a1;">Rond je aanmelding af</p>
+      <p style="margin:0;font-size:13px;color:#475569;line-height:1.6;">In de intake vul je je gegevens aan, geef je toestemming en doorloop je een korte vragenlijst. Dit hoeft niet meteen — de onderstaande link blijft geldig.</p>
+    </div>
+    ${btn(opts.intakeUrl, 'Ga naar de intake')}` : ''
+
+  const body = `
+    ${hi}
+    ${p(`Bedankt voor je bestelling. In de bijlage vind je je factuur <strong style="color:#1e293b;">${esc(opts.number)}</strong>.`)}
+    ${intakeBlock}
+    ${p('Vragen? Bezoek onze <a href="https://helpdesk.vita-health.nl" style="color:#1f1683;">helpdesk</a>.', 'text-align:center;font-size:12px;color:#94a3b8;')}
+  `
+  return {
+    subject: `Factuur ${opts.number} — Vita Health`,
+    html: shell('Bedankt voor je bestelling', body),
+  }
+}
+
+// ─── Creditfactuur (na terugbetaling) ─────────────────────────────────────────
+
+export function creditfactuurEmail(opts: {
+  firstName?: string | null
+  number: string
+}): { subject: string; html: string } {
+  const hi = opts.firstName
+    ? greeting(opts.firstName)
+    : `<p style="margin:0 0 20px;color:#1e293b;font-size:15px;font-weight:600;">Beste,</p>`
+
+  const body = `
+    ${hi}
+    ${p(`In de bijlage vind je de creditfactuur <strong style="color:#1e293b;">${esc(opts.number)}</strong> voor je terugbetaling.`)}
+
+    <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:16px 22px;margin:0 0 8px;">
+      <p style="margin:0;font-size:13px;color:#475569;line-height:1.6;">Het betaalde bedrag is teruggestort op de rekening waarmee je hebt betaald. Afhankelijk van je bank kan de verwerking enkele werkdagen duren.</p>
+    </div>
+
+    ${p('Vragen? Bezoek onze <a href="https://helpdesk.vita-health.nl" style="color:#1f1683;">helpdesk</a>.', 'text-align:center;font-size:12px;color:#94a3b8;')}
+  `
+  return {
+    subject: `Creditfactuur ${opts.number} — Vita Health`,
+    html: shell('Je terugbetaling', body),
+  }
+}
+
 // ─── 5. Medewerker uitnodiging ────────────────────────────────────────────────
 
 export function medewerkerUitnodigingEmail(opts: {
