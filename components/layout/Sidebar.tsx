@@ -7,7 +7,7 @@ import { cn } from '@/lib/utils'
 import type { LucideIcon } from 'lucide-react'
 import {
   LayoutDashboard, TestTube2, Users, Building2, Stethoscope,
-  Package, LogOut, CircleUserRound, ClipboardList, ScrollText, Dumbbell, Settings, ShieldCheck, UserCog, FileCheck, BookOpen, FlaskConical, Sparkles, Receipt,
+  Package, LogOut, CircleUserRound, ClipboardList, ScrollText, Dumbbell, Settings, ShieldCheck, UserCog, FileCheck, BookOpen, FlaskConical, Sparkles, Receipt, TrendingUp,
 } from 'lucide-react'
 import { isAdmin, canManageKnowledge, canSeeResults } from '@/lib/auth/roles'
 import { APP_VERSION } from '@/lib/version'
@@ -216,6 +216,19 @@ export function Sidebar({ newOrderCount = 0 }: SidebarProps) {
           >
             <ShieldCheck size={17} className={pathname.startsWith('/auditlog') ? 'text-[#1f1683]' : 'text-[#94a3b8]'} />
             <span className="flex-1">Auditlog</span>
+            <span className="text-[9px] font-semibold uppercase tracking-wide text-[#94a3b8] border border-[#e2e8f0] rounded px-1">Admin</span>
+          </Link>
+          <Link
+            href="/omzet"
+            className={cn(
+              'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+              pathname.startsWith('/omzet')
+                ? 'bg-[#eef4ff] text-[#1f1683]'
+                : 'text-[#94a3b8] hover:bg-[#f8fafc] hover:text-[#1e293b]'
+            )}
+          >
+            <TrendingUp size={17} className={pathname.startsWith('/omzet') ? 'text-[#1f1683]' : 'text-[#94a3b8]'} />
+            <span className="flex-1">Omzet</span>
             <span className="text-[9px] font-semibold uppercase tracking-wide text-[#94a3b8] border border-[#e2e8f0] rounded px-1">Admin</span>
           </Link>
         </div>
