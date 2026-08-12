@@ -17,3 +17,10 @@ Plaats de bijbehorende documenten in de juiste map. Elke map bevat een README me
 | `10-assurance-testen/` | Assurance & testen |
 | `11-wettelijk-kader/` | Wettelijk kader (breder) |
 | `12-aansprakelijkheid-verzekering/` | Aansprakelijkheid & verzekering |
+
+## Aanvullende documentatie
+
+| Document | Omschrijving |
+|----------|--------------|
+| [`betaalmuur-vita-health-v1.0.md`](betaalmuur-vita-health-v1.0.md) | Betaalmuur & facturatie — functioneel en technisch ontwerp (markdown) |
+| [`../betaalmuur-vita-health-v1.0.docx`](../betaalmuur-vita-health-v1.0.docx) | Zelfde document als Word-versie |
