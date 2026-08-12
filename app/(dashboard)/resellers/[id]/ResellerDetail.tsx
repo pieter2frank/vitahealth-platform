@@ -16,11 +16,25 @@ export interface ResellerCode {
   packageId: string | null; maxUses: number | null; usedCount: number
   validUntil: string | null; active: boolean
 }
+export interface ResellerStats {
+  usedCount: number; grossCents: number; netCents: number; discountCents: number
+  refundCount: number; refundGrossCents: number
+}
+
+function StatCard({ label, value, sub, strong }: { label: string; value: string; sub?: string; strong?: boolean }) {
+  return (
+    <div className="rounded-xl border border-[#e2e8f0] bg-white p-4">
+      <p className="text-xs font-medium text-[#64748b]">{label}</p>
+      <p className={`mt-1.5 text-2xl font-bold ${strong ? 'text-[#1f1683]' : 'text-[#1e293b]'}`}>{value}</p>
+      {sub && <p className="text-xs text-[#94a3b8]">{sub}</p>}
+    </div>
+  )
+}
 
 const discountLabel = (t: 'percent' | 'fixed', v: number) => (t === 'percent' ? `${v}%` : formatEuro(v))
 const fmtDate = (iso: string | null) => { if (!iso) return '—'; try { return format(new Date(iso), 'd MMM yyyy', { locale: nl }) } catch { return '—' } }
 
-export function ResellerDetail({ data, codes, packages }: { data: ResellerData; codes: ResellerCode[]; packages: PackageOption[] }) {
+export function ResellerDetail({ data, codes, packages, stats }: { data: ResellerData; codes: ResellerCode[]; packages: PackageOption[]; stats: ResellerStats }) {
   const router = useRouter()
   const pkgName = new Map(packages.map(p => [p.id, p.name]))
   const [showCodeForm, setShowCodeForm] = useState(false)
@@ -51,6 +65,14 @@ export function ResellerDetail({ data, codes, packages }: { data: ResellerData; 
   return (
     <>
       <h1 className="mb-5 text-xl font-bold text-[#1e293b]">{data.name}</h1>
+
+      {/* Cijfers */}
+      <div className="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
+        <StatCard label="Keer gebruikt" value={`${stats.usedCount}`} sub="betaalde bestellingen" />
+        <StatCard label="Bruto-omzet" value={formatEuro(stats.grossCents)} sub="incl. btw" strong />
+        <StatCard label="Netto-omzet" value={formatEuro(stats.netCents)} sub="excl. btw" />
+        <StatCard label="Gegeven korting" value={formatEuro(stats.discountCents)} sub={stats.refundCount > 0 ? `${stats.refundCount}× terugbetaald (${formatEuro(stats.refundGrossCents)})` : 'via deze reseller'} />
+      </div>
 
       {/* Gegevens */}
       <ResellerForm data={data} onSaved={() => router.refresh()} />

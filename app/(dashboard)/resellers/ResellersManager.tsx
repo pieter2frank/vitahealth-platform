@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Loader2, XCircle, Plus, ChevronRight } from 'lucide-react'
+import { formatEuro } from '@/lib/payments/pricing'
 
 export interface ResellerRow {
   id: string
@@ -13,6 +14,9 @@ export interface ResellerRow {
   city: string | null
   active: boolean
   codeCount: number
+  usedCount: number
+  grossCents: number
+  netCents: number
 }
 
 export function ResellersManager({ rows }: { rows: ResellerRow[] }) {
@@ -39,15 +43,17 @@ export function ResellersManager({ rows }: { rows: ResellerRow[] }) {
               <tr className="border-b border-[#e2e8f0] bg-[#f8fafc] text-left text-xs font-semibold uppercase tracking-wide text-[#94a3b8]">
                 <th className="px-4 py-3">Naam</th>
                 <th className="px-4 py-3">Contact</th>
-                <th className="px-4 py-3">Plaats</th>
                 <th className="px-4 py-3">Codes</th>
+                <th className="px-4 py-3 text-right">Gebruikt</th>
+                <th className="px-4 py-3 text-right">Bruto</th>
+                <th className="px-4 py-3 text-right">Netto</th>
                 <th className="px-4 py-3">Status</th>
                 <th className="px-4 py-3"></th>
               </tr>
             </thead>
             <tbody>
               {rows.length === 0 && (
-                <tr><td colSpan={6} className="px-4 py-10 text-center text-[#94a3b8]">Nog geen resellers.</td></tr>
+                <tr><td colSpan={8} className="px-4 py-10 text-center text-[#94a3b8]">Nog geen resellers.</td></tr>
               )}
               {rows.map(r => (
                 <tr
@@ -60,8 +66,10 @@ export function ResellersManager({ rows }: { rows: ResellerRow[] }) {
                     {r.contactPerson || '—'}
                     {r.email && <div className="text-xs text-[#94a3b8]">{r.email}</div>}
                   </td>
-                  <td className="px-4 py-3 text-[#64748b]">{r.city || '—'}</td>
                   <td className="px-4 py-3 tabular-nums text-[#64748b]">{r.codeCount}</td>
+                  <td className="px-4 py-3 text-right tabular-nums text-[#64748b]">{r.usedCount}</td>
+                  <td className="px-4 py-3 text-right tabular-nums font-medium text-[#1e293b]">{formatEuro(r.grossCents)}</td>
+                  <td className="px-4 py-3 text-right tabular-nums text-[#64748b]">{formatEuro(r.netCents)}</td>
                   <td className="px-4 py-3">
                     <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium ${
                       r.active ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-slate-200 bg-slate-50 text-slate-500'
