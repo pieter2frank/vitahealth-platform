@@ -1,5 +1,5 @@
 'use client'
-import { Fragment } from 'react'
+import { Fragment, useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { usePathname, useRouter } from 'next/navigation'
@@ -7,7 +7,7 @@ import { cn } from '@/lib/utils'
 import type { LucideIcon } from 'lucide-react'
 import {
   LayoutDashboard, TestTube2, Users, Building2, Stethoscope,
-  Package, LogOut, CircleUserRound, ClipboardList, ScrollText, Dumbbell, Settings, ShieldCheck, UserCog, FileCheck, BookOpen, FlaskConical, Sparkles, Receipt, TrendingUp, BadgePercent,
+  Package, LogOut, CircleUserRound, ClipboardList, ScrollText, Dumbbell, Settings, ShieldCheck, UserCog, FileCheck, BookOpen, FlaskConical, Sparkles, Receipt, TrendingUp, BadgePercent, Shield, ChevronDown,
 } from 'lucide-react'
 import { isAdmin, canManageKnowledge, canSeeResults } from '@/lib/auth/roles'
 import { APP_VERSION } from '@/lib/version'
@@ -38,6 +38,16 @@ const NAV_GROUPS: NavItem[][] = [
   ],
 ]
 
+// Admin-only menu-items, gegroepeerd onder het uitklapbare 'Admin'-item.
+const ADMIN_ITEMS: { href: string; label: string; icon: LucideIcon }[] = [
+  { href: '/medewerkers',   label: 'Medewerkers',   icon: UserCog },
+  { href: '/toestemmingen', label: 'Toestemmingen', icon: FileCheck },
+  { href: '/auditlog',      label: 'Auditlog',      icon: ShieldCheck },
+  { href: '/bestellingen',  label: 'Bestellingen',  icon: Receipt },
+  { href: '/omzet',         label: 'Omzet',         icon: TrendingUp },
+  { href: '/kortingscodes', label: 'Kortingscodes', icon: BadgePercent },
+]
+
 const ROLE_LABELS: Record<string, string> = {
   admin:         'Admin',
   arts:          'Arts',
@@ -58,6 +68,10 @@ export function Sidebar({ newOrderCount = 0 }: SidebarProps) {
   const pathname = usePathname()
   const router = useRouter()
   const { email, name, role } = useUser()
+
+  // Admin-submenu: standaard uitgeklapt als je op een admin-pagina staat.
+  const adminActive = ADMIN_ITEMS.some(i => pathname === i.href || pathname.startsWith(i.href + '/'))
+  const [adminOpen, setAdminOpen] = useState(adminActive)
 
   async function handleSignOut() {
     const supabase = createClient()
@@ -161,87 +175,47 @@ export function Sidebar({ newOrderCount = 0 }: SidebarProps) {
         )}
       </nav>
 
-      {/* Admin: medewerkers + auditlog onderaan nav */}
+      {/* Admin: uitklapbaar menu met de admin-only pagina's */}
       {isAdmin(role) && (
-        <div className="px-3 pt-2 pb-1 border-t border-[#f1f5f9] mt-1 space-y-0.5">
-          <Link
-            href="/medewerkers"
+        <div className="px-3 pt-2 pb-1 border-t border-[#f1f5f9] mt-1">
+          <button
+            type="button"
+            onClick={() => setAdminOpen(o => !o)}
+            aria-expanded={adminOpen}
             className={cn(
-              'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
-              pathname.startsWith('/medewerkers')
+              'flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+              adminActive && !adminOpen
                 ? 'bg-[#eef4ff] text-[#1f1683]'
-                : 'text-[#94a3b8] hover:bg-[#f8fafc] hover:text-[#1e293b]'
+                : 'text-[#64748b] hover:bg-[#f8fafc] hover:text-[#1e293b]'
             )}
           >
-            <UserCog size={17} className={pathname.startsWith('/medewerkers') ? 'text-[#1f1683]' : 'text-[#94a3b8]'} />
-            <span className="flex-1">Medewerkers</span>
-            <span className="text-[9px] font-semibold uppercase tracking-wide text-[#94a3b8] border border-[#e2e8f0] rounded px-1">Admin</span>
-          </Link>
-          <Link
-            href="/toestemmingen"
-            className={cn(
-              'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
-              pathname.startsWith('/toestemmingen')
-                ? 'bg-[#eef4ff] text-[#1f1683]'
-                : 'text-[#94a3b8] hover:bg-[#f8fafc] hover:text-[#1e293b]'
-            )}
-          >
-            <FileCheck size={17} className={pathname.startsWith('/toestemmingen') ? 'text-[#1f1683]' : 'text-[#94a3b8]'} />
-            <span className="flex-1">Toestemmingen</span>
-            <span className="text-[9px] font-semibold uppercase tracking-wide text-[#94a3b8] border border-[#e2e8f0] rounded px-1">Admin</span>
-          </Link>
-          <Link
-            href="/auditlog"
-            className={cn(
-              'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
-              pathname.startsWith('/auditlog')
-                ? 'bg-[#eef4ff] text-[#1f1683]'
-                : 'text-[#94a3b8] hover:bg-[#f8fafc] hover:text-[#1e293b]'
-            )}
-          >
-            <ShieldCheck size={17} className={pathname.startsWith('/auditlog') ? 'text-[#1f1683]' : 'text-[#94a3b8]'} />
-            <span className="flex-1">Auditlog</span>
-            <span className="text-[9px] font-semibold uppercase tracking-wide text-[#94a3b8] border border-[#e2e8f0] rounded px-1">Admin</span>
-          </Link>
-          <Link
-            href="/bestellingen"
-            className={cn(
-              'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
-              pathname.startsWith('/bestellingen')
-                ? 'bg-[#eef4ff] text-[#1f1683]'
-                : 'text-[#94a3b8] hover:bg-[#f8fafc] hover:text-[#1e293b]'
-            )}
-          >
-            <Receipt size={17} className={pathname.startsWith('/bestellingen') ? 'text-[#1f1683]' : 'text-[#94a3b8]'} />
-            <span className="flex-1">Bestellingen</span>
-            <span className="text-[9px] font-semibold uppercase tracking-wide text-[#94a3b8] border border-[#e2e8f0] rounded px-1">Admin</span>
-          </Link>
-          <Link
-            href="/omzet"
-            className={cn(
-              'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
-              pathname.startsWith('/omzet')
-                ? 'bg-[#eef4ff] text-[#1f1683]'
-                : 'text-[#94a3b8] hover:bg-[#f8fafc] hover:text-[#1e293b]'
-            )}
-          >
-            <TrendingUp size={17} className={pathname.startsWith('/omzet') ? 'text-[#1f1683]' : 'text-[#94a3b8]'} />
-            <span className="flex-1">Omzet</span>
-            <span className="text-[9px] font-semibold uppercase tracking-wide text-[#94a3b8] border border-[#e2e8f0] rounded px-1">Admin</span>
-          </Link>
-          <Link
-            href="/kortingscodes"
-            className={cn(
-              'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
-              pathname.startsWith('/kortingscodes')
-                ? 'bg-[#eef4ff] text-[#1f1683]'
-                : 'text-[#94a3b8] hover:bg-[#f8fafc] hover:text-[#1e293b]'
-            )}
-          >
-            <BadgePercent size={17} className={pathname.startsWith('/kortingscodes') ? 'text-[#1f1683]' : 'text-[#94a3b8]'} />
-            <span className="flex-1">Kortingscodes</span>
-            <span className="text-[9px] font-semibold uppercase tracking-wide text-[#94a3b8] border border-[#e2e8f0] rounded px-1">Admin</span>
-          </Link>
+            <Shield size={17} className={adminActive ? 'text-[#1f1683]' : 'text-[#94a3b8]'} />
+            <span className="flex-1 text-left">Admin</span>
+            <ChevronDown size={15} className={cn('text-[#94a3b8] transition-transform', adminOpen && 'rotate-180')} />
+          </button>
+
+          {adminOpen && (
+            <div className="mt-0.5 ml-4 space-y-0.5 border-l border-[#e2e8f0] pl-2">
+              {ADMIN_ITEMS.map(({ href, label, icon: Icon }) => {
+                const active = pathname === href || pathname.startsWith(href + '/')
+                return (
+                  <Link
+                    key={href}
+                    href={href}
+                    className={cn(
+                      'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+                      active
+                        ? 'bg-[#eef4ff] text-[#1f1683]'
+                        : 'text-[#94a3b8] hover:bg-[#f8fafc] hover:text-[#1e293b]'
+                    )}
+                  >
+                    <Icon size={16} className={active ? 'text-[#1f1683]' : 'text-[#94a3b8]'} />
+                    <span className="flex-1">{label}</span>
+                  </Link>
+                )
+              })}
+            </div>
+          )}
         </div>
       )}
 
