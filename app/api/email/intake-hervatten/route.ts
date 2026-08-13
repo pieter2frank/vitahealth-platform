@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { getClientRecord } from '@/lib/pii/identity'
 import { intakeHervattingEmail } from '@/lib/email/templates'
 import { isUuid } from '@/lib/validation'
 import { logAuditEvent } from '@/lib/audit'
@@ -17,11 +18,8 @@ export async function POST(req: Request) {
   const admin = createAdminClient()
 
   // Cliënt ophalen
-  const { data: client } = await admin
-    .from('vh_client')
-    .select('id, first_name, email')
-    .eq('id', clientId)
-    .single()
+  // Fase 2 PII-kluis: dossier + identiteit via de toegangslaag.
+  const client = await getClientRecord(admin, clientId)
 
   if (!client) {
     return NextResponse.json({ error: 'Cliënt niet gevonden.' }, { status: 404 })

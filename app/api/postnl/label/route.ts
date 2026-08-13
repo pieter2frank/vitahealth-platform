@@ -8,6 +8,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { getClientRecord } from '@/lib/pii/identity'
 import { createShipment, splitAddress, type PostNLReceiver } from '@/lib/postnl'
 import { kitVerzondenEmail } from '@/lib/email/templates'
 import { logAuditEvent } from '@/lib/audit'
@@ -27,7 +28,7 @@ export async function POST(req: Request) {
   // Kit + gekoppelde cliënt ophalen
   const { data: kit } = await admin
     .from('vh_testkit')
-    .select('id, barcode, assigned_client_id, tracking_code, vh_client(first_name, last_name, email, address, city, postal_code)')
+    .select('id, barcode, assigned_client_id, tracking_code')
     .eq('id', kitId)
     .single()
 
@@ -36,10 +37,10 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Er is al een verzendlabel aangemaakt voor deze kit.' }, { status: 409 })
   }
 
-  const client = kit.vh_client as unknown as {
-    first_name: string; last_name: string; email: string | null
-    address: string | null; city: string | null; postal_code: string | null
-  } | null
+  // Fase 2 PII-kluis: naam/adres via de toegangslaag (niet meer via de join).
+  const client = kit.assigned_client_id
+    ? await getClientRecord(admin, kit.assigned_client_id as string)
+    : null
 
   if (!client) return NextResponse.json({ error: 'Geen cliënt aan deze kit gekoppeld.' }, { status: 400 })
   if (!client.address || !client.postal_code || !client.city) {

@@ -1,4 +1,5 @@
 import { createAdminClient } from '@/lib/supabase/admin'
+import { getIdentity } from '@/lib/pii/identity'
 import { favorability, calcBmi, bmiLabel, ageFrom, markerAttention } from '@/lib/health-scoring'
 
 // Stelt een GEPSEUDONIMISEERD casusdocument samen uit het dossier: kenmerken,
@@ -51,9 +52,12 @@ export interface CaseDoc { text: string; title: string; hasData: boolean }
 export async function buildClientCaseText(clientId: string): Promise<CaseDoc> {
   const admin = createAdminClient()
 
-  const { data: client } = await admin
-    .from('vh_client').select('gender, birth_date').eq('id', clientId).maybeSingle()
-  const age = ageFrom(client?.birth_date ?? null)
+  // Fase 2 PII-kluis: geboortedatum via de toegangslaag; geslacht blijft op vh_client.
+  const [{ data: client }, identity] = await Promise.all([
+    admin.from('vh_client').select('gender').eq('id', clientId).maybeSingle(),
+    getIdentity(admin, clientId),
+  ])
+  const age = ageFrom(identity?.birthDate ?? null)
   const gender = client?.gender ? (GENDER[client.gender] ?? client.gender) : null
 
   const { data: qr } = await admin

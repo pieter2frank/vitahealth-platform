@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { getIdentity } from '@/lib/pii/identity'
 import { requireRole } from '@/lib/auth/guard'
 import { isUuid } from '@/lib/validation'
 import { getAiProvider } from '@/lib/ai'
@@ -67,13 +68,15 @@ export async function POST(req: Request) {
     }
 
     const [{ data: client }, { data: ann }] = await Promise.all([
-      admin.from('vh_client').select('gender, birth_date').eq('id', clientId).maybeSingle(),
+      admin.from('vh_client').select('gender').eq('id', clientId).maybeSingle(),
       admin.from('vh_annotation')
         .select('advies, algemeen_beeld, submitted_at')
         .eq('client_id', clientId).eq('status', 'ingediend')
         .order('submitted_at', { ascending: false }).limit(1).maybeSingle(),
     ])
-    const c = client as ClientRel | null
+    // Fase 2 PII-kluis: geboortedatum via de toegangslaag.
+    const identity = await getIdentity(admin, clientId)
+    const c: ClientRel | null = client ? { gender: (client as { gender: string | null }).gender, birth_date: identity?.birthDate ?? null } : null
 
     const outputs: Record<string, { text: string; ms: number; error?: string }> = {}
     for (const v of variants) outputs[v.key] = await runOne(v.provider, ctx.system, ctx.user)

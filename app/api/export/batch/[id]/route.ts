@@ -1,4 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
+import { getIdentities } from '@/lib/pii/identity'
 import * as XLSX from 'xlsx'
 import { isUuid } from '@/lib/validation'
 import type { Client } from '@/types'
@@ -55,13 +57,16 @@ export async function GET(
   // 2. Kits in deze batch met cliëntgegevens
   const { data: kits } = await supabase
     .from('vh_testkit')
-    .select('id, barcode, sample_date, vh_client(id, subject_ref, birth_date, gender)')
+    .select('id, barcode, sample_date, vh_client(id, subject_ref, gender)')
     .eq('batch_id', id)
     .order('barcode', { ascending: true })
 
   const clientIds = (kits ?? [])
-    .map(k => (k.vh_client as unknown as Pick<Client, 'id' | 'subject_ref' | 'birth_date' | 'gender'> | null)?.id)
+    .map(k => (k.vh_client as unknown as Pick<Client, 'id' | 'subject_ref' | 'gender'> | null)?.id)
     .filter((cid): cid is string => !!cid)
+
+  // Fase 2 PII-kluis: geboortedatum via de toegangslaag (batch, ontsleuteld).
+  const identities = await getIdentities(createAdminClient(), clientIds)
 
   // 3. Meest recente vragenlijstrespons per cliënt
   const responseMap = new Map<string, Record<string, unknown>>()
@@ -81,7 +86,8 @@ export async function GET(
 
   // 4. Rijen opbouwen
   const rows = (kits ?? []).map(kit => {
-    const client    = kit.vh_client as unknown as Pick<Client, 'id' | 'subject_ref' | 'birth_date' | 'gender'> | null
+    const client    = kit.vh_client as unknown as Pick<Client, 'id' | 'subject_ref' | 'gender'> | null
+    const identity  = client ? identities.get(client.id) : null
     const resp      = client ? responseMap.get(client.id) : null
     // Geslacht primair uit het cliëntrecord, anders uit de vragenlijst
     const genderRaw = (client?.gender ?? (resp?.d1_geslacht as string | undefined)) || ''
@@ -93,7 +99,7 @@ export async function GET(
       // van dezelfde persoon kan koppelen en vergelijken (geen PII).
       'Subject ID':                client?.subject_ref ?? '',
       'Date of Sample Collection': formatDob((kit.sample_date as string | null) ?? null),
-      'Date of Birth':             formatDob(client?.birth_date ?? null),
+      'Date of Birth':             formatDob(identity?.birthDate ?? null),
       'Biological Sex':            genderRaw ? (GENDER_CODE[genderRaw] ?? 'other') : '',
     }
   })

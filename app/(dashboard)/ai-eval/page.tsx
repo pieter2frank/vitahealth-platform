@@ -1,5 +1,6 @@
 import { requireRolePage } from '@/lib/auth/guard'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { getIdentities } from '@/lib/pii/identity'
 import { caseLabel } from '@/lib/annotation'
 import { getAiProvider } from '@/lib/ai'
 import { anthropicProvider } from '@/lib/ai/anthropic'
@@ -22,15 +23,17 @@ export default async function AiEvalPage() {
     .order('submitted_at', { ascending: false })
 
   const clientIds = [...new Set((anns ?? []).map(a => a.client_id as string))]
+  // Fase 2 PII-kluis: geboortedatum via de toegangslaag (batch).
   const { data: clients } = clientIds.length
-    ? await admin.from('vh_client').select('id, gender, birth_date').in('id', clientIds)
-    : { data: [] as { id: string; gender: string | null; birth_date: string | null }[] }
+    ? await admin.from('vh_client').select('id, gender').in('id', clientIds)
+    : { data: [] as { id: string; gender: string | null }[] }
+  const identities = await getIdentities(admin, clientIds)
 
   const byId = new Map((clients ?? []).map(c => [c.id, c]))
   const options = clientIds
     .map(id => {
       const c = byId.get(id)
-      return { id, label: caseLabel(c?.birth_date ?? null, c?.gender ?? null) }
+      return { id, label: caseLabel(identities.get(id)?.birthDate ?? null, c?.gender ?? null) }
     })
     .filter(o => byId.has(o.id))
 

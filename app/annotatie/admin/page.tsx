@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { requireAnnotationAccess } from '@/lib/auth/guard'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { getIdentities } from '@/lib/pii/identity'
 import { caseLabel } from '@/lib/annotation'
 import { RondeForm } from './RondeForm'
 import { formatDate } from '@/lib/utils'
@@ -39,9 +40,11 @@ export default async function AdminRondesPage() {
   }
   const eligibleIds = [...latestReport.keys()].filter(id => withQ.has(id))
 
+  // Fase 2 PII-kluis: geboortedatum via de toegangslaag (batch).
   const { data: clients } = eligibleIds.length
-    ? await admin.from('vh_client').select('id, gender, birth_date').in('id', eligibleIds)
-    : { data: [] as { id: string; gender: string | null; birth_date: string | null }[] }
+    ? await admin.from('vh_client').select('id, gender').in('id', eligibleIds)
+    : { data: [] as { id: string; gender: string | null }[] }
+  const identities = await getIdentities(admin, eligibleIds)
 
   const options = (clients ?? [])
     .map(c => {
@@ -53,7 +56,7 @@ export default async function AdminRondesPage() {
         .filter(x => x.result_category && x.result_category !== 'average_or_lower')
         .map(x => DISEASE[x.disease] ?? x.disease)
       if (risks.length) meta.push(`risico: ${risks.join(', ')}`)
-      return { id: c.id, label: caseLabel(c.birth_date, c.gender), meta: meta.join(' · ') }
+      return { id: c.id, label: caseLabel(identities.get(c.id)?.birthDate ?? null, c.gender), meta: meta.join(' · ') }
     })
     .sort((a, b) => a.label.localeCompare(b.label))
 

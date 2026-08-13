@@ -89,6 +89,45 @@ export async function findClientIdByEmail(admin: Admin, email: string): Promise<
 }
 
 /**
+ * Pseudoniem dossier + ontsleutelde identiteit, samengevoegd in de oude
+ * (snake_case) vorm van vh_client. Handig als drop-in vervanger van een
+ * `select('id, first_name, …')` op vh_client (fase 2): de aanroeper hoeft
+ * alleen de query te vervangen, niet de veldnamen.
+ */
+export interface ClientRecord {
+  id: string; subject_ref: string | null; gender: string | null
+  enrollment_status: string | null; created_at: string | null
+  first_name: string; last_name: string
+  email: string | null; phone: string | null; birth_date: string | null
+  address: string | null; postal_code: string | null; city: string | null
+}
+
+export async function getClientRecord(admin: Admin, clientId: string): Promise<ClientRecord | null> {
+  const [{ data: c }, identity] = await Promise.all([
+    admin.from('vh_client')
+      .select('id, subject_ref, gender, enrollment_status, created_at')
+      .eq('id', clientId).maybeSingle(),
+    getIdentity(admin, clientId),
+  ])
+  if (!c) return null
+  return {
+    id: c.id as string,
+    subject_ref:       (c.subject_ref as string | null) ?? null,
+    gender:            (c.gender as string | null) ?? null,
+    enrollment_status: (c.enrollment_status as string | null) ?? null,
+    created_at:        (c.created_at as string | null) ?? null,
+    first_name:  identity?.firstName ?? '',
+    last_name:   identity?.lastName ?? '',
+    email:       identity?.email ?? null,
+    phone:       identity?.phone ?? null,
+    birth_date:  identity?.birthDate ?? null,
+    address:     identity?.address ?? null,
+    postal_code: identity?.postalCode ?? null,
+    city:        identity?.city ?? null,
+  }
+}
+
+/**
  * Schrijft (versleuteld) identiteitsvelden voor een cliënt; maakt de kluisrij
  * aan als die nog niet bestaat. Alleen meegegeven velden worden geraakt;
  * een expliciete null wist het veld. Bij e-mail wordt ook email_hash gezet.

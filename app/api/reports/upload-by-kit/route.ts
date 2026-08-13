@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { requireRole } from '@/lib/auth/guard'
+import { getIdentity } from '@/lib/pii/identity'
 import { processReportDocument, kitIdFromFilename } from '@/lib/reports/process'
 
 // POST /api/reports/upload-by-kit  (multipart/form-data, veld "file")
@@ -49,9 +50,9 @@ export async function POST(req: Request) {
   }
   const clientId = kit.assigned_client_id as string
 
-  const { data: client } = await admin
-    .from('vh_client').select('first_name, last_name').eq('id', clientId).maybeSingle()
-  const clientName = client ? `${client.first_name} ${client.last_name}` : '—'
+  // Fase 2 PII-kluis: naam via de toegangslaag.
+  const identity = await getIdentity(admin, clientId)
+  const clientName = identity ? `${identity.firstName ?? ''} ${identity.lastName ?? ''}`.trim() || '—' : '—'
 
   // PDF in de private bucket zetten (zelfde padconventie als het dossier).
   const path = `${clientId}/${crypto.randomUUID()}-${file.name}`
