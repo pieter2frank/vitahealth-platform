@@ -1,7 +1,7 @@
 import type { createAdminClient } from '@/lib/supabase/admin'
 import { getOrCreateIntakeToken } from '@/lib/intake-token'
 import { issueInvoiceAndEmail } from '@/lib/payments/invoice'
-import { upsertIdentity, type IdentityFields } from '@/lib/pii/identity'
+import { upsertIdentity, getIdentity, findClientIdByEmail, type IdentityFields } from '@/lib/pii/identity'
 
 type Admin = ReturnType<typeof createAdminClient>
 
@@ -24,25 +24,25 @@ export async function settleOrderPaid(admin: Admin, orderId: string): Promise<{ 
   // vult naam/adres in stap 1-2, net als bij een uitgenodigde cliënt).
   if (!clientId) {
     const email = (order.email as string).trim()
-    const { data: existing } = await admin
-      .from('vh_client').select('id, first_name, last_name, address, postal_code, city')
-      .ilike('email', email).maybeSingle()
+    // Zoeken via de kluis (email_hash) — fase 2: leest niet meer uit de oude kolommen.
+    const existingId = await findClientIdByEmail(admin, email)
 
-    if (existing?.id) {
-      clientId = existing.id as string
+    if (existingId) {
+      clientId = existingId
       // Lege naam/adresvelden bijvullen met de op de paywall opgegeven gegevens
       // (bv. een eerder leeg aangemaakte cliënt of een terugkerende klant zonder
       // deze velden). Bestaande, gevulde gegevens overschrijven we niet.
-      const blank = (v: unknown) => !(((v as string | null) ?? '').trim())
+      const existing = await getIdentity(admin, existingId)
+      const blank = (v: string | null | undefined) => !((v ?? '').trim())
       const patch: Record<string, string> = {}
       const vault: IdentityFields = { email }   // e-mail altijd mee → email_hash in de kluis
-      if (blank(existing.first_name)  && order.buyer_first_name)  { patch.first_name  = order.buyer_first_name as string;  vault.firstName  = patch.first_name }
-      if (blank(existing.last_name)   && order.buyer_last_name)   { patch.last_name   = order.buyer_last_name as string;   vault.lastName   = patch.last_name }
-      if (blank(existing.address)     && order.buyer_address)     { patch.address     = order.buyer_address as string;     vault.address    = patch.address }
-      if (blank(existing.postal_code) && order.buyer_postal_code) { patch.postal_code = order.buyer_postal_code as string; vault.postalCode = patch.postal_code }
-      if (blank(existing.city)        && order.buyer_city)        { patch.city        = order.buyer_city as string;        vault.city       = patch.city }
-      if (Object.keys(patch).length) await admin.from('vh_client').update(patch).eq('id', existing.id)
-      // Dubbelschrijven naar de PII-kluis (fase 1; oude kolommen blijven leidend).
+      if (blank(existing?.firstName)  && order.buyer_first_name)  { patch.first_name  = order.buyer_first_name as string;  vault.firstName  = patch.first_name }
+      if (blank(existing?.lastName)   && order.buyer_last_name)   { patch.last_name   = order.buyer_last_name as string;   vault.lastName   = patch.last_name }
+      if (blank(existing?.address)    && order.buyer_address)     { patch.address     = order.buyer_address as string;     vault.address    = patch.address }
+      if (blank(existing?.postalCode) && order.buyer_postal_code) { patch.postal_code = order.buyer_postal_code as string; vault.postalCode = patch.postal_code }
+      if (blank(existing?.city)       && order.buyer_city)        { patch.city        = order.buyer_city as string;        vault.city       = patch.city }
+      if (Object.keys(patch).length) await admin.from('vh_client').update(patch).eq('id', existingId)
+      // Dubbelschrijven naar de PII-kluis (oude kolommen blijven leidend tot fase 3).
       try { await upsertIdentity(admin, clientId, vault) }
       catch (e) { console.error('[pii] kluis schrijven mislukt (settle existing):', e) }
     } else {

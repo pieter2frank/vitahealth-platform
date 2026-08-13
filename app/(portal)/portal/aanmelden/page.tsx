@@ -1,4 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
+import { getIdentity } from '@/lib/pii/identity'
 import { EnrollmentForm } from './EnrollmentForm'
 import type { QuestionnaireDefinition, QuestionnaireQuestion } from '@/types'
 import { REQUIRED_CONSENTS, OPTIONAL_CONSENTS } from '@/lib/consents'
@@ -19,18 +21,21 @@ export default async function AanmeldenPage({ searchParams }: PageProps) {
   if (token) {
     const { data } = await supabase.rpc('resolve_intake_token', { p_token: token })
     if (data?.exists) {
+      // Fase 2 PII-kluis: persoonsgegevens komen uit de kluis (server-side
+      // ontsleuteld), niet meer uit de RPC-payload.
+      const identity = await getIdentity(createAdminClient(), data.client_id as string)
       initialResumeInfo = {
         clientId:     data.client_id,
         status:       data.status,
-        firstName:    data.first_name    ?? '',
-        lastName:     data.last_name     ?? '',
-        email:        data.email         ?? '',
-        phone:        data.phone         ?? '',
-        birthDate:    data.birth_date    ?? '',
-        address:      data.address       ?? '',
-        postalCode:   data.postal_code   ?? '',
-        city:         data.city          ?? '',
-        hasAddress:   data.has_address   ?? false,
+        firstName:    identity?.firstName  ?? '',
+        lastName:     identity?.lastName   ?? '',
+        email:        identity?.email      ?? '',
+        phone:        identity?.phone      ?? '',
+        birthDate:    identity?.birthDate  ?? '',
+        address:      identity?.address    ?? '',
+        postalCode:   identity?.postalCode ?? '',
+        city:         identity?.city       ?? '',
+        hasAddress:   Boolean((identity?.address ?? '').trim()),
         assignmentId: data.assignment_id ?? null,
         token:        data.token         ?? token ?? null,
         screenerChoice: (data.screener_choice as 'ok' | 'hold' | null) ?? null,

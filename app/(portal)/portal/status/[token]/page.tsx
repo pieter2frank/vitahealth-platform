@@ -1,4 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
+import { getIdentity } from '@/lib/pii/identity'
 import { notFound } from 'next/navigation'
 import { CheckCircle2, Clock, Circle, AlertCircle, Ban } from 'lucide-react'
 import { format } from 'date-fns'
@@ -124,6 +126,12 @@ export default async function StatusPage({
   if (error || !data?.exists) notFound()
 
   const d = data as StatusData
+  // Fase 2 PII-kluis: voornaam uit de kluis (server-side ontsleuteld). Vereist
+  // migratie 078 (client_id in de RPC); vangnet op het oude first_name-veld.
+  if (data.client_id) {
+    const identity = await getIdentity(createAdminClient(), data.client_id as string)
+    if (identity?.firstName) d.first_name = identity.firstName
+  }
   const hasOrder = Boolean(d.has_order)
   // Betaalstap vooraan als er een order is; de intakestappen schuiven dan één op.
   const steps = hasOrder ? [PAYMENT_STEP, ...STEPS] : STEPS

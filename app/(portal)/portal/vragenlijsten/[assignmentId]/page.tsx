@@ -1,4 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
+import { getIdentity } from '@/lib/pii/identity'
 import { notFound } from 'next/navigation'
 import { ScrollText, User } from 'lucide-react'
 import { PublicQuestionnairePlayer } from './PublicQuestionnairePlayer'
@@ -23,8 +25,11 @@ export default async function PubliekeVragenlijstPage({
 
   if (!assignment?.json_content) notFound()
 
-  const client = assignment.first_name
-    ? { first_name: assignment.first_name, last_name: assignment.last_name ?? '' }
+  // Fase 2 PII-kluis: naam uit de kluis (server-side ontsleuteld), niet meer
+  // uit de RPC-payload.
+  const identity = await getIdentity(createAdminClient(), assignment.client_id)
+  const client = identity?.firstName
+    ? { first_name: identity.firstName, last_name: identity.lastName ?? '' }
     : null
   const q = { title: assignment.title }
   const def = assignment.json_content

@@ -4,6 +4,7 @@ import { intakeHervattingEmail } from '@/lib/email/templates'
 import { logAuditEvent } from '@/lib/audit'
 import { getOrCreateIntakeToken } from '@/lib/intake-token'
 import { sendEmail } from '@/lib/email/send'
+import { findClientIdByEmail, getIdentity } from '@/lib/pii/identity'
 
 // POST /api/portal/resume-link  { email }
 // Zelf-service: stuurt een veilige hervat-link naar het GEREGISTREERDE adres als
@@ -18,33 +19,30 @@ export async function POST(req: Request) {
   if (!clean || !clean.includes('@')) return NextResponse.json({ ok: true })
 
   const admin = createAdminClient()
-  const { data: client } = await admin
-    .from('vh_client')
-    .select('id, first_name, email')
-    .ilike('email', clean)
-    .order('created_at', { ascending: false })
-    .limit(1)
-    .maybeSingle()
+  // Zoeken via de kluis (email_hash) — fase 2: leest niet meer uit de oude kolommen.
+  const clientId = await findClientIdByEmail(admin, clean)
 
   // Onbekend adres → stil, uniforme respons (geen enumeratie).
-  if (!client?.email) return NextResponse.json({ ok: true })
+  if (!clientId) return NextResponse.json({ ok: true })
+  const identity = await getIdentity(admin, clientId)
+  if (!identity?.email) return NextResponse.json({ ok: true })
 
   // Intake-token ophalen of aanmaken (het token is de secret voor veilig hervatten).
-  const token = await getOrCreateIntakeToken(admin, client.id)
+  const token = await getOrCreateIntakeToken(admin, clientId)
   if (!token) return NextResponse.json({ ok: true })
 
   const portalUrl = process.env.NEXT_PUBLIC_PORTAL_URL ?? ''
   const resumeUrl = `${portalUrl}/portal/aanmelden?token=${token}`
-  const { subject, html } = intakeHervattingEmail({ firstName: client.first_name, vragenlijstUrl: resumeUrl })
+  const { subject, html } = intakeHervattingEmail({ firstName: identity.firstName ?? '', vragenlijstUrl: resumeUrl })
 
-  await sendEmail({ to: client.email, subject, html })
+  await sendEmail({ to: identity.email, subject, html })
 
   logAuditEvent({
     actorUserId:     null,
     actorRole:       'portaal_eigen_data',
-    subjectClientId: client.id,
+    subjectClientId: clientId,
     resourceType:    'client',
-    resourceId:      client.id,
+    resourceId:      clientId,
     action:          'email_sent',
     outcome:         'success',
     reason:          'Zelf-service hervat-link verstuurd',

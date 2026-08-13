@@ -172,13 +172,12 @@ export function EnrollmentForm({
       }
 
       setSaving(true)
-      const supabase = createClient()
-      const { data: checkData, error: checkError } = await supabase
-        .rpc('check_enrollment_email', { p_email: email.trim() })
-
-      if (checkError) {
-        console.error('[EnrollmentForm] check_enrollment_email fout:', checkError)
-      }
+      // Fase 2 PII-kluis: e-mailcheck via de server route (zoekt op email_hash).
+      const checkRes = await fetch('/api/portal/check-email', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email.trim() }),
+      }).catch(() => null)
+      const checkData = checkRes ? await checkRes.json().catch(() => ({})) : {}
 
       if (checkData?.exists) {
         // Bekend adres → veilige hervat-link mailen; geen gegevens inline tonen.
