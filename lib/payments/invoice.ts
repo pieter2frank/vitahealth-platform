@@ -132,7 +132,9 @@ export async function createInvoiceForOrder(
   const year = new Date().getFullYear()
   const { data: seq, error: seqErr } = await admin.rpc('next_invoice_number', { p_year: year })
   if (seqErr || seq == null) throw new Error('Factuurnummer toewijzen mislukt.')
-  const number = `${year}-${String(seq).padStart(4, '0')}`
+  // Factuurnummer: VHP{jaar}-{6 cijfers}, bv. VHP2026-000001. De reeks blijft
+  // gapless (seq komt uit de atomische teller); alleen de weergave verandert.
+  const number = `VHP${year}-${String(seq).padStart(6, '0')}`
   const issuedAt = new Date().toISOString()
 
   const buyerName = [order.buyer_first_name, order.buyer_last_name].filter(Boolean).join(' ').trim()
