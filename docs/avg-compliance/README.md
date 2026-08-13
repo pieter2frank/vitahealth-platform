@@ -28,5 +28,7 @@ Plaats de bijbehorende documenten in de juiste map. Elke map bevat een README me
 | [`../pii-kluis-implementatieplan-v1.0.docx`](../pii-kluis-implementatieplan-v1.0.docx) | Zelfde document als Word-versie |
 | [`server-hardening-checklist-v1.0.md`](server-hardening-checklist-v1.0.md) | Server-hardening — checklist voor de TransIP-VPS'en en het Coolify-paneel (markdown) |
 | [`../server-hardening-checklist-v1.0.docx`](../server-hardening-checklist-v1.0.docx) | Zelfde document als Word-versie (aanvinkbaar) |
+| [`pii-kluis-toelichting-avg-v1.0.md`](pii-kluis-toelichting-avg-v1.0.md) | PII-kluis — toelichting voor de AVG-functionaris in gewone taal (markdown) |
+| [`../pii-kluis-toelichting-avg-v1.0.docx`](../pii-kluis-toelichting-avg-v1.0.docx) | Zelfde document als Word-versie |
 
 _Historie: v1.0 (`betaalmuur-vita-health-v1.0.md` / `.docx`)._
