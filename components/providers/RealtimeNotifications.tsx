@@ -30,16 +30,31 @@ export function RealtimeNotifications() {
   useEffect(() => {
     const supabase = createClient()
 
+    // PII-kluis: het realtime-event bevat geen naam meer (vh_client is pseudoniem).
+    // Naam via de server route uit de kluis halen; korte retry omdat het event een
+    // fractie eerder kan aankomen dan de kluisrij bij een verse registratie.
+    async function nameFor(clientId: string): Promise<string> {
+      for (const delay of [0, 1500]) {
+        if (delay) await new Promise(r => setTimeout(r, delay))
+        try {
+          const j = await (await fetch(`/api/clients/search?id=${clientId}`)).json()
+          const name = (j.results?.[0]?.name as string | undefined)?.trim()
+          if (name) return name
+        } catch { /* volgende poging */ }
+      }
+      return 'Nieuwe cliënt'
+    }
+
     const channel = supabase
       .channel('dashboard-intake-meldingen')
       .on(
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'vh_client' },
-        (payload) => {
-          const c = payload.new as { id: string; first_name: string; last_name: string }
+        async (payload) => {
+          const c = payload.new as { id: string }
           addToast({
             clientId: c.id,
-            name:     `${c.first_name} ${c.last_name}`,
+            name:     await nameFor(c.id),
             message:  'heeft zich aangemeld via het portaal',
             type:     'aanmelding',
           })
@@ -48,12 +63,12 @@ export function RealtimeNotifications() {
       .on(
         'postgres_changes',
         { event: 'UPDATE', schema: 'public', table: 'vh_client' },
-        (payload) => {
-          const c = payload.new as { id: string; first_name: string; last_name: string; enrollment_status: string }
+        async (payload) => {
+          const c = payload.new as { id: string; enrollment_status: string }
           if (c.enrollment_status === 'vragenlijst_ingevuld') {
             addToast({
               clientId: c.id,
-              name:     `${c.first_name} ${c.last_name}`,
+              name:     await nameFor(c.id),
               message:  'heeft de intake volledig ingevuld',
               type:     'intake',
             })
