@@ -26,5 +26,7 @@ Plaats de bijbehorende documenten in de juiste map. Elke map bevat een README me
 | [`../betaalmuur-vita-health-v1.1.docx`](../betaalmuur-vita-health-v1.1.docx) | Zelfde document als Word-versie |
 | [`pii-kluis-implementatieplan-v1.0.md`](pii-kluis-implementatieplan-v1.0.md) | PII-kluis — gefaseerd plan voor scheiding persoonsgegevens/medische gegevens (markdown) |
 | [`../pii-kluis-implementatieplan-v1.0.docx`](../pii-kluis-implementatieplan-v1.0.docx) | Zelfde document als Word-versie |
+| [`server-hardening-checklist-v1.0.md`](server-hardening-checklist-v1.0.md) | Server-hardening — checklist voor de TransIP-VPS'en en het Coolify-paneel (markdown) |
+| [`../server-hardening-checklist-v1.0.docx`](../server-hardening-checklist-v1.0.docx) | Zelfde document als Word-versie (aanvinkbaar) |
 
 _Historie: v1.0 (`betaalmuur-vita-health-v1.0.md` / `.docx`)._
