@@ -1,4 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
+import { getIdentities } from '@/lib/pii/identity'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { formatDate } from '@/lib/utils'
@@ -29,12 +31,17 @@ export default async function BatchDetailPage({
 
   const { data: kitsRaw } = await supabase
     .from('vh_testkit')
-    .select('id, barcode, retour_date, results_date, status, vh_client(id, first_name, last_name), vh_company(id, name), vh_arbo(id, name)')
+    .select('id, barcode, retour_date, results_date, status, vh_client(id), vh_company(id, name), vh_arbo(id, name)')
     .eq('batch_id', id)
     .order('retour_date', { ascending: true })
 
+  // Fase 2 PII-kluis: namen in één batch uit de kluis.
+  const identities = await getIdentities(createAdminClient(),
+    (kitsRaw ?? []).map(k => (k.vh_client as unknown as { id: string } | null)?.id).filter((x): x is string => !!x))
+
   const kits = (kitsRaw ?? []).map(kit => {
-    const c  = kit.vh_client  as unknown as Pick<Client, 'id' | 'first_name' | 'last_name'> | null
+    const c  = kit.vh_client  as unknown as Pick<Client, 'id'> | null
+    const cn = c ? identities.get(c.id) : null
     const co = kit.vh_company as unknown as Pick<Company, 'id' | 'name'> | null
     const a  = kit.vh_arbo    as unknown as Pick<Arbo, 'id' | 'name'> | null
     return {
@@ -43,7 +50,7 @@ export default async function BatchDetailPage({
       retour_date: kit.retour_date as string | null,
       results_date: kit.results_date as string | null,
       status: kit.status as string,
-      assignedName: c ? `${c.first_name} ${c.last_name}` : co?.name ?? a?.name ?? '—',
+      assignedName: cn ? `${cn.firstName ?? ''} ${cn.lastName ?? ''}`.trim() : co?.name ?? a?.name ?? '—',
       assignedHref: c ? `/clienten/${c.id}` : co ? `/bedrijven/${co.id}` : a ? `/arbodiensten/${a.id}` : null,
       AssignedIcon: c ? User : co ? Building2 : a ? Stethoscope : null,
     }

@@ -1,4 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
+import { getClientRecord } from '@/lib/pii/identity'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { formatDate, formatDateTime, STATUS_LABELS, STATUS_COLORS } from '@/lib/utils'
@@ -18,7 +20,7 @@ export default async function TestkitDetailPage({
 
   const { data: kit } = await supabase
     .from('vh_testkit')
-    .select('*, vh_client(*), vh_company(*), vh_arbo(*)')
+    .select('*, vh_client(id), vh_company(*), vh_arbo(*)')
     .eq('id', id)
     .single()
 
@@ -35,7 +37,9 @@ export default async function TestkitDetailPage({
     } catch { /* ongeldige JSON → niet geconfigureerd */ }
   }
 
-  const client = kit.vh_client as Client | null
+  // Fase 2 PII-kluis: cliëntgegevens via de toegangslaag.
+  const kitClientId = (kit.vh_client as { id: string } | null)?.id ?? null
+  const client = kitClientId ? await getClientRecord(createAdminClient(), kitClientId) : null
   const company = kit.vh_company as Company | null
   const arbo = kit.vh_arbo as Arbo | null
 

@@ -1,4 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
+import { getIdentities } from '@/lib/pii/identity'
 import Link from 'next/link'
 import { ENROLLMENT_LABELS, ENROLLMENT_COLORS, NEUTRAL_PILL, statusPillClass, type EnrollmentStatus } from '@/lib/enrollment'
 import { UserCheck } from 'lucide-react'
@@ -29,9 +31,10 @@ export default async function AanvragenPage({
   const supabase = await createClient()
 
   // Toon cliënten die via het portal zijn aangemeld en nog verwerkt moeten worden
+  // Fase 2 PII-kluis: alleen niet-PII uit vh_client; naam/e-mail/plaats uit de kluis.
   let query = supabase
     .from('vh_client')
-    .select('id, first_name, last_name, email, city, enrollment_status, created_at')
+    .select('id, enrollment_status, created_at')
     .order('created_at', { ascending: false })
 
   if (status && ACTIVE_STATUSES.includes(status as EnrollmentStatus)) {
@@ -40,7 +43,20 @@ export default async function AanvragenPage({
     query = query.in('enrollment_status', ACTIVE_STATUSES)
   }
 
-  const { data: clients, error } = await query
+  const { data: rows, error } = await query
+  const identities = await getIdentities(createAdminClient(), (rows ?? []).map(r => r.id as string))
+  const clients = (rows ?? []).map(r => {
+    const idn = identities.get(r.id as string)
+    return {
+      id: r.id as string,
+      first_name: idn?.firstName ?? '',
+      last_name:  idn?.lastName ?? '',
+      email:      idn?.email ?? null,
+      city:       idn?.city ?? null,
+      enrollment_status: (r.enrollment_status as string | null) ?? null,
+      created_at: r.created_at as string,
+    }
+  })
 
   return (
     <div className="p-8">

@@ -1,4 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
+import { getClientRecord } from '@/lib/pii/identity'
 import { notFound } from 'next/navigation'
 import { logAuditEvent } from '@/lib/audit'
 import Link from 'next/link'
@@ -43,11 +45,8 @@ export default async function ClientDetailPage({
   // Medewerker ophalen voor auditlog
   const { data: { user } } = await supabase.auth.getUser()
 
-  const { data: client } = await supabase
-    .from('vh_client')
-    .select('id, subject_ref, first_name, last_name, email, phone, birth_date, gender, address, city, postal_code, created_at, enrollment_status')
-    .eq('id', id)
-    .single()
+  // Fase 2 PII-kluis: dossier + ontsleutelde identiteit via de toegangslaag.
+  const client = await getClientRecord(createAdminClient(), id)
 
   if (!client) notFound()
 

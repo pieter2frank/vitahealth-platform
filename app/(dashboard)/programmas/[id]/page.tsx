@@ -1,4 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
+import { getIdentities } from '@/lib/pii/identity'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { formatDate } from '@/lib/utils'
@@ -29,18 +31,27 @@ export default async function ProgrammaDetailPage({
   const [{ data: assignments }, { data: clients }] = await Promise.all([
     supabase
       .from('vh_program_assignment')
-      .select('id, status, start_date, assigned_at, vh_client(id, first_name, last_name)')
+      .select('id, status, start_date, assigned_at, vh_client(id)')
       .eq('program_id', id)
       .order('assigned_at', { ascending: false }),
     supabase
       .from('vh_client')
-      .select('id, first_name, last_name')
-      .order('last_name'),
+      .select('id'),
   ])
+
+  // Fase 2 PII-kluis: namen in één batch uit de kluis.
+  const identities = await getIdentities(createAdminClient(), [
+    ...new Set([
+      ...(clients ?? []).map(c => c.id as string),
+      ...(assignments ?? []).map(a => (a.vh_client as unknown as { id: string } | null)?.id).filter((x): x is string => !!x),
+    ]),
+  ])
+  const nameOf = (id: string) => { const i = identities.get(id); return `${i?.firstName ?? ''} ${i?.lastName ?? ''}`.trim() }
 
   const def = p.json_content as ProgramDefinition
   const schedule = def.schedule ?? []
-  const clientList = (clients ?? []).map(c => ({ id: c.id, name: `${c.first_name} ${c.last_name}` }))
+  const clientList = (clients ?? []).map(c => ({ id: c.id as string, name: nameOf(c.id as string) }))
+    .sort((a, b) => a.name.localeCompare(b.name, 'nl'))
 
   const STATUS_LABELS: Record<string, string> = {
     active: 'Actief',
@@ -169,7 +180,7 @@ export default async function ProgrammaDetailPage({
             ) : (
               <ul className="divide-y divide-[#f1f5f9]">
                 {assignments.map((a) => {
-                  const client = a.vh_client as unknown as { id: string; first_name: string; last_name: string } | null
+                  const client = a.vh_client as unknown as { id: string } | null
                   return (
                     <li key={a.id} className="px-4 py-3 flex items-center justify-between gap-2">
                       <div className="min-w-0">
@@ -177,7 +188,7 @@ export default async function ProgrammaDetailPage({
                           href={client ? `/clienten/${client.id}` : '#'}
                           className="text-sm font-medium text-[#1f1683] hover:underline truncate block"
                         >
-                          {client ? `${client.first_name} ${client.last_name}` : '—'}
+                          {client ? nameOf(client.id) : '—'}
                         </Link>
                         <p className="text-xs text-[#94a3b8]">{formatDate(a.assigned_at)}</p>
                       </div>

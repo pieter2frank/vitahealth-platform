@@ -1,4 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
+import { getIdentities } from '@/lib/pii/identity'
 import Link from 'next/link'
 import { UserPlus, Search, Send } from 'lucide-react'
 import { ClientsTable } from './ClientsTable'
@@ -12,17 +14,38 @@ export default async function ClientenPage({
   const { q, status } = await searchParams
   const supabase = await createClient()
 
-  let query = supabase
+  // Fase 2 PII-kluis: alleen niet-PII uit vh_client; naam/e-mail/telefoon/plaats
+  // komen uit de kluis. Zoeken gebeurt daarom in de app-laag (na ontsleuteling)
+  // in plaats van met SQL-ilike op de oude kolommen.
+  const { data: rows, error } = await supabase
     .from('vh_client')
-    .select('id, first_name, last_name, email, phone, city, created_at, enrollment_status')
-    .order('last_name', { ascending: true })
+    .select('id, created_at, enrollment_status')
+
+  const identities = await getIdentities(createAdminClient(), (rows ?? []).map(r => r.id as string))
+
+  let clients = (rows ?? []).map(r => {
+    const idn = identities.get(r.id as string)
+    return {
+      id: r.id as string,
+      first_name: idn?.firstName ?? '',
+      last_name:  idn?.lastName ?? '',
+      email:      idn?.email ?? null,
+      phone:      idn?.phone ?? null,
+      city:       idn?.city ?? null,
+      created_at: r.created_at as string,
+      enrollment_status: (r.enrollment_status as string | null) ?? null,
+    }
+  }).sort((a, b) => a.last_name.localeCompare(b.last_name, 'nl'))
 
   const term = sanitizeSearchTerm(q)
   if (term) {
-    query = query.or(`last_name.ilike.%${term}%,first_name.ilike.%${term}%,email.ilike.%${term}%`)
+    const t = term.toLowerCase()
+    clients = clients.filter(c =>
+      c.first_name.toLowerCase().includes(t) ||
+      c.last_name.toLowerCase().includes(t) ||
+      (c.email ?? '').toLowerCase().includes(t)
+    )
   }
-
-  const { data: clients, error } = await query
 
   return (
     <div className="p-8">

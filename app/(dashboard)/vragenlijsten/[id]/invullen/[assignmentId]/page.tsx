@@ -1,4 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
+import { getIdentity } from '@/lib/pii/identity'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft, User } from 'lucide-react'
@@ -15,14 +17,16 @@ export default async function InvullenPage({
 
   const { data: assignment } = await supabase
     .from('vh_questionnaire_assignment')
-    .select('id, status, questionnaire_id, client_id, vh_client(first_name, last_name), vh_questionnaire(title, json_content)')
+    .select('id, status, questionnaire_id, client_id, vh_questionnaire(title, json_content)')
     .eq('id', assignmentId)
     .single()
 
   if (!assignment) notFound()
   if (assignment.questionnaire_id !== id) notFound()
 
-  const client = assignment.vh_client as unknown as { first_name: string; last_name: string } | null
+  // Fase 2 PII-kluis: naam via de toegangslaag.
+  const identity = assignment.client_id ? await getIdentity(createAdminClient(), assignment.client_id as string) : null
+  const client = identity?.firstName ? { first_name: identity.firstName, last_name: identity.lastName ?? '' } : null
   const q = assignment.vh_questionnaire as unknown as { title: string; json_content: QuestionnaireDefinition } | null
 
   if (!q) notFound()

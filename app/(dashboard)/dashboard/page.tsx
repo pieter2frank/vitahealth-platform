@@ -1,4 +1,6 @@
 ﻿import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
+import { getIdentities } from '@/lib/pii/identity'
 import {
   TestTube2, Users, Building2, Package,
 } from 'lucide-react'
@@ -51,40 +53,52 @@ async function getData(supabase: Awaited<ReturnType<typeof createClient>>) {
     { data: incomplete },
   ] = await Promise.all([
     supabase.from('vh_client')
-      .select('id, first_name, last_name, email, created_at')
+      .select('id, created_at')
       .eq('enrollment_status', 'vragenlijst_ingevuld')
       .order('created_at', { ascending: false })
       .limit(8),
     // Intake geblokkeerd (mogelijke contra-indicatie) → arts
     supabase.from('vh_client')
-      .select('id, first_name, last_name, email, created_at')
+      .select('id, created_at')
       .eq('enrollment_status', 'intake_on_hold')
       .order('created_at', { ascending: false })
       .limit(8),
     supabase.from('vh_client')
-      .select('id, first_name, last_name, email, created_at')
+      .select('id, created_at')
       .eq('enrollment_status', 'intake_akkoord')
       .order('created_at', { ascending: false })
       .limit(8),
     // Retour-kits die nog naar Nightingale moeten → medewerker
     supabase.from('vh_testkit')
-      .select('id, barcode, retour_date, vh_client(first_name, last_name)')
+      .select('id, barcode, retour_date, vh_client(id)')
       .eq('status', 'retour')
       .is('batch_id', null)
       .order('retour_date', { ascending: false })
       .limit(8),
     // Uitslag binnen → medewerker
     supabase.from('vh_client')
-      .select('id, first_name, last_name, email, created_at')
+      .select('id, created_at')
       .eq('enrollment_status', 'uitslag_bekend')
       .order('created_at', { ascending: false })
       .limit(8),
     supabase.from('vh_client')
-      .select('id, first_name, last_name, email, enrollment_status, created_at')
+      .select('id, enrollment_status, created_at')
       .in('enrollment_status', ['aangemeld', 'toestemming_gegeven'])
       .order('created_at', { ascending: false })
       .limit(8),
   ])
+
+  // Fase 2 PII-kluis: namen/e-mails in één batch uit de kluis.
+  const kitClientIds = (retourRaw ?? [])
+    .map(k => (k.vh_client as unknown as { id: string } | null)?.id)
+    .filter((x): x is string => !!x)
+  const allClientIds = [...new Set([
+    ...[...(toReview ?? []), ...(onHold ?? []), ...(toSendKit ?? []), ...(resultsIn ?? []), ...(incomplete ?? [])].map(c => c.id as string),
+    ...kitClientIds,
+  ])]
+  const identities = await getIdentities(createAdminClient(), allClientIds)
+  const nameOf  = (id: string) => { const i = identities.get(id); return `${i?.firstName ?? ''} ${i?.lastName ?? ''}`.trim() }
+  const emailOf = (id: string) => identities.get(id)?.email ?? null
 
   // ── Acties platmaken naar één lijst ───────────────────────────────────────
   type ActionRow = {
@@ -99,7 +113,7 @@ async function getData(supabase: Awaited<ReturnType<typeof createClient>>) {
   const actions: ActionRow[] = []
   const pushClient = (
     type: ActionType,
-    rows: { id: string; first_name: string; last_name: string; email: string | null; created_at: string }[],
+    rows: { id: string; created_at: string }[],
     subFn: (c: { email: string | null }) => string | null,
   ) => {
     for (const c of rows) {
@@ -107,8 +121,8 @@ async function getData(supabase: Awaited<ReturnType<typeof createClient>>) {
         key: `${type}:${c.id}`,
         actionType: type,
         subjectId: c.id,
-        subjectLabel: `${c.first_name} ${c.last_name}`,
-        subjectSub: subFn(c),
+        subjectLabel: nameOf(c.id),
+        subjectSub: subFn({ email: emailOf(c.id) }),
         href: `/clienten/${c.id}`,
         date: c.created_at,
       })
@@ -121,13 +135,13 @@ async function getData(supabase: Awaited<ReturnType<typeof createClient>>) {
   pushClient('result_process', (resultsIn ?? []) as never, c => c.email ?? null)
 
   for (const kit of retourRaw ?? []) {
-    const c = kit.vh_client as unknown as { first_name: string; last_name: string } | null
+    const cid = (kit.vh_client as unknown as { id: string } | null)?.id
     actions.push({
       key: `kit_batch:${kit.id}`,
       actionType: 'kit_batch',
       subjectId: kit.id as string,
       subjectLabel: kit.barcode as string,
-      subjectSub: c ? `${c.first_name} ${c.last_name}` : 'Niet toegewezen',
+      subjectSub: cid ? nameOf(cid) : 'Niet toegewezen',
       href: `/testkits/${kit.id}`,
       date: (kit.retour_date as string | null) ?? new Date().toISOString(),
     })
@@ -138,7 +152,7 @@ async function getData(supabase: Awaited<ReturnType<typeof createClient>>) {
       key: `enrollment_incomplete:${c.id}`,
       actionType: 'enrollment_incomplete',
       subjectId: c.id,
-      subjectLabel: `${c.first_name} ${c.last_name}`,
+      subjectLabel: nameOf(c.id),
       subjectSub: c.enrollment_status === 'toestemming_gegeven' ? 'Gestopt na toestemmingen' : 'Gestopt na adresgegevens',
       href: `/clienten/${c.id}`,
       date: c.created_at,

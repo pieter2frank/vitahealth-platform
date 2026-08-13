@@ -95,8 +95,8 @@ export async function findClientIdByEmail(admin: Admin, email: string): Promise<
  * alleen de query te vervangen, niet de veldnamen.
  */
 export interface ClientRecord {
-  id: string; subject_ref: string | null; gender: string | null
-  enrollment_status: string | null; created_at: string | null
+  id: string; subject_ref: string; gender: string | null
+  enrollment_status: string | null; created_at: string
   first_name: string; last_name: string
   email: string | null; phone: string | null; birth_date: string | null
   address: string | null; postal_code: string | null; city: string | null
@@ -112,10 +112,10 @@ export async function getClientRecord(admin: Admin, clientId: string): Promise<C
   if (!c) return null
   return {
     id: c.id as string,
-    subject_ref:       (c.subject_ref as string | null) ?? null,
+    subject_ref:       (c.subject_ref as string | null) ?? '',
     gender:            (c.gender as string | null) ?? null,
     enrollment_status: (c.enrollment_status as string | null) ?? null,
-    created_at:        (c.created_at as string | null) ?? null,
+    created_at:        (c.created_at as string | null) ?? '',
     first_name:  identity?.firstName ?? '',
     last_name:   identity?.lastName ?? '',
     email:       identity?.email ?? null,

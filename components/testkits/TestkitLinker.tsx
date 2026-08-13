@@ -61,7 +61,7 @@ export function TestkitLinker({ clientId, clientName }: Props) {
     // Kit opzoeken (ook al toegewezen kits meenemen voor foutmelding)
     const { data: kit } = await supabase
       .from('vh_testkit')
-      .select('id, barcode, assigned, vh_client(first_name, last_name)')
+      .select('id, barcode, assigned, vh_client(id)')
       .eq('barcode', trimmed)
       .maybeSingle()
 
@@ -81,9 +81,15 @@ export function TestkitLinker({ clientId, clientName }: Props) {
       setMessage(`Testkit ${trimmed} is toegewezen aan ${clientName}.`)
 
     } else if (kit.assigned) {
-      // Al gekoppeld aan iemand anders
-      const c = kit.vh_client as unknown as { first_name: string; last_name: string } | null
-      const owner = c ? `${c.first_name} ${c.last_name}` : 'een andere cliënt'
+      // Al gekoppeld aan iemand anders — naam via de server route (PII-kluis).
+      const cid = (kit.vh_client as unknown as { id: string } | null)?.id
+      let owner = 'een andere cliënt'
+      if (cid) {
+        try {
+          const j = await (await fetch(`/api/clients/search?id=${cid}`)).json()
+          owner = j.results?.[0]?.name || owner
+        } catch { /* naam is nice-to-have */ }
+      }
       setError(`Kit al gekoppeld aan ${owner}.`)
       setSaving(false)
       return

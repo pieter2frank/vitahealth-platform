@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { getIdentities } from '@/lib/pii/identity'
 import type { SupabaseClient } from '@supabase/supabase-js' // eslint-disable-line @typescript-eslint/no-unused-vars
 import { redirect } from 'next/navigation'
 import { format } from 'date-fns'
@@ -127,11 +128,10 @@ export default async function AuditlogPage({
 
   // ── Cliëntnamen ophalen voor subject_client_id's ───────────────────────────
   const clientIds = [...new Set(events.map((e: AuditEvent) => e.subject_client_id).filter((id): id is string => !!id))]
-  const { data: clients } = clientIds.length
-    ? await admin.from('vh_client').select('id, first_name, last_name').in('id', clientIds)
-    : { data: [] }
-
-  const clientMap = Object.fromEntries((clients ?? []).map((c: { id: string; first_name: string; last_name: string }) => [c.id, c]))
+  // Fase 2 PII-kluis: namen in één batch uit de kluis.
+  const clientIdentities = await getIdentities(admin, clientIds)
+  const clientMap = Object.fromEntries([...clientIdentities.values()]
+    .map(i => [i.clientId, { id: i.clientId, first_name: i.firstName ?? '', last_name: i.lastName ?? '' }]))
 
   // Openstaande alerts ophalen
   const { data: activeAlerts } = await admin

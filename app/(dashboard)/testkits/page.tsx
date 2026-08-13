@@ -1,4 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
+import { getIdentities } from '@/lib/pii/identity'
 import Link from 'next/link'
 import { Plus, ScanLine } from 'lucide-react'
 import { TestkitsTable, type KitRow } from './TestkitsTable'
@@ -14,7 +16,7 @@ export default async function TestkitsPage({
 
   let query = supabase
     .from('vh_testkit')
-    .select('id, barcode, date, status, assigned, vh_client(first_name, last_name), vh_company(name), vh_arbo(name)')
+    .select('id, barcode, date, status, assigned, vh_client(id), vh_company(name), vh_arbo(name)')
     .order('date', { ascending: false })
 
   if (status) query = query.eq('status', status)
@@ -22,15 +24,25 @@ export default async function TestkitsPage({
 
   const { data: rawKits, error } = await query
 
+  // Fase 2 PII-kluis: namen in één batch uit de kluis.
+  const kitClientIds = (rawKits ?? [])
+    .map(k => (k.vh_client as unknown as { id: string } | null)?.id)
+    .filter((x): x is string => !!x)
+  const identities = await getIdentities(createAdminClient(), kitClientIds)
+  const nameOf = (id: string | undefined) => {
+    if (!id) return null
+    const i = identities.get(id)
+    return i ? `${i.firstName ?? ''} ${i.lastName ?? ''}`.trim() : null
+  }
+
   const kits: KitRow[] = (rawKits ?? []).map(kit => ({
     id:         kit.id,
     barcode:    kit.barcode,
     date:       kit.date,
     status:     kit.status,
     assigned:   kit.assigned,
-    assignedTo: (kit.vh_client as unknown as { first_name: string; last_name: string } | null)
-      ? `${(kit.vh_client as unknown as { first_name: string; last_name: string }).first_name} ${(kit.vh_client as unknown as { first_name: string; last_name: string }).last_name}`
-      : (kit.vh_company as unknown as { name: string } | null)?.name
+    assignedTo: nameOf((kit.vh_client as unknown as { id: string } | null)?.id)
+      ?? (kit.vh_company as unknown as { name: string } | null)?.name
       ?? (kit.vh_arbo    as unknown as { name: string } | null)?.name
       ?? '—',
   }))

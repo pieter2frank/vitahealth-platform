@@ -1,4 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
+import { getIdentity } from '@/lib/pii/identity'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { formatDate, formatDateTime } from '@/lib/utils'
@@ -21,9 +23,9 @@ export default async function AanvraagDetailPage({
 
   if (!order) notFound()
 
-  const { data: client } = order.client_id
-    ? await supabase.from('vh_client').select('id, first_name, last_name').eq('id', order.client_id).single()
-    : { data: null }
+  // Fase 2 PII-kluis: naam via de toegangslaag.
+  const identity = order.client_id ? await getIdentity(createAdminClient(), order.client_id as string) : null
+  const client = identity ? { id: order.client_id as string, first_name: identity.firstName ?? '', last_name: identity.lastName ?? '' } : null
 
   const STATUS_MAP: Record<string, { label: string; cls: string }> = {
     nieuw:         { label: 'Nieuw',         cls: 'bg-orange-100 text-orange-700 border-orange-200' },

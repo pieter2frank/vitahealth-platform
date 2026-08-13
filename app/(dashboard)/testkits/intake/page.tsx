@@ -6,9 +6,13 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { ScanLine, CheckCircle2, AlertCircle, X, ChevronDown } from 'lucide-react'
 import { formatDateTime } from '@/lib/utils'
-import type { Testkit, Client, Company, Arbo } from '@/types'
+import type { Testkit, Company, Arbo } from '@/types'
 
 type AssignType = 'client' | 'company' | 'arbo'
+
+// Fase 2 PII-kluis: cliënt-zoekresultaten komen van de server route (ontsleuteld);
+// de browser leest geen PII-kolommen meer.
+type ClientHit = { id: string; name: string; email: string | null }
 
 export default function IntakePage() {
   const router = useRouter()
@@ -22,8 +26,9 @@ export default function IntakePage() {
   // Toewijzing
   const [assignType, setAssignType] = useState<AssignType | ''>('')
   const [assignSearch, setAssignSearch] = useState('')
-  const [assignResults, setAssignResults] = useState<(Client | Company | Arbo)[]>([])
-  const [selectedAssign, setSelectedAssign] = useState<Client | Company | Arbo | null>(null)
+  const [assignResults, setAssignResults] = useState<(ClientHit | Company | Arbo)[]>([])
+  const [selectedAssign, setSelectedAssign] = useState<ClientHit | Company | Arbo | null>(null)
+  const [foundClientName, setFoundClientName] = useState('')
   const [showDropdown, setShowDropdown] = useState(false)
 
   const [saving, setSaving] = useState(false)
@@ -46,11 +51,19 @@ export default function IntakePage() {
     const supabase = createClient()
     const { data } = await supabase
       .from('vh_testkit')
-      .select('*, vh_client(*), vh_company(*), vh_arbo(*)')
+      .select('*, vh_client(id), vh_company(*), vh_arbo(*)')
       .eq('barcode', barcode.trim())
       .maybeSingle()
 
     setFound(data as Testkit | null)
+    // Naam van de gekoppelde cliënt via de server route (kluis).
+    setFoundClientName('')
+    const cid = (data?.vh_client as { id?: string } | null)?.id
+    if (cid) {
+      fetch(`/api/clients/search?id=${cid}`)
+        .then(r => r.json()).then(j => setFoundClientName(j.results?.[0]?.name ?? ''))
+        .catch(() => {})
+    }
     setScanning(false)
   }
 
@@ -61,23 +74,28 @@ export default function IntakePage() {
       setAssignResults([])
       return
     }
+    // Cliënten: server route (kluis); bedrijven/arbo: direct (geen PII-kluis).
+    if (assignType === 'client') {
+      const res = await fetch(`/api/clients/search?q=${encodeURIComponent(value)}`).catch(() => null)
+      const j = res ? await res.json().catch(() => ({})) : {}
+      setAssignResults((j.results ?? []) as ClientHit[])
+      return
+    }
     const supabase = createClient()
-    const table = assignType === 'client' ? 'vh_client' : assignType === 'company' ? 'vh_company' : 'vh_arbo'
-    const searchField = assignType === 'client' ? 'last_name' : 'name'
-
+    const table = assignType === 'company' ? 'vh_company' : 'vh_arbo'
     const { data } = await supabase
       .from(table)
       .select('*')
-      .ilike(searchField, `%${value}%`)
+      .ilike('name', `%${value}%`)
       .limit(8)
 
-    setAssignResults((data ?? []) as (Client | Company | Arbo)[])
+    setAssignResults((data ?? []) as (Company | Arbo)[])
   }
 
-  function getAssignLabel(item: Client | Company | Arbo) {
+  function getAssignLabel(item: ClientHit | Company | Arbo) {
     if (assignType === 'client') {
-      const c = item as Client
-      return `${c.first_name} ${c.last_name}${c.email ? ' · ' + c.email : ''}`
+      const c = item as ClientHit
+      return `${c.name}${c.email ? ' · ' + c.email : ''}`
     }
     return (item as Company | Arbo).name
   }
@@ -209,7 +227,7 @@ export default function IntakePage() {
           {found.assigned && (
             <div className="text-sm text-[#64748b] bg-[#f8fafc] rounded-lg p-3 border border-[#e2e8f0]">
               {found.vh_client && (
-                <span>Toegewezen aan: <strong>{(found.vh_client as Client).first_name} {(found.vh_client as Client).last_name}</strong></span>
+                <span>Toegewezen aan: <strong>{foundClientName || '…'}</strong></span>
               )}
               {found.vh_company && (
                 <span>Toegewezen aan bedrijf: <strong>{(found.vh_company as Company).name}</strong></span>
@@ -267,12 +285,12 @@ interface AssignSectionProps {
   setAssignType: (t: AssignType | '') => void
   assignSearch: string
   onSearch: (v: string) => void
-  assignResults: (Client | Company | Arbo)[]
-  selectedAssign: Client | Company | Arbo | null
-  setSelectedAssign: (v: Client | Company | Arbo | null) => void
+  assignResults: (ClientHit | Company | Arbo)[]
+  selectedAssign: ClientHit | Company | Arbo | null
+  setSelectedAssign: (v: ClientHit | Company | Arbo | null) => void
   showDropdown: boolean
   setShowDropdown: (v: boolean) => void
-  getLabel: (item: Client | Company | Arbo) => string
+  getLabel: (item: ClientHit | Company | Arbo) => string
 }
 
 function AssignSection({

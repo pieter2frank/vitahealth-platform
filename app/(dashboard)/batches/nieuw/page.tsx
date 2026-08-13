@@ -1,4 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
+import { getIdentities } from '@/lib/pii/identity'
 import { BatchForm } from './BatchForm'
 import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
@@ -8,14 +10,19 @@ export default async function NieuweBatchPage() {
 
   const { data: retourRaw } = await supabase
     .from('vh_testkit')
-    .select('id, barcode, retour_date, sample_date, vh_client(first_name, last_name), vh_company(name), vh_arbo(name)')
+    .select('id, barcode, retour_date, sample_date, vh_client(id), vh_company(name), vh_arbo(name)')
     .eq('status', 'retour')
     .is('batch_id', null)
     .order('retour_date', { ascending: true })
 
+  // Fase 2 PII-kluis: namen in één batch uit de kluis.
+  const identities = await getIdentities(createAdminClient(),
+    (retourRaw ?? []).map(k => (k.vh_client as unknown as { id: string } | null)?.id).filter((x): x is string => !!x))
+
   // Plat maken voor de client component (geen serializatie-issues met geneste objecten)
   const retourKits = (retourRaw ?? []).map((kit) => {
-    const c = kit.vh_client as unknown as { first_name: string; last_name: string } | null
+    const cid = (kit.vh_client as unknown as { id: string } | null)?.id
+    const idn = cid ? identities.get(cid) : null
     const co = kit.vh_company as unknown as { name: string } | null
     const a = kit.vh_arbo as unknown as { name: string } | null
     return {
@@ -23,8 +30,8 @@ export default async function NieuweBatchPage() {
       barcode: kit.barcode,
       retour_date: kit.retour_date as string | null,
       sample_date: kit.sample_date as string | null,
-      assignedName: c
-        ? `${c.first_name} ${c.last_name}`
+      assignedName: idn
+        ? `${idn.firstName ?? ''} ${idn.lastName ?? ''}`.trim()
         : co?.name ?? a?.name ?? 'Niet toegewezen',
     }
   })
