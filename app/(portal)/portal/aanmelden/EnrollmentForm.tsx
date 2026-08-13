@@ -90,21 +90,24 @@ export function EnrollmentForm({
 
   useEffect(() => {
     if (!initialEmail) return
-    const supabase = createClient()
-    supabase.rpc('check_enrollment_email', { p_email: initialEmail.trim() }).then(async ({ data, error }) => {
-      if (error) {
-        console.error('[EnrollmentForm] check_enrollment_email fout:', error)
-      }
-      if (data?.exists) {
-        // Geen inline gegevens (e-mail is niet geheim). Veilige link naar het adres.
-        await fetch('/api/portal/resume-link', {
-          method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email: initialEmail.trim() }),
-        }).catch(() => {})
-        setResumeEmailSent(true)
-      }
-      setCheckingInitialEmail(false)
+    // Fase 3 PII-kluis: e-mailcheck via de server route (zoekt op email_hash).
+    fetch('/api/portal/check-email', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: initialEmail.trim() }),
     })
+      .then(r => r.json())
+      .then(async (data) => {
+        if (data?.exists) {
+          // Geen inline gegevens (e-mail is niet geheim). Veilige link naar het adres.
+          await fetch('/api/portal/resume-link', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: initialEmail.trim() }),
+          }).catch(() => {})
+          setResumeEmailSent(true)
+        }
+        setCheckingInitialEmail(false)
+      })
+      .catch(() => setCheckingInitialEmail(false))
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 

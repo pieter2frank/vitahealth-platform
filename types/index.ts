@@ -27,18 +27,13 @@ export interface Testkit {
   vh_arbo?: Arbo | null
 }
 
+// Fase 3 PII-kluis: vh_client is pseudoniem. Herleidbare velden (naam, adres,
+// e-mail, telefoon, geboortedatum) leven uitsluitend versleuteld in
+// vh_client_identity — gebruik ClientRecord/ClientIdentity uit lib/pii/identity.
 export interface Client {
   id: string
   subject_ref: string
-  first_name: string
-  last_name: string
-  email: string | null
-  phone: string | null
-  birth_date: string | null
   gender: string | null
-  address: string | null
-  city: string | null
-  postal_code: string | null
   enrollment_status: string | null
   created_at: string
 }

@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { DateFieldNL } from '@/components/ui/DateFieldNL'
 import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
-import type { Client } from '@/types'
+import type { ClientRecord } from '@/lib/pii/identity'
 import { useUser } from '@/components/providers/UserProvider'
 import { canSeeBirthDate } from '@/lib/auth/roles'
 
@@ -18,7 +18,7 @@ const GENDER_OPTIONS = [
   { value: 'zeg_liever_niet', label: 'Zeg ik liever niet' },
 ]
 
-export function EditClientForm({ client }: { client: Client }) {
+export function EditClientForm({ client }: { client: ClientRecord }) {
   const router = useRouter()
   const { role } = useUser()
   const showDob = canSeeBirthDate(role)

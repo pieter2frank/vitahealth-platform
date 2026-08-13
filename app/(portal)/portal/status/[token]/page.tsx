@@ -126,11 +126,13 @@ export default async function StatusPage({
   if (error || !data?.exists) notFound()
 
   const d = data as StatusData
-  // Fase 2 PII-kluis: voornaam uit de kluis (server-side ontsleuteld). Vereist
-  // migratie 078 (client_id in de RPC); vangnet op het oude first_name-veld.
+  // PII-kluis: voornaam uit de kluis (server-side ontsleuteld). De RPC levert
+  // sinds fase 3 (migratie 079) geen naam meer.
   if (data.client_id) {
     const identity = await getIdentity(createAdminClient(), data.client_id as string)
-    if (identity?.firstName) d.first_name = identity.firstName
+    d.first_name = identity?.firstName ?? d.first_name ?? ''
+  } else {
+    d.first_name = d.first_name ?? ''
   }
   const hasOrder = Boolean(d.has_order)
   // Betaalstap vooraan als er een order is; de intakestappen schuiven dan één op.

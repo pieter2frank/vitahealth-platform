@@ -32,34 +32,24 @@ export async function settleOrderPaid(admin: Admin, orderId: string): Promise<{ 
       // Lege naam/adresvelden bijvullen met de op de paywall opgegeven gegevens
       // (bv. een eerder leeg aangemaakte cliënt of een terugkerende klant zonder
       // deze velden). Bestaande, gevulde gegevens overschrijven we niet.
+      // Fase 3 PII-kluis: uitsluitend de kluis — de oude kolommen bestaan niet meer.
       const existing = await getIdentity(admin, existingId)
       const blank = (v: string | null | undefined) => !((v ?? '').trim())
-      const patch: Record<string, string> = {}
       const vault: IdentityFields = { email }   // e-mail altijd mee → email_hash in de kluis
-      if (blank(existing?.firstName)  && order.buyer_first_name)  { patch.first_name  = order.buyer_first_name as string;  vault.firstName  = patch.first_name }
-      if (blank(existing?.lastName)   && order.buyer_last_name)   { patch.last_name   = order.buyer_last_name as string;   vault.lastName   = patch.last_name }
-      if (blank(existing?.address)    && order.buyer_address)     { patch.address     = order.buyer_address as string;     vault.address    = patch.address }
-      if (blank(existing?.postalCode) && order.buyer_postal_code) { patch.postal_code = order.buyer_postal_code as string; vault.postalCode = patch.postal_code }
-      if (blank(existing?.city)       && order.buyer_city)        { patch.city        = order.buyer_city as string;        vault.city       = patch.city }
-      if (Object.keys(patch).length) await admin.from('vh_client').update(patch).eq('id', existingId)
-      // Dubbelschrijven naar de PII-kluis (oude kolommen blijven leidend tot fase 3).
+      if (blank(existing?.firstName)  && order.buyer_first_name)  vault.firstName  = order.buyer_first_name as string
+      if (blank(existing?.lastName)   && order.buyer_last_name)   vault.lastName   = order.buyer_last_name as string
+      if (blank(existing?.address)    && order.buyer_address)     vault.address    = order.buyer_address as string
+      if (blank(existing?.postalCode) && order.buyer_postal_code) vault.postalCode = order.buyer_postal_code as string
+      if (blank(existing?.city)       && order.buyer_city)        vault.city       = order.buyer_city as string
       try { await upsertIdentity(admin, clientId, vault) }
       catch (e) { console.error('[pii] kluis schrijven mislukt (settle existing):', e) }
     } else {
-      // Cliënt aanmaken met de op de paywall opgegeven naam + adres; de intake
-      // vult deze voorgevuld aan (en voegt geboortedatum/telefoon/toestemmingen toe).
+      // Pseudoniem cliëntrecord aanmaken; naam + adres gaan naar de kluis. De
+      // intake vult deze voorgevuld aan (geboortedatum/telefoon/toestemmingen).
       const { data: created } = await admin
-        .from('vh_client').insert({
-          first_name:  (order.buyer_first_name as string | null) ?? '',
-          last_name:   (order.buyer_last_name as string | null) ?? '',
-          email,
-          address:     (order.buyer_address as string | null) ?? null,
-          postal_code: (order.buyer_postal_code as string | null) ?? null,
-          city:        (order.buyer_city as string | null) ?? null,
-        }).select('id').single()
+        .from('vh_client').insert({ enrollment_status: 'aangemeld' }).select('id').single()
       clientId = (created?.id as string | undefined) ?? null
 
-      // Dubbelschrijven naar de PII-kluis (fase 1; oude kolommen blijven leidend).
       if (clientId) {
         try {
           await upsertIdentity(admin, clientId, {

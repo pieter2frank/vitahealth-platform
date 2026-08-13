@@ -39,6 +39,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Vul alle verplichte velden in.' }, { status: 400 })
     }
 
+    // Pseudoniem record via de RPC (fase 3: de RPC schrijft zelf geen PII meer).
     const { data: newId, error } = await admin.rpc('portal_register_client', {
       p_first_name: firstName, p_last_name: lastName, p_email: email,
       p_phone: phone || null, p_birth_date: birthDate || null,
@@ -49,16 +50,19 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Registratie mislukt.' }, { status: 500 })
     }
 
-    // Kluis (best-effort is hier NIET goed genoeg: dubbelschrijven moet kloppen —
-    // bij een fout melden we dat, de oude kolommen zijn dan al gevuld en de
-    // backfill herstelt de kluis alsnog).
+    // De kluis is de enige opslag van de identiteit — een fout is hier fataal.
     try {
       await upsertIdentity(admin, newId as string, {
         firstName, lastName, email,
         phone: phone || null, birthDate: birthDate || null,
         address, postalCode, city,
       })
-    } catch (e) { console.error('[pii] kluis schrijven mislukt (create):', e) }
+    } catch (e) {
+      console.error('[pii] kluis schrijven mislukt (create):', e)
+      // Wees-record zonder identiteit opruimen zodat de klant opnieuw kan proberen.
+      await admin.from('vh_client').delete().eq('id', newId as string)
+      return NextResponse.json({ error: 'Registratie mislukt. Probeer het opnieuw.' }, { status: 500 })
+    }
 
     return NextResponse.json({ ok: true, id: newId })
   }
@@ -73,23 +77,21 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Deze aanmelding kan niet meer worden gewijzigd.' }, { status: 403 })
   }
 
-  // Alleen de velden die de portal echt bewerkt (naam/e-mail blijven van de uitnodiging).
-  const patch: Record<string, string | null> = {}
+  // Alleen de velden die de portal echt bewerkt (naam/e-mail blijven van de
+  // uitnodiging). Fase 3: uitsluitend de kluis — vh_client heeft geen PII meer.
   const vault: Parameters<typeof upsertIdentity>[2] = {}
-  if ('phone' in b)      { patch.phone       = str(b.phone, 40) || null;  vault.phone      = patch.phone }
-  if ('birthDate' in b)  { patch.birth_date  = str(b.birthDate, 10) || null; vault.birthDate = patch.birth_date }
-  if ('address' in b)    { patch.address     = str(b.address) || null;    vault.address    = patch.address }
-  if ('postalCode' in b) { patch.postal_code = str(b.postalCode, 16) || null; vault.postalCode = patch.postal_code }
-  if ('city' in b)       { patch.city        = str(b.city, 120) || null;  vault.city       = patch.city }
-  if (Object.keys(patch).length === 0) return NextResponse.json({ error: 'Niets te wijzigen.' }, { status: 400 })
+  if ('phone' in b)      vault.phone      = str(b.phone, 40) || null
+  if ('birthDate' in b)  vault.birthDate  = str(b.birthDate, 10) || null
+  if ('address' in b)    vault.address    = str(b.address) || null
+  if ('postalCode' in b) vault.postalCode = str(b.postalCode, 16) || null
+  if ('city' in b)       vault.city       = str(b.city, 120) || null
+  if (Object.keys(vault).length === 0) return NextResponse.json({ error: 'Niets te wijzigen.' }, { status: 400 })
 
-  const { error: updErr } = await admin.from('vh_client').update(patch).eq('id', clientId)
-  if (updErr) {
-    console.error('[portal] personalia bijwerken mislukt:', updErr)
+  try { await upsertIdentity(admin, clientId, vault) }
+  catch (e) {
+    console.error('[pii] kluis schrijven mislukt (update):', e)
     return NextResponse.json({ error: 'Opslaan mislukt.' }, { status: 500 })
   }
-  try { await upsertIdentity(admin, clientId, vault) }
-  catch (e) { console.error('[pii] kluis schrijven mislukt (update):', e) }
 
   return NextResponse.json({ ok: true })
 }

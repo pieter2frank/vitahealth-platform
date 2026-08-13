@@ -31,15 +31,9 @@ export async function POST(req: Request) {
   const gender    = str(b.gender, 20)
 
   const admin = createAdminClient()
+  // Fase 3 PII-kluis: pseudoniem record; alle identiteitsvelden gaan naar de kluis.
   const { data: created, error } = await admin.from('vh_client').insert({
-    first_name:  firstName,
-    last_name:   lastName,
-    email:       email || null,
-    phone:       phone || null,
-    birth_date:  birthDate || null,
-    address:     address || null,
-    postal_code: postalCode || null,
-    city:        city || null,
+    enrollment_status: 'aangemeld',
     ...(gender ? { gender } : {}),
   }).select('id').single()
 
