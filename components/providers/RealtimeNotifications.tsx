@@ -25,24 +25,30 @@ export function RealtimeNotifications() {
     const id = crypto.randomUUID()
     setToasts(prev => [...prev.slice(-4), { ...toast, id }]) // max 5 tegelijk
     setTimeout(() => dismiss(id), AUTO_DISMISS_MS)
+    return id
   }, [dismiss])
+
+  // Naam achteraf invullen zodra de kluis hem levert (toast staat er dan al).
+  const setToastName = useCallback((id: string, name: string) => {
+    setToasts(prev => prev.map(t => (t.id === id ? { ...t, name } : t)))
+  }, [])
 
   useEffect(() => {
     const supabase = createClient()
 
     // PII-kluis: het realtime-event bevat geen naam meer (vh_client is pseudoniem).
-    // Naam via de server route uit de kluis halen; korte retry omdat het event een
+    // De toast verschijnt daarom direct (zoals voorheen) en de naam wordt
+    // bijgewerkt zodra de kluis hem levert; korte retry omdat het event een
     // fractie eerder kan aankomen dan de kluisrij bij een verse registratie.
-    async function nameFor(clientId: string): Promise<string> {
+    async function fillName(toastId: string, clientId: string) {
       for (const delay of [0, 1500]) {
         if (delay) await new Promise(r => setTimeout(r, delay))
         try {
           const j = await (await fetch(`/api/clients/search?id=${clientId}`)).json()
           const name = (j.results?.[0]?.name as string | undefined)?.trim()
-          if (name) return name
-        } catch { /* volgende poging */ }
+          if (name) { setToastName(toastId, name); return }
+        } catch (e) { console.warn('[meldingen] naam ophalen mislukt:', e) }
       }
-      return 'Nieuwe cliënt'
     }
 
     const channel = supabase
@@ -50,35 +56,40 @@ export function RealtimeNotifications() {
       .on(
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'vh_client' },
-        async (payload) => {
+        (payload) => {
           const c = payload.new as { id: string }
-          addToast({
+          const toastId = addToast({
             clientId: c.id,
-            name:     await nameFor(c.id),
+            name:     'Nieuwe cliënt',
             message:  'heeft zich aangemeld via het portaal',
             type:     'aanmelding',
           })
+          void fillName(toastId, c.id)
         },
       )
       .on(
         'postgres_changes',
         { event: 'UPDATE', schema: 'public', table: 'vh_client' },
-        async (payload) => {
+        (payload) => {
           const c = payload.new as { id: string; enrollment_status: string }
           if (c.enrollment_status === 'vragenlijst_ingevuld') {
-            addToast({
+            const toastId = addToast({
               clientId: c.id,
-              name:     await nameFor(c.id),
+              name:     'Cliënt',
               message:  'heeft de intake volledig ingevuld',
               type:     'intake',
             })
+            void fillName(toastId, c.id)
           }
         },
       )
-      .subscribe()
+      .subscribe((status) => {
+        // Diagnostiek: zichtbaar in de browserconsole als het kanaal niet verbindt.
+        if (status !== 'SUBSCRIBED') console.warn('[meldingen] realtime-status:', status)
+      })
 
     return () => { supabase.removeChannel(channel) }
-  }, [addToast])
+  }, [addToast, setToastName])
 
   if (toasts.length === 0) return null
 
