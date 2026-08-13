@@ -1,7 +1,6 @@
 'use client'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { DateFieldNL } from '@/components/ui/DateFieldNL'
@@ -47,26 +46,27 @@ export function EditClientForm({ client }: { client: Client }) {
     setSaving(true)
     setError('')
 
-    const supabase = createClient()
-    const { error: updateError } = await supabase
-      .from('vh_client')
-      .update({
-        first_name: form.first_name.trim(),
-        last_name: form.last_name.trim(),
-        email: form.email.trim() || null,
-        phone: form.phone.trim() || null,
+    // Server route: schrijft oude kolommen + PII-kluis (browser kan niet versleutelen).
+    const res = await fetch(`/api/clients/${client.id}`, {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        firstName: form.first_name.trim(),
+        lastName: form.last_name.trim(),
+        email: form.email.trim(),
+        phone: form.phone.trim(),
         // birth_date alleen meesturen als de rol het mag zien/bewerken — anders
         // niet aanraken (voorkomt dat de logistieke rol de DOB per ongeluk wist).
-        ...(showDob ? { birth_date: form.birth_date || null } : {}),
-        gender: form.gender || null,
-        address: form.address.trim() || null,
-        city: form.city.trim() || null,
-        postal_code: form.postal_code.trim() || null,
-      })
-      .eq('id', client.id)
+        ...(showDob ? { birthDate: form.birth_date || '' } : {}),
+        gender: form.gender,
+        address: form.address.trim(),
+        city: form.city.trim(),
+        postalCode: form.postal_code.trim(),
+      }),
+    })
+    const j = await res.json().catch(() => ({}))
 
-    if (updateError) {
-      setError(updateError.message)
+    if (!res.ok) {
+      setError(j.error ?? 'Opslaan mislukt.')
       setSaving(false)
       return
     }

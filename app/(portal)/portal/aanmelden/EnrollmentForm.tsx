@@ -160,11 +160,11 @@ export function EnrollmentForm({
       // bij stap 2 hervat (en niet terugvalt naar stap 1).
       if (clientId) {
         setSaving(true)
-        const supabase = createClient()
-        await supabase
-          .from('vh_client')
-          .update({ phone: phone.trim() || null, birth_date: birthDate || null })
-          .eq('id', clientId)
+        // Server route: schrijft oude kolommen + PII-kluis (browser kan niet versleutelen).
+        await fetch('/api/portal/personalia', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ clientId, phone: phone.trim(), birthDate: birthDate || '' }),
+        }).catch(() => {})
         setSaving(false)
         setStep(2)
         window.scrollTo({ top: 0, behavior: 'smooth' })
@@ -204,46 +204,39 @@ export function EnrollmentForm({
       if (err) { setError(err); return }
 
       setSaving(true)
-      const supabase = createClient()
 
-      const adresPayload = {
-        phone:      phone.trim() || null,
-        birth_date: birthDate    || null,
-        address:    address.trim(),
-        postal_code: postalCode.trim(),
-        city:       city.trim(),
-      }
-
+      // Server route: schrijft oude kolommen + PII-kluis (browser kan niet versleutelen).
       if (clientId) {
         // Uitgenodigde cliënt: bestaand record bijwerken
-        const { error: updateErr } = await supabase
-          .from('vh_client')
-          .update(adresPayload)
-          .eq('id', clientId)
-
+        const res = await fetch('/api/portal/personalia', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            clientId,
+            phone: phone.trim(), birthDate: birthDate || '',
+            address: address.trim(), postalCode: postalCode.trim(), city: city.trim(),
+          }),
+        })
+        const j = await res.json().catch(() => ({}))
         setSaving(false)
-        if (updateErr) { setError('Opslaan mislukt: ' + updateErr.message); return }
+        if (!res.ok) { setError('Opslaan mislukt: ' + (j.error ?? 'onbekende fout')); return }
       } else {
-        // Nieuwe cliënt: aanmaken via SECURITY DEFINER-RPC (geen directe anon
-        // insert/return op vh_client — zie migratie 059/060).
-        const { data: newId, error: insertErr } = await supabase
-          .rpc('portal_register_client', {
-            p_first_name:  firstName.trim(),
-            p_last_name:   lastName.trim(),
-            p_email:       email.trim(),
-            p_phone:       phone.trim() || null,
-            p_birth_date:  birthDate || null,
-            p_address:     address.trim(),
-            p_postal_code: postalCode.trim(),
-            p_city:        city.trim(),
-          })
-
+        // Nieuwe cliënt aanmaken
+        const res = await fetch('/api/portal/personalia', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            create: true,
+            firstName: firstName.trim(), lastName: lastName.trim(), email: email.trim(),
+            phone: phone.trim(), birthDate: birthDate || '',
+            address: address.trim(), postalCode: postalCode.trim(), city: city.trim(),
+          }),
+        })
+        const j = await res.json().catch(() => ({}))
         setSaving(false)
-        if (insertErr || !newId) {
-          setError('Registratie mislukt: ' + (insertErr?.message ?? 'onbekende fout'))
+        if (!res.ok || !j.id) {
+          setError('Registratie mislukt: ' + (j.error ?? 'onbekende fout'))
           return
         }
-        setClientId(newId as string)
+        setClientId(j.id as string)
       }
 
       setStep(3)

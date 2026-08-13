@@ -39,23 +39,24 @@ export function OrderActions({ order }: { order: OrderData }) {
     setError('')
     const supabase = createClient()
 
-    // Maak cliëntprofiel aan vanuit aanvraagdata
-    const { data: client, error: clientErr } = await supabase
-      .from('vh_client')
-      .insert({
-        first_name: order.first_name,
-        last_name: order.last_name,
-        email: order.email,
-        phone: order.phone,
-        birth_date: order.birth_date,
-        address: order.address,
-        city: order.city,
-        postal_code: order.postal_code,
-      })
-      .select('id')
-      .single()
+    // Maak cliëntprofiel aan vanuit aanvraagdata — via de server route (schrijft
+    // oude kolommen + PII-kluis; de browser kan niet versleutelen).
+    const createRes = await fetch('/api/clients', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        firstName:  order.first_name ?? '',
+        lastName:   order.last_name ?? '',
+        email:      order.email ?? '',
+        phone:      order.phone ?? '',
+        birthDate:  order.birth_date ?? '',
+        address:    order.address ?? '',
+        city:       order.city ?? '',
+        postalCode: order.postal_code ?? '',
+      }),
+    })
+    const client = await createRes.json().catch(() => ({}))
 
-    if (clientErr) { setError(clientErr.message); setSaving(false); return }
+    if (!createRes.ok || !client.id) { setError(client.error ?? 'Cliënt aanmaken mislukt.'); setSaving(false); return }
 
     // Koppel cliënt aan aanvraag + zet status op bevestigd
     const { error: updateErr } = await supabase

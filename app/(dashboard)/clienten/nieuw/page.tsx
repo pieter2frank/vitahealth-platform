@@ -1,7 +1,6 @@
 'use client'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
 import { Input } from '@/components/ui/input'
 import { DateInput } from '@/components/ui/date-input'
 import { Button } from '@/components/ui/button'
@@ -37,32 +36,30 @@ export default function NieuweClientPage() {
     setSaving(true)
     setError('')
 
-    const supabase = createClient()
-    const payload = {
-      first_name: form.first_name.trim(),
-      last_name: form.last_name.trim(),
-      email: form.email.trim() || null,
-      phone: form.phone.trim() || null,
-      birth_date: form.birth_date || null,
-      address: form.address.trim() || null,
-      city: form.city.trim() || null,
-      postal_code: form.postal_code.trim() || null,
-    }
+    // Server route: schrijft oude kolommen + PII-kluis (browser kan niet versleutelen).
+    const res = await fetch('/api/clients', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        firstName: form.first_name.trim(),
+        lastName: form.last_name.trim(),
+        email: form.email.trim(),
+        phone: form.phone.trim(),
+        birthDate: form.birth_date || '',
+        address: form.address.trim(),
+        city: form.city.trim(),
+        postalCode: form.postal_code.trim(),
+      }),
+    })
+    const data = await res.json().catch(() => ({}))
 
-    const { data, error: insertError } = await supabase
-      .from('vh_client')
-      .insert(payload)
-      .select('id')
-      .single()
-
-    if (insertError) {
-      setError(insertError.message)
+    if (!res.ok || !data.id) {
+      setError(data.error ?? 'Cliënt aanmaken mislukt.')
       setSaving(false)
       return
     }
 
     // Uitnodigingsmail versturen als er een e-mailadres is ingevuld
-    if (payload.email) {
+    if (form.email.trim()) {
       fetch('/api/email/uitnodiging', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

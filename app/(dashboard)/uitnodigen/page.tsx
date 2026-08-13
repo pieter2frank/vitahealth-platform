@@ -25,19 +25,20 @@ export default function UitnodigingPage() {
 
     const supabase = createClient()
 
-    // 1. Minimale cliëntrecord aanmaken
-    const { data: client, error: insertErr } = await supabase
-      .from('vh_client')
-      .insert({
-        first_name: form.first_name.trim(),
-        last_name:  form.last_name.trim(),
-        email:      form.email.trim().toLowerCase(),
-      })
-      .select('id')
-      .single()
+    // 1. Minimale cliëntrecord aanmaken — via de server route (schrijft oude
+    //    kolommen + PII-kluis; de browser kan niet versleutelen).
+    const createRes = await fetch('/api/clients', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        firstName: form.first_name.trim(),
+        lastName:  form.last_name.trim(),
+        email:     form.email.trim().toLowerCase(),
+      }),
+    })
+    const client = await createRes.json().catch(() => ({}))
 
-    if (insertErr) {
-      setError(insertErr.message)
+    if (!createRes.ok || !client.id) {
+      setError(client.error ?? 'Cliënt aanmaken mislukt.')
       setSaving(false)
       return
     }
