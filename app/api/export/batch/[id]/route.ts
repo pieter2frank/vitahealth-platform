@@ -135,7 +135,11 @@ export async function GET(
     outcome:        'success',
     reason:         `Batch ${batch.badge_id} geëxporteerd naar Excel`,
     ipAddress:      ip,
-    metadata:       { batch_id: id, badge_id: batch.badge_id, kit_count: (kits ?? []).length },
+    metadata:       {
+      batch_id: id, badge_id: batch.badge_id, kit_count: (kits ?? []).length,
+      // PII-kluis: bulk-ontsleuteling wordt expliciet vastgelegd (fase 4).
+      identities_decrypted: identities.size,
+    },
   })
 
   return new Response(blob, {

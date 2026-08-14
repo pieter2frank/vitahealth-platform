@@ -100,6 +100,8 @@ export interface ClientRecord {
   first_name: string; last_name: string
   email: string | null; phone: string | null; birth_date: string | null
   address: string | null; postal_code: string | null; city: string | null
+  /** false = geen kluisrij (dossier is geanonimiseerd of identiteit ontbreekt). */
+  identity_present: boolean
 }
 
 export async function getClientRecord(admin: Admin, clientId: string): Promise<ClientRecord | null> {
@@ -124,6 +126,7 @@ export async function getClientRecord(admin: Admin, clientId: string): Promise<C
     address:     identity?.address ?? null,
     postal_code: identity?.postalCode ?? null,
     city:        identity?.city ?? null,
+    identity_present: identity !== null,
   }
 }
 

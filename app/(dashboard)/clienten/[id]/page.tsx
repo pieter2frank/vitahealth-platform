@@ -7,8 +7,9 @@ import Link from 'next/link'
 import { formatDate, formatDateTime, STATUS_LABELS, STATUS_COLORS } from '@/lib/utils'
 import { ArrowLeft, Pencil, TestTube2, User, Phone, Mail, MapPin, Calendar, ShieldAlert, ShieldCheck } from 'lucide-react'
 import { SCREENER_DECLARATION_LABEL } from '@/lib/screener'
-import { canSeeBirthDate } from '@/lib/auth/roles'
+import { canSeeBirthDate, isAdmin } from '@/lib/auth/roles'
 import { EditClientForm } from './EditClientForm'
+import { AnonymizeButton } from './AnonymizeButton'
 import { TestkitLinker } from '@/components/testkits/TestkitLinker'
 import { DeleteButton } from '@/components/ui/DeleteButton'
 import { CollapsibleCard } from '@/components/ui/CollapsibleCard'
@@ -151,13 +152,23 @@ export default async function ClientDetailPage({
         <div className="flex items-start justify-between">
           <div>
             <h1 className="text-2xl font-bold text-[#1e293b]">
-              {client.first_name} {client.last_name}
+              {client.identity_present ? `${client.first_name} ${client.last_name}` : 'Geanonimiseerd dossier'}
             </h1>
             <p className="text-sm text-[#64748b] mt-0.5">
               Cliënt sinds {formatDate(client.created_at)}
+              {!client.identity_present && (
+                <span className="ml-2 inline-flex items-center rounded-full border border-slate-300 bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-600">
+                  Identiteit verwijderd (retentiebeleid)
+                </span>
+              )}
             </p>
           </div>
           <div className="flex items-center gap-2">
+            {/* Retentie: anonimiseren kan alleen bij een afgerond/beëindigd traject (admin) */}
+            {isAdmin(me?.role) && client.identity_present &&
+              ['uitslag_besproken', 'intake_afgewezen', 'geannuleerd'].includes(client.enrollment_status ?? '') && (
+              <AnonymizeButton clientId={client.id} clientName={`${client.first_name} ${client.last_name}`} />
+            )}
             <InsightsModal
               clientId={client.id}
               clientName={`${client.first_name} ${client.last_name}`}

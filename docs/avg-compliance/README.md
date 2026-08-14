@@ -30,5 +30,7 @@ Plaats de bijbehorende documenten in de juiste map. Elke map bevat een README me
 | [`../server-hardening-checklist-v1.0.docx`](../server-hardening-checklist-v1.0.docx) | Zelfde document als Word-versie (aanvinkbaar) |
 | [`pii-kluis-toelichting-avg-v1.1.md`](pii-kluis-toelichting-avg-v1.1.md) | PII-kluis — toelichting voor de AVG-functionaris in gewone taal (markdown, actueel) |
 | [`../pii-kluis-toelichting-avg-v1.1.docx`](../pii-kluis-toelichting-avg-v1.1.docx) | Zelfde document als Word-versie |
+| [`pii-sleutelbeheer-retentie-v1.0.md`](pii-sleutelbeheer-retentie-v1.0.md) | PII-kluis — sleutelrotatie, verlies-scenario's en anonimiseren/retentie (markdown) |
+| [`../pii-sleutelbeheer-retentie-v1.0.docx`](../pii-sleutelbeheer-retentie-v1.0.docx) | Zelfde document als Word-versie (checklist aanvinkbaar) |
 
 _Historie: betaalmuur v1.0, pii-kluis-implementatieplan v1.0 en pii-kluis-toelichting-avg v1.0 (zelfde mappen)._
