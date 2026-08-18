@@ -16,7 +16,7 @@ erbij, en hieronder een regel invullen.
 | TransIP | Self-serve afgesloten via het TransIP-controlepaneel (op naam van accounthouder) | VO v8 + subverwerkersovereenkomst v6 | 18-08-2026 | ✔ `vo-transip-v8.pdf` + `svo-transip-v6.pdf` | ✔ (svo) |
 | Resend | _in te vullen_ | | | ☐ | ☐ |
 | Better Stack | _in te vullen_ | | | ☐ | ☐ |
-| Nebius | _in te vullen (opvragen; incl. bevestiging geen training op onze data)_ | | | ☐ | ☐ |
+| Nebius (Token Factory) | Self-serve: DPA op docs.tokenfactory.nebius.com/legal/dpa (Nebius B.V., NL-recht; DPA voorziet expliciet in art. 9-gezondheidsdata, Annex 1(B)). Geen training op klantdata in beide modi (Legal Quick Guide §4.2). **Actie: Zero Data Retention aanzetten** (org-instellingen) + schriftelijke ZDR-bevestiging vragen via support; subverwerkers: /legal/subprocessors | _PDF nog opslaan_ | 18-08-2026 | ☐ | ☐ |
 | Nightingale Health | _in te vullen (via labcontract — ondertekend document)_ | | | ☐ | ☐ |
 
 **Geen DPA (zelfstandig verwerkingsverantwoordelijke):** Mollie (betaalinstelling) en
