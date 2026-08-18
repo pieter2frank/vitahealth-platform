@@ -24,7 +24,7 @@ Plaats hier de documenten die bij dit hoofdstuk horen. Checklist:
 
 **Overig:**
 
-- [ ] Subverwerkersregister bijwerken zodra de VO's binnen zijn (incl. subverwerkers per partij)
+- [x] Subverwerkersregister v1.1 (18-08-2026) — alle partijen + subverwerkers + rolduiding Mollie/PostNL; alleen Nightingale nog open
 - [ ] Bevestiging: geen medische data in support/analytics
 
 ---
