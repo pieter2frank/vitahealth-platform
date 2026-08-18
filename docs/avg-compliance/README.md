@@ -34,6 +34,6 @@ Plaats de bijbehorende documenten in de juiste map. Elke map bevat een README me
 | [`pii-sleutelbeheer-retentie-v1.0.md`](pii-sleutelbeheer-retentie-v1.0.md) | PII-kluis — sleutelrotatie, verlies-scenario's en anonimiseren/retentie (markdown) |
 | [`../pii-sleutelbeheer-retentie-v1.0.docx`](../pii-sleutelbeheer-retentie-v1.0.docx) | Zelfde document als Word-versie (checklist aanvinkbaar) |
 | [`../beveiligingsmaatregelen-vita-health-v1.1.docx`](../beveiligingsmaatregelen-vita-health-v1.1.docx) | Beveiligingsmaatregelen — overkoepelend maatregelen-document (Word, actueel) |
-| [`../vita-health-beveiligingsplanning.ics`](../vita-health-beveiligingsplanning.ics) | Agenda-bestand bij de jaarplanning (importeren in Outlook/Google/Apple) |
+| [`13-agenda planning/vita-health-beveiligingsplanning.ics`](13-agenda%20planning/vita-health-beveiligingsplanning.ics) | Agenda-bestand bij de jaarplanning (importeren in Outlook/Google/Apple) |
 
 _Historie: oudere versies (betaalmuur v1.0; pii-kluis-implementatieplan v1.0/v1.1; pii-kluis-toelichting-avg v1.0; server-hardening-checklist v1.0; beveiligingsmaatregelen v1.0) blijven in dezelfde mappen bewaard._

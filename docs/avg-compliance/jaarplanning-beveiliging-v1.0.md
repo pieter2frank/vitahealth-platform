@@ -9,7 +9,7 @@ _Terugkerende beveiligingstaken, augustus 2026 – augustus 2027_
 | **Status** | Vastgesteld — als agenda-items ingepland (iCal) |
 | **Eigenaar** | Vita Health |
 
-> De bijbehorende agenda-afspraken staan in `vita-health-beveiligingsplanning.ics`
+> De bijbehorende agenda-afspraken staan in `13-agenda planning/vita-health-beveiligingsplanning.ics`
 > (geïmporteerd in de agenda van de beheerder). Inhoudelijke procedures staan in
 > `server-hardening-checklist-v1.0` en `pii-sleutelbeheer-retentie-v1.0`.
 

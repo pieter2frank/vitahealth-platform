@@ -13,13 +13,13 @@ Plaats hier de documenten die bij dit hoofdstuk horen. Checklist:
 - [x] Zivver — standaard-DPA gedownload (zivver.com/legal/data-processing); evt. bevestiging accountbeheer nog na te vragen
 - [x] TransIP — VO (v8) + subverwerkersovereenkomst (v6) afgesloten via het controlepaneel
 - [x] Nebius (AI-advies) — DPA + subverwerkerslijst aanwezig; geen training op klantdata (publiek gedocumenteerd); Zero Data Retention aan (18-08-2026)
-- [x] Resend — ondertekende DPA + SOC 2 Type II + pentest-attestatie aanwezig; subverwerkerslijst nog toevoegen
+- [x] Resend — ondertekende DPA + SOC 2 Type II + pentest-attestatie aanwezig; subverwerkers in de DPA-annex
 - [x] Better Stack — DPA + subverwerkerslijst (Schedule A) aanwezig; ons gebruik bevat bewust geen gevoelige data (pseudonieme auditlog)
 
 **Geen VO (zelfstandig verwerkingsverantwoordelijke) — rol vastleggen in het verwerkingsregister:**
 
-- [ ] Mollie (betaalinstelling, eigen verantwoordelijke voor betaalverwerking)
-- [ ] PostNL (vervoerder, eigen verantwoordelijke voor bezorging)
+- [x] Mollie (betaalinstelling, eigen verantwoordelijke voor betaalverwerking) — rolduiding opgenomen in verwerkingsregister v1.2 (18-08-2026)
+- [x] PostNL (vervoerder, eigen verantwoordelijke voor bezorging) — rolduiding opgenomen in verwerkingsregister v1.2 (18-08-2026)
 - [x] GitHub / Coolify — geen cliëntgegevens (alleen code / zelf-gehost)
 
 **Overig:**
