@@ -11,9 +11,9 @@ erbij, en hieronder een regel invullen.
 
 | Partij | Totstandkoming | Versie / datum DPA | Vastgesteld op | PDF in map | Subverwerkers-PDF |
 |---|---|---|---|---|---|
-| Supabase | Automatisch — DPA "forms part of the Supabase Terms of Service" (geaccepteerd bij accountaanmaak) | Version 1 — August 1, 2026 | 18-08-2026 | ☐ `dpa-supabase-v1-aug2026.pdf` | ☐ |
-| Zivver | _in te vullen_ | | | ☐ | ☐ |
-| TransIP | _in te vullen (self-serve in controlepaneel)_ | | | ☐ | ☐ |
+| Supabase | Automatisch — DPA "forms part of the Supabase Terms of Service" (geaccepteerd bij accountaanmaak) | Version 1 — August 1, 2026 | 18-08-2026 | ✔ `dpa-supabase-v1-aug2026.pdf` + TIA (`Supabase+TIA+250314.pdf`) | ☐ |
+| Zivver | Standaard-DPA van zivver.com/legal/data-processing (gekoppeld aan de hoofdovereenkomst; desgewenst bevestiging vragen bij accountbeheer) | zie PDF | 18-08-2026 | ✔ `dpa-zivver.pdf` | ☐ |
+| TransIP | Self-serve afgesloten via het TransIP-controlepaneel (op naam van accounthouder) | VO v8 + subverwerkersovereenkomst v6 | 18-08-2026 | ✔ `vo-transip-v8.pdf` + `svo-transip-v6.pdf` | ✔ (svo) |
 | Resend | _in te vullen_ | | | ☐ | ☐ |
 | Better Stack | _in te vullen_ | | | ☐ | ☐ |
 | Nebius | _in te vullen (opvragen; incl. bevestiging geen training op onze data)_ | | | ☐ | ☐ |
