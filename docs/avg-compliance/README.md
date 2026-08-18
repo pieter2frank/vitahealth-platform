@@ -26,12 +26,14 @@ Plaats de bijbehorende documenten in de juiste map. Elke map bevat een README me
 | [`../betaalmuur-vita-health-v1.1.docx`](../betaalmuur-vita-health-v1.1.docx) | Zelfde document als Word-versie |
 | [`pii-kluis-implementatieplan-v1.2.md`](pii-kluis-implementatieplan-v1.2.md) | PII-kluis — implementatieplan, alle fasen afgerond (markdown, actueel) |
 | [`../pii-kluis-implementatieplan-v1.2.docx`](../pii-kluis-implementatieplan-v1.2.docx) | Zelfde document als Word-versie |
-| [`server-hardening-checklist-v1.0.md`](server-hardening-checklist-v1.0.md) | Server-hardening — checklist voor de TransIP-VPS'en en het Coolify-paneel (markdown) |
-| [`../server-hardening-checklist-v1.0.docx`](../server-hardening-checklist-v1.0.docx) | Zelfde document als Word-versie (aanvinkbaar) |
+| [`server-hardening-checklist-v1.1.md`](server-hardening-checklist-v1.1.md) | Server-hardening — checklist voor de TransIP-VPS'en en het Coolify-paneel (markdown, actueel) |
+| [`../server-hardening-checklist-v1.1.docx`](../server-hardening-checklist-v1.1.docx) | Zelfde document als Word-versie (aanvinkbaar) |
 | [`pii-kluis-toelichting-avg-v1.1.md`](pii-kluis-toelichting-avg-v1.1.md) | PII-kluis — toelichting voor de AVG-functionaris in gewone taal (markdown, actueel) |
 | [`../pii-kluis-toelichting-avg-v1.1.docx`](../pii-kluis-toelichting-avg-v1.1.docx) | Zelfde document als Word-versie |
 | [`jaarplanning-beveiliging-v1.0.md`](jaarplanning-beveiliging-v1.0.md) | Jaarplanning beveiliging & controles (maandelijks/kwartaal/halfjaar/jaarlijks, met iCal) |
 | [`pii-sleutelbeheer-retentie-v1.0.md`](pii-sleutelbeheer-retentie-v1.0.md) | PII-kluis — sleutelrotatie, verlies-scenario's en anonimiseren/retentie (markdown) |
 | [`../pii-sleutelbeheer-retentie-v1.0.docx`](../pii-sleutelbeheer-retentie-v1.0.docx) | Zelfde document als Word-versie (checklist aanvinkbaar) |
+| [`../beveiligingsmaatregelen-vita-health-v1.1.docx`](../beveiligingsmaatregelen-vita-health-v1.1.docx) | Beveiligingsmaatregelen — overkoepelend maatregelen-document (Word, actueel) |
+| [`../vita-health-beveiligingsplanning.ics`](../vita-health-beveiligingsplanning.ics) | Agenda-bestand bij de jaarplanning (importeren in Outlook/Google/Apple) |
 
-_Historie: betaalmuur v1.0, pii-kluis-implementatieplan v1.0 en pii-kluis-toelichting-avg v1.0 (zelfde mappen)._
+_Historie: oudere versies (betaalmuur v1.0; pii-kluis-implementatieplan v1.0/v1.1; pii-kluis-toelichting-avg v1.0; server-hardening-checklist v1.0; beveiligingsmaatregelen v1.0) blijven in dezelfde mappen bewaard._
