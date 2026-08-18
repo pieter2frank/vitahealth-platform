@@ -14,7 +14,7 @@ Plaats hier de documenten die bij dit hoofdstuk horen. Checklist:
 - [x] TransIP — VO (v8) + subverwerkersovereenkomst (v6) afgesloten via het controlepaneel
 - [x] Nebius (AI-advies) — DPA + subverwerkerslijst aanwezig; geen training op klantdata (publiek gedocumenteerd); Zero Data Retention aan (18-08-2026)
 - [x] Resend — ondertekende DPA + SOC 2 Type II + pentest-attestatie aanwezig; subverwerkerslijst nog toevoegen
-- [ ] Better Stack — DPA via legal-pagina of support
+- [x] Better Stack — DPA + subverwerkerslijst (Schedule A) aanwezig; ons gebruik bevat bewust geen gevoelige data (pseudonieme auditlog)
 
 **Geen VO (zelfstandig verwerkingsverantwoordelijke) — rol vastleggen in het verwerkingsregister:**
 
