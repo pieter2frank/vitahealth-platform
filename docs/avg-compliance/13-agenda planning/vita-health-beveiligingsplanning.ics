@@ -1,0 +1,115 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Vita Health//Beveiligingsplanning//NL
+CALSCALE:GREGORIAN
+X-WR-CALNAME:Vita Health beveiliging
+BEGIN:VTIMEZONE
+TZID:Europe/Amsterdam
+BEGIN:DAYLIGHT
+TZOFFSETFROM:+0100
+TZOFFSETTO:+0200
+TZNAME:CEST
+DTSTART:19700329T020000
+RRULE:FREQ=YEARLY;BYMONTH=3;BYDAY=-1SU
+END:DAYLIGHT
+BEGIN:STANDARD
+TZOFFSETFROM:+0200
+TZOFFSETTO:+0100
+TZNAME:CET
+DTSTART:19701025T030000
+RRULE:FREQ=YEARLY;BYMONTH=10;BYDAY=-1SU
+END:STANDARD
+END:VTIMEZONE
+BEGIN:VEVENT
+UID:vh-sec-maandelijks@vita-health.nl
+DTSTAMP:20260818T120000Z
+DTSTART;TZID=Europe/Amsterdam:20260907T090000
+DTEND;TZID=Europe/Amsterdam:20260907T091500
+RRULE:FREQ=MONTHLY;BYDAY=1MO;COUNT=12
+SUMMARY:Vita Health - maandelijks serveronderhoud
+DESCRIPTION:MAANDELIJKS SERVERONDERHOUD (~15 min) - beide servers (contro
+ l-plane 149.210.173.248\, app-server 149.210.237.67):\n1. Inloggen (sleu
+ tel) en draaien: sudo apt update && sudo apt upgrade -y\n2. Staat er "**
+ * System restart required ***"? Reboot plannen/uitvoeren (app-server = p
+ latform ±2 min offline\; control-plane = alleen Coolify-paneel).\n3. Co
+ olify: Settings → Update - bijwerken indien beschikbaar.\n4. Snelle bl
+ ik: sudo fail2ban-client status sshd (draait hij\, zijn er bans?).\nZie:
+  docs/server-hardening-checklist-v1.0
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Herinnering
+TRIGGER:-P1D
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:vh-sec-kwartaal@vita-health.nl
+DTSTAMP:20260818T120000Z
+DTSTART;TZID=Europe/Amsterdam:20261117T090000
+DTEND;TZID=Europe/Amsterdam:20261117T093000
+RRULE:FREQ=MONTHLY;INTERVAL=3;COUNT=3
+SUMMARY:Vita Health - kwartaalritueel beveiliging
+DESCRIPTION:KWARTAALRITUEEL BEVEILIGING (~30 min):\n1. Sleutels: staan PI
+ I_ENCRYPTION_KEY(_Vn) + PII_HASH_KEY op precies twee plekken (Coolify + 
+ wachtwoordmanager)?\n2. Rotatie: jongste PII-sleutelrotatie < 12 maanden
+ ?\n3. Retentie: dossiers met afgerond/beëindigd traject + verstreken be
+ waartermijn? → knop "Dossier anonimiseren".\n4. Auditlog-steekproef: k
+ loppen export- en anonimiseer-regels?\n5. Firewallregels (TransIP\, beid
+ e servers) nog conform? (paneel/SSH-allowlists\; 80/443 app-server open)
+ \n6. authorized_keys beide servers nalopen: alleen eigen sleutel + cooli
+ fy-sleutel (app-server).\n7. Coolify: accounts/tokens nalopen\, 2FA nog 
+ actief.\nZie: docs/pii-sleutelbeheer-retentie-v1.0 (h6) + server-hardeni
+ ng-checklist-v1.0 (h6)
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Herinnering
+TRIGGER:-P1D
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:vh-sec-restoretest@vita-health.nl
+DTSTAMP:20260818T120000Z
+DTSTART;TZID=Europe/Amsterdam:20270223T090000
+DTEND;TZID=Europe/Amsterdam:20270223T094500
+SUMMARY:Vita Health - backup-restoretest
+DESCRIPTION:BACKUP-RESTORETEST (~45 min):\nDoel: bewijzen dat we een back
+ up echt kunnen terugzetten.\n1. Supabase: controleer dat de automatische
+  backups draaien (Database → Backups).\n2. Voer een testrestore uit na
+ ar een tijdelijk/nieuw project (of minimaal: download een backup en cont
+ roleer dat hij leesbaar/compleet is).\n3. Controleer dat de PII-sleutels
+  uit de wachtwoordmanager de kluisvelden in die backup kunnen ontsleutel
+ en (zonder sleutel is een backup onbruikbaar!).\n4. Noteer datum + uitko
+ mst in het beveiligingsdossier.
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Herinnering
+TRIGGER:-P1D
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:vh-sec-jaarreview@vita-health.nl
+DTSTAMP:20260818T120000Z
+DTSTART;TZID=Europe/Amsterdam:20270817T090000
+DTEND;TZID=Europe/Amsterdam:20270817T103000
+SUMMARY:Vita Health - jaarlijkse beveiligingsreview (incl. sleutelrotatie
+ )
+DESCRIPTION:JAARLIJKSE BEVEILIGINGSREVIEW (~90 min):\n1. Kwartaalritueel 
+ volledig uitvoeren (zie kwartaal-omschrijving).\n2. PII-SLEUTELROTATIE: 
+ nieuwe sleutel als PII_ENCRYPTION_KEY_V<n+1> in Coolify + wachtwoordmana
+ ger → redeploy → /api/admin/pii-rotate als admin → pas bij remaini
+ ng:0 de oude sleutel verwijderen. Procedure: docs/pii-sleutelbeheer-rete
+ ntie-v1.0 (h2).\n3. Overige sleutels roteren of beoordelen: Mollie\, Ziv
+ ver\, Resend\, SUPABASE_SERVICE_ROLE_KEY\, AUDIT_HASH_SALT.\n4. Toegangs
+ review: wie heeft toegang tot Coolify\, Supabase\, TransIP\, GitHub\, wa
+ chtwoordmanager? Vertrokken personen → sleutels roteren.\n5. Backup-re
+ storetest herhalen.\n6. Documentenreview: kloppen de versies in docs/ no
+ g met de werkelijkheid? Zo nodig versienummer ophogen.\n7. Verwerkersove
+ reenkomsten actueel? (Supabase\, Mollie\, Zivver\, Resend\, Better Stack
+ \, hosting)\n8. Server-hardening-checklist volledig opnieuw aflopen (bei
+ de servers).
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Herinnering
+TRIGGER:-P1D
+END:VALARM
+END:VEVENT
+END:VCALENDAR
