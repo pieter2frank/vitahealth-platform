@@ -12,7 +12,7 @@ Plaats hier de documenten die bij dit hoofdstuk horen. Checklist:
 - [ ] Nightingale Health — via het labcontract; VO/data-processing-bijlage opvragen bij contactpersoon
 - [x] Zivver — standaard-DPA gedownload (zivver.com/legal/data-processing); evt. bevestiging accountbeheer nog na te vragen
 - [x] TransIP — VO (v8) + subverwerkersovereenkomst (v6) afgesloten via het controlepaneel
-- [ ] Nebius (AI-advies) — DPA via legal-pagina's of opvragen via support; incl. bevestiging "geen training op onze data"
+- [x] Nebius (AI-advies) — DPA + subverwerkerslijst aanwezig; geen training op klantdata (publiek gedocumenteerd); Zero Data Retention aan (18-08-2026)
 - [ ] Resend — self-serve: resend.com/legal/dpa; VS-partij → SCC's + subverwerkers (AWS) noteren
 - [ ] Better Stack — DPA via legal-pagina of support
 
