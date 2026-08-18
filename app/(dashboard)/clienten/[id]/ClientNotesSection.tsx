@@ -173,6 +173,11 @@ function NoteCard({
       {/* Bewerkformulier */}
       {editing && (
         <div className="p-5 space-y-4">
+          {/* PII-beleid (kluis fase 5): vrije tekst wordt niet versleuteld */}
+          <p className="mb-3 rounded-lg border border-[#e2e8f0] bg-[#f8fafc] px-3 py-2 text-xs text-[#64748b]">
+            Let op: notities worden niet versleuteld. Zet er geen herleidbare persoonsgegevens in
+            (adres, geboortedatum, BSN e.d.) — die horen in de daarvoor bestemde velden.
+          </p>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-medium text-[#64748b] mb-1.5">Aantekeningen</label>

@@ -1,5 +1,6 @@
 import { createAdminClient } from '@/lib/supabase/admin'
 import { requireRolePage } from '@/lib/auth/guard'
+import { decryptOrderBuyer } from '@/lib/pii/order'
 import { formatEuro } from '@/lib/payments/pricing'
 import { Receipt, CheckCircle2, Ban, Wallet } from 'lucide-react'
 import { OrdersTable, type OrderRow } from './OrdersTable'
@@ -16,17 +17,21 @@ export default async function BestellingenPage() {
     .order('created_at', { ascending: false })
     .limit(500)
 
-  const orders: OrderRow[] = (data ?? []).map(o => ({
-    id:                o.id as string,
-    createdAt:         o.created_at as string,
-    packageName:       (o.package_name as string) ?? '—',
-    buyerName:         [o.buyer_first_name, o.buyer_last_name].filter(Boolean).join(' ').trim() || null,
-    email:             (o.email as string) ?? '',
-    amountCents:       (o.amount_cents as number) ?? 0,
-    status:            (o.status as string) ?? 'open',
-    paidAt:            (o.paid_at as string | null) ?? null,
-    refundedAt:        (o.refunded_at as string | null) ?? null,
-  }))
+  const orders: OrderRow[] = (data ?? []).map(o => {
+    // Fase 5 PII-kluis: kopervelden op de order zijn versleuteld.
+    const buyer = decryptOrderBuyer(o as Parameters<typeof decryptOrderBuyer>[0])
+    return {
+      id:                o.id as string,
+      createdAt:         o.created_at as string,
+      packageName:       (o.package_name as string) ?? '—',
+      buyerName:         [buyer.firstName, buyer.lastName].filter(Boolean).join(' ').trim() || null,
+      email:             buyer.email,
+      amountCents:       (o.amount_cents as number) ?? 0,
+      status:            (o.status as string) ?? 'open',
+      paidAt:            (o.paid_at as string | null) ?? null,
+      refundedAt:        (o.refunded_at as string | null) ?? null,
+    }
+  })
 
   const paid        = orders.filter(o => o.status === 'paid')
   const refunded    = orders.filter(o => o.status === 'refunded')

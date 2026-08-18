@@ -3,6 +3,7 @@ import type { createAdminClient } from '@/lib/supabase/admin'
 import { COMPANY } from '@/lib/company'
 import { sendEmail } from '@/lib/email/send'
 import { factuurEmail, creditfactuurEmail } from '@/lib/email/templates'
+import { decryptOrderBuyer } from '@/lib/pii/order'
 
 type Admin = ReturnType<typeof createAdminClient>
 
@@ -115,12 +116,14 @@ export async function createInvoiceForOrder(
     .eq('id', orderId).single()
   if (!order) throw new Error('Order niet gevonden.')
 
-  const firstName = (order.buyer_first_name as string | null) || null
+  // Fase 5 PII-kluis: kopervelden op de order zijn versleuteld — eerst ontsleutelen.
+  const buyer = decryptOrderBuyer(order as Parameters<typeof decryptOrderBuyer>[0])
+  const firstName = buyer.firstName || null
 
   const { data: existing } = await admin
     .from('vh_invoice').select('number').eq('order_id', orderId).eq('type', type).maybeSingle()
   if (existing?.number) {
-    return { created: false, number: existing.number as string, pdf: null, email: order.email as string, firstName }
+    return { created: false, number: existing.number as string, pdf: null, email: buyer.email, firstName }
   }
 
   const sign = type === 'credit' ? -1 : 1
@@ -137,13 +140,13 @@ export async function createInvoiceForOrder(
   const number = `VHP${year}-${String(seq).padStart(6, '0')}`
   const issuedAt = new Date().toISOString()
 
-  const buyerName = [order.buyer_first_name, order.buyer_last_name].filter(Boolean).join(' ').trim()
-  const postalCity = [order.buyer_postal_code, order.buyer_city].filter(Boolean).join(' ').trim()
+  const buyerName = [buyer.firstName, buyer.lastName].filter(Boolean).join(' ').trim()
+  const postalCity = [buyer.postalCode, buyer.city].filter(Boolean).join(' ').trim()
   const pdf = await generateInvoicePdf({
     number, issuedAt, type,
-    buyerEmail: order.email as string,
+    buyerEmail: buyer.email,
     buyerName: buyerName || undefined,
-    buyerAddress: (order.buyer_address as string | null) || undefined,
+    buyerAddress: buyer.address || undefined,
     buyerPostalCity: postalCity || undefined,
     packageName: order.package_name as string,
     netCents: net, vatCents: vat, grossCents: gross, vatRate: rate,
@@ -159,7 +162,7 @@ export async function createInvoiceForOrder(
     storage_path: storagePath, issued_at: issuedAt,
   })
 
-  return { created: true, number, pdf, email: order.email as string, firstName }
+  return { created: true, number, pdf, email: buyer.email, firstName }
 }
 
 // Maakt de factuur (indien nieuw) en mailt hem als bijlage. Best-effort.

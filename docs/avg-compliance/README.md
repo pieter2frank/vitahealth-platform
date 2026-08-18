@@ -24,8 +24,8 @@ Plaats de bijbehorende documenten in de juiste map. Elke map bevat een README me
 |----------|--------------|
 | [`betaalmuur-vita-health-v1.1.md`](betaalmuur-vita-health-v1.1.md) | Betaalmuur & facturatie — functioneel en technisch ontwerp (markdown, actueel) |
 | [`../betaalmuur-vita-health-v1.1.docx`](../betaalmuur-vita-health-v1.1.docx) | Zelfde document als Word-versie |
-| [`pii-kluis-implementatieplan-v1.1.md`](pii-kluis-implementatieplan-v1.1.md) | PII-kluis — implementatieplan, fasen 0–3 afgerond (markdown, actueel) |
-| [`../pii-kluis-implementatieplan-v1.1.docx`](../pii-kluis-implementatieplan-v1.1.docx) | Zelfde document als Word-versie |
+| [`pii-kluis-implementatieplan-v1.2.md`](pii-kluis-implementatieplan-v1.2.md) | PII-kluis — implementatieplan, alle fasen afgerond (markdown, actueel) |
+| [`../pii-kluis-implementatieplan-v1.2.docx`](../pii-kluis-implementatieplan-v1.2.docx) | Zelfde document als Word-versie |
 | [`server-hardening-checklist-v1.0.md`](server-hardening-checklist-v1.0.md) | Server-hardening — checklist voor de TransIP-VPS'en en het Coolify-paneel (markdown) |
 | [`../server-hardening-checklist-v1.0.docx`](../server-hardening-checklist-v1.0.docx) | Zelfde document als Word-versie (aanvinkbaar) |
 | [`pii-kluis-toelichting-avg-v1.1.md`](pii-kluis-toelichting-avg-v1.1.md) | PII-kluis — toelichting voor de AVG-functionaris in gewone taal (markdown, actueel) |

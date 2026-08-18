@@ -3,6 +3,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { priceFor, discountError, type Package, type DiscountCode } from '@/lib/payments/pricing'
 import { createMolliePayment, mollieConfigured } from '@/lib/payments/mollie'
 import { settleOrderPaid } from '@/lib/payments/fulfil'
+import { encryptOrderBuyer } from '@/lib/pii/order'
 
 // POST /api/payments/checkout  { slug, email, code? }
 // Maakt een order aan en start de Mollie-betaling (of vervult direct bij €0).
@@ -47,15 +48,17 @@ export async function POST(req: Request) {
 
   const price = priceFor(pkg as Package, dc)
 
+  // Fase 5 PII-kluis: kopergegevens versleuteld op de order. Het id wordt vooraf
+  // gegenereerd omdat de veldversleuteling eraan gebonden is (AAD).
+  const orderId = crypto.randomUUID()
   const { data: order, error } = await admin.from('vh_order').insert({
+    id:              orderId,
     package_id:      pkg.id,
     package_name:    pkg.name,
-    email:           email.trim(),
-    buyer_first_name: firstName,
-    buyer_last_name:  lastName,
-    buyer_address:    address,
-    buyer_postal_code: postalCode,
-    buyer_city:       city,
+    ...encryptOrderBuyer(orderId, {
+      email: email.trim(),
+      firstName, lastName, address, postalCode, city,
+    }),
     amount_cents:    price.amount_cents,
     vat_cents:       price.vat_cents,
     vat_rate:        price.vat_rate,

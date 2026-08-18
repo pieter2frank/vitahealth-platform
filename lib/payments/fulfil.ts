@@ -2,6 +2,7 @@ import type { createAdminClient } from '@/lib/supabase/admin'
 import { getOrCreateIntakeToken } from '@/lib/intake-token'
 import { issueInvoiceAndEmail } from '@/lib/payments/invoice'
 import { upsertIdentity, getIdentity, findClientIdByEmail, type IdentityFields } from '@/lib/pii/identity'
+import { decryptOrderBuyer } from '@/lib/pii/order'
 
 type Admin = ReturnType<typeof createAdminClient>
 
@@ -23,7 +24,9 @@ export async function settleOrderPaid(admin: Admin, orderId: string): Promise<{ 
   // Eerste keer: cliënt zoeken op e-mail of aanmaken (leeg naam-veld; de intake
   // vult naam/adres in stap 1-2, net als bij een uitgenodigde cliënt).
   if (!clientId) {
-    const email = (order.email as string).trim()
+    // Fase 5 PII-kluis: kopervelden op de order zijn versleuteld — eerst ontsleutelen.
+    const buyer = decryptOrderBuyer(order as Parameters<typeof decryptOrderBuyer>[0])
+    const email = buyer.email.trim()
     // Zoeken via de kluis (email_hash) — fase 2: leest niet meer uit de oude kolommen.
     const existingId = await findClientIdByEmail(admin, email)
 
@@ -32,15 +35,14 @@ export async function settleOrderPaid(admin: Admin, orderId: string): Promise<{ 
       // Lege naam/adresvelden bijvullen met de op de paywall opgegeven gegevens
       // (bv. een eerder leeg aangemaakte cliënt of een terugkerende klant zonder
       // deze velden). Bestaande, gevulde gegevens overschrijven we niet.
-      // Fase 3 PII-kluis: uitsluitend de kluis — de oude kolommen bestaan niet meer.
       const existing = await getIdentity(admin, existingId)
       const blank = (v: string | null | undefined) => !((v ?? '').trim())
       const vault: IdentityFields = { email }   // e-mail altijd mee → email_hash in de kluis
-      if (blank(existing?.firstName)  && order.buyer_first_name)  vault.firstName  = order.buyer_first_name as string
-      if (blank(existing?.lastName)   && order.buyer_last_name)   vault.lastName   = order.buyer_last_name as string
-      if (blank(existing?.address)    && order.buyer_address)     vault.address    = order.buyer_address as string
-      if (blank(existing?.postalCode) && order.buyer_postal_code) vault.postalCode = order.buyer_postal_code as string
-      if (blank(existing?.city)       && order.buyer_city)        vault.city       = order.buyer_city as string
+      if (blank(existing?.firstName)  && buyer.firstName)  vault.firstName  = buyer.firstName
+      if (blank(existing?.lastName)   && buyer.lastName)   vault.lastName   = buyer.lastName
+      if (blank(existing?.address)    && buyer.address)    vault.address    = buyer.address
+      if (blank(existing?.postalCode) && buyer.postalCode) vault.postalCode = buyer.postalCode
+      if (blank(existing?.city)       && buyer.city)       vault.city       = buyer.city
       try { await upsertIdentity(admin, clientId, vault) }
       catch (e) { console.error('[pii] kluis schrijven mislukt (settle existing):', e) }
     } else {
@@ -53,12 +55,12 @@ export async function settleOrderPaid(admin: Admin, orderId: string): Promise<{ 
       if (clientId) {
         try {
           await upsertIdentity(admin, clientId, {
-            firstName:  (order.buyer_first_name as string | null) ?? null,
-            lastName:   (order.buyer_last_name as string | null) ?? null,
+            firstName:  buyer.firstName,
+            lastName:   buyer.lastName,
             email,
-            address:    (order.buyer_address as string | null) ?? null,
-            postalCode: (order.buyer_postal_code as string | null) ?? null,
-            city:       (order.buyer_city as string | null) ?? null,
+            address:    buyer.address,
+            postalCode: buyer.postalCode,
+            city:       buyer.city,
           })
         } catch (e) { console.error('[pii] kluis schrijven mislukt (settle create):', e) }
       }
