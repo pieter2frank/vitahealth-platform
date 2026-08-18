@@ -13,7 +13,7 @@ Plaats hier de documenten die bij dit hoofdstuk horen. Checklist:
 - [x] Zivver — standaard-DPA gedownload (zivver.com/legal/data-processing); evt. bevestiging accountbeheer nog na te vragen
 - [x] TransIP — VO (v8) + subverwerkersovereenkomst (v6) afgesloten via het controlepaneel
 - [x] Nebius (AI-advies) — DPA + subverwerkerslijst aanwezig; geen training op klantdata (publiek gedocumenteerd); Zero Data Retention aan (18-08-2026)
-- [ ] Resend — self-serve: resend.com/legal/dpa; VS-partij → SCC's + subverwerkers (AWS) noteren
+- [x] Resend — ondertekende DPA + SOC 2 Type II + pentest-attestatie aanwezig; subverwerkerslijst nog toevoegen
 - [ ] Better Stack — DPA via legal-pagina of support
 
 **Geen VO (zelfstandig verwerkingsverantwoordelijke) — rol vastleggen in het verwerkingsregister:**
