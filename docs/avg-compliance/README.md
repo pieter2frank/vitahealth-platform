@@ -35,5 +35,7 @@ Plaats de bijbehorende documenten in de juiste map. Elke map bevat een README me
 | [`../pii-sleutelbeheer-retentie-v1.0.docx`](../pii-sleutelbeheer-retentie-v1.0.docx) | Zelfde document als Word-versie (checklist aanvinkbaar) |
 | [`../beveiligingsmaatregelen-vita-health-v1.1.docx`](../beveiligingsmaatregelen-vita-health-v1.1.docx) | Beveiligingsmaatregelen — overkoepelend maatregelen-document (Word, actueel) |
 | [`13-agenda planning/vita-health-beveiligingsplanning.ics`](13-agenda%20planning/vita-health-beveiligingsplanning.ics) | Agenda-bestand bij de jaarplanning (importeren in Outlook/Google/Apple) |
+| [`avg-briefing-functionaris-v1.0.md`](avg-briefing-functionaris-v1.0.md) | AVG-briefing voor het gesprek met de AVG-functionaris: platform, gegevens, maatregelen, dossier, resterende route |
+| [`../avg-briefing-functionaris-v1.0.docx`](../avg-briefing-functionaris-v1.0.docx) | Zelfde document als Word-versie |
 
 _Historie: oudere versies (betaalmuur v1.0; pii-kluis-implementatieplan v1.0/v1.1; pii-kluis-toelichting-avg v1.0; server-hardening-checklist v1.0; beveiligingsmaatregelen v1.0) blijven in dezelfde mappen bewaard._
