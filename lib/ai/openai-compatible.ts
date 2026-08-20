@@ -70,8 +70,24 @@ export function makeOpenAiCompatibleProvider(cfg: Config): AiProvider {
       if (!res.ok) {
         throw new Error(`${cfg.name} chat ${res.status}: ${(await res.text()).slice(0, 300)}`)
       }
-      const data = await res.json() as { choices?: { message?: { content?: string } }[] }
-      return data.choices?.[0]?.message?.content ?? ''
+      const data = await res.json() as {
+        choices?: { message?: { content?: string; reasoning_content?: string }; finish_reason?: string }[]
+      }
+      const choice = data.choices?.[0]
+      const content = choice?.message?.content ?? ''
+      if (!content.trim()) {
+        // Denk-modellen (Kimi-K3, DeepSeek-R1, Qwen-Thinking) zetten hun redenering
+        // in reasoning_content; is het tokenbudget op vóór het echte antwoord, dan
+        // blijft content leeg. Duidelijke fout i.p.v. een stil leeg advies.
+        const dachtAlleen = Boolean(choice?.message?.reasoning_content)
+        throw new Error(
+          `${cfg.name} gaf een leeg antwoord` +
+          (dachtAlleen ? ' — dit is een denk-model dat zijn hele tokenbudget aan redeneren besteedde' : '') +
+          (choice?.finish_reason ? ` (finish_reason: ${choice.finish_reason})` : '') +
+          '. Kies een niet-denkende instruct-variant of verhoog maxTokens.',
+        )
+      }
+      return content
     },
   }
 }
