@@ -58,36 +58,38 @@ export async function POST(req: Request) {
   }
 
   const admin = createAdminClient()
-  const results = []
+  const judge = anthropicProvider.isConfigured() ? anthropicProvider : current
 
-  for (const clientId of clientIds) {
+  // Alles parallel: de casussen naast elkaar, per casus de modellen naast elkaar,
+  // en daarna de rubric-beoordelingen naast elkaar. De totale looptijd is zo
+  // ongeveer die van de traagste enkele model-call in plaats van de optelsom.
+  const results = await Promise.all(clientIds.map(async (clientId) => {
     // Zelfde prompt + zelfde opgehaalde kennis voor élk model.
     let ctx
     try {
       ctx = await buildAdviceContext(clientId)
     } catch (e) {
-      results.push({ clientId, label: 'Casus', error: e instanceof Error ? e.message : 'Context bouwen mislukt.' })
-      continue
+      return { clientId, label: 'Casus', error: e instanceof Error ? e.message : 'Context bouwen mislukt.' }
     }
 
-    const [{ data: client }, { data: ann }] = await Promise.all([
+    const [{ data: client }, { data: ann }, identity] = await Promise.all([
       admin.from('vh_client').select('gender').eq('id', clientId).maybeSingle(),
       admin.from('vh_annotation')
         .select('advies, algemeen_beeld, submitted_at')
         .eq('client_id', clientId).eq('status', 'ingediend')
         .order('submitted_at', { ascending: false }).limit(1).maybeSingle(),
+      // Fase 2 PII-kluis: geboortedatum via de toegangslaag.
+      getIdentity(admin, clientId),
     ])
-    // Fase 2 PII-kluis: geboortedatum via de toegangslaag.
-    const identity = await getIdentity(admin, clientId)
     const c: ClientRel | null = client ? { gender: (client as { gender: string | null }).gender, birth_date: identity?.birthDate ?? null } : null
 
+    const outs = await Promise.all(variants.map(v => runOne(v.provider, ctx)))
     const outputs: Record<string, { text: string; ms: number; error?: string; scores?: AdviceScores | null }> = {}
-    for (const v of variants) outputs[v.key] = await runOne(v.provider, ctx)
+    variants.forEach((v, i) => { outputs[v.key] = outs[i] })
 
     // Rubric-beoordeling per uitvoer door de sterkst beschikbare provider —
     // maakt het verschil tussen modellen en promptversies meetbaar in cijfers.
-    const judge = anthropicProvider.isConfigured() ? anthropicProvider : current
-    for (const v of variants) {
+    await Promise.all(variants.map(async (v) => {
       const o = outputs[v.key]
       if (!o.error && o.text) {
         o.scores = await judgeAdvice({
@@ -97,17 +99,17 @@ export async function POST(req: Request) {
           artsAdvies: ann?.advies ?? null,
         })
       }
-    }
+    }))
 
-    results.push({
+    return {
       clientId,
       label:         caseLabel(c?.birth_date ?? null, c?.gender ?? null),
       chunksUsed:    ctx.chunksUsed,
       artsAdvies:    ann?.advies ?? null,
       artsBeeld:     ann?.algemeen_beeld ?? null,
       outputs,
-    })
-  }
+    }
+  }))
 
   logAuditEvent({
     actorUserId:  auth.userId,

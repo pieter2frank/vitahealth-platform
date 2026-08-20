@@ -38,9 +38,13 @@ export const anthropicProvider: AiProvider = {
     // Let op: temperature/top_p bestaan niet meer op Opus 4.8 (400 bij meesturen);
     // sturen doe je via de prompt. Adaptive thinking staat expliciet aan — bij
     // weglaten denkt het model niet.
+    // De denk-tokens tellen mee in max_tokens; zonder ruimte erbovenop wordt het
+    // antwoord afgekapt of blijft het zelfs leeg als het model lang nadenkt.
+    // maxTokens blijft dus "tokens voor het antwoord" en de denkruimte komt erbij.
+    const THINKING_HEADROOM = 3000
     const res = await client.messages.create({
       model:      MODEL,
-      max_tokens: maxTokens,
+      max_tokens: maxTokens + THINKING_HEADROOM,
       thinking:   { type: 'adaptive' },
       ...(system ? { system } : {}),
       messages: [

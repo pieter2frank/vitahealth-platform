@@ -57,8 +57,9 @@ const SYSTEM = [
 ].join('\n')
 
 // Sjabloon in de stijl van de arts-adviezen (algemeen beeld → top 3 aanbevelingen
-// met titel + alinea → vervolg).
-const TEMPLATE = [
+// met titel + alinea → vervolg). Geëxporteerd zodat de rubric-beoordelaar
+// (lib/ai/judge.ts) tegen exact hetzelfde sjabloon toetst.
+export const TEMPLATE = [
   'ALGEMEEN BEELD',
   '(3 à 5 zinnen: eerst het totaalbeeld — metabole leeftijd, Resilience Score, wat goed',
   'gaat — daarna in gewone taal wat aandacht vraagt en waarom dat bij deze persoon past.)',
