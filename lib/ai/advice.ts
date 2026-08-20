@@ -3,6 +3,7 @@ import { getAiProvider } from './index'
 import { retrieveKnowledge, type RetrievedChunk } from './knowledge'
 import { buildClientCaseText } from './case-document'
 import { buildClientPriorities, type Priority } from './priorities'
+import { evaluateAdviceRules, type MatchedRule } from './rules'
 import type { ChatMessage } from './types'
 
 // Adviesgeneratie in drie lagen:
@@ -25,6 +26,8 @@ const SYSTEM = [
   '  "Voor dit punt is nog geen kennis beschikbaar in de kennisbank; de arts vult dit aan."',
   '- Geen diagnoses, geen medicatie-adviezen of doseringen, geen behandeladvies.',
   '- Noem bij elk aandachtspunt de concrete meetwaarde uit de casus waarop het gebaseerd is.',
+  '- Staan er RICHTLIJNEN VAN DE ARTS in de opdracht, pas die dan verplicht toe in het',
+  '  bijbehorende aandachtspunt en markeer dat met (richtlijn arts).',
   '- Schrijf in het Nederlands, spreek de cliënt aan met "u", concreet en motiverend.',
   '- Houd je exact aan het sjabloon in de opdracht: dezelfde kopjes, dezelfde volgorde,',
   '  geen secties toevoegen of weglaten. Gebruik geen markdown-tekens (geen # of **).',
@@ -67,6 +70,7 @@ export interface AdviceContext {
   chunksUsed:  number
   summaryText: string
   priorities:  Priority[]
+  rules:       MatchedRule[]
 }
 
 // Few-shot: de meest recente door de arts goedgekeurde (of verzonden) adviezen
@@ -107,10 +111,11 @@ async function buildExamples(clientId: string): Promise<ChatMessage[]> {
 // zodat de model-vergelijking (AI-eval) exact dezelfde context en prompt gebruikt
 // als productie — anders vergelijk je modellen op ongelijke input.
 export async function buildAdviceContext(clientId: string): Promise<AdviceContext> {
-  const [caseDoc, { priorities }, examples] = await Promise.all([
+  const [caseDoc, { priorities }, examples, rules] = await Promise.all([
     buildClientCaseText(clientId),
     buildClientPriorities(clientId),
     buildExamples(clientId),
+    evaluateAdviceRules(clientId),
   ])
   const top = priorities.slice(0, TOP_COUNT)
   const rest = priorities.slice(TOP_COUNT)
@@ -157,6 +162,11 @@ export async function buildAdviceContext(clientId: string): Promise<AdviceContex
     'OVERIGE SIGNALEN (alleen kort noemen onder OVERIGE PUNTEN):',
     restLines,
     '',
+    ...(rules.length ? [
+      'RICHTLIJNEN VAN DE ARTS (van toepassing op deze casus — verplicht toepassen):',
+      rules.map((r, i) => `R${i + 1}. ${r.instruction}`).join('\n'),
+      '',
+    ] : []),
     'BESCHIKBARE KENNIS (gebruik uitsluitend dit; verwijs met [nr]):',
     knowledgeBlocks,
     '',
@@ -178,6 +188,7 @@ export async function buildAdviceContext(clientId: string): Promise<AdviceContex
     chunksUsed:  numbered.length,
     summaryText,
     priorities:  top,
+    rules,
   }
 }
 
@@ -196,7 +207,7 @@ export async function generateAdvice(clientId: string, createdBy: string): Promi
       content:   { text },
       model:     provider.name,
       sources:   ctx.chunkIds,
-      signals:   { summary: ctx.summaryText, priorities: ctx.priorities },
+      signals:   { summary: ctx.summaryText, priorities: ctx.priorities, rules: ctx.rules.map(r => ({ id: r.id, name: r.name })) },
       created_by: createdBy,
     })
     .select('id').single()

@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
-import { BookOpen, Plus, GraduationCap, Highlighter } from 'lucide-react'
+import { BookOpen, Plus, GraduationCap, Highlighter, GitBranch } from 'lucide-react'
 import { requireRolePage } from '@/lib/auth/guard'
 import { CASE_SOURCE, isAnnotatedCaseSource } from '@/lib/knowledge-domains'
 import { KnowledgeTable } from './KnowledgeTable'
@@ -47,13 +47,22 @@ export default async function KennisbankPage({ searchParams }: { searchParams: P
             Gecureerde leefstijlkennis die het AI-advies voedt (RAG)
           </p>
         </div>
-        <Link
-          href="/kennisbank/nieuw"
-          className="inline-flex items-center gap-2 rounded-lg bg-[#1f1683] px-4 py-2 text-sm font-medium text-white hover:bg-[#1a1270] transition-colors"
-        >
-          <Plus size={15} />
-          Nieuw kennisdocument
-        </Link>
+        <div className="flex items-center gap-2">
+          <Link
+            href="/kennisbank/regels"
+            className="inline-flex items-center gap-2 rounded-lg border border-[#e2e8f0] bg-white px-4 py-2 text-sm font-medium text-[#1e293b] hover:bg-[#f8fafc] transition-colors"
+          >
+            <GitBranch size={15} />
+            Als-dan richtlijnen
+          </Link>
+          <Link
+            href="/kennisbank/nieuw"
+            className="inline-flex items-center gap-2 rounded-lg bg-[#1f1683] px-4 py-2 text-sm font-medium text-white hover:bg-[#1a1270] transition-colors"
+          >
+            <Plus size={15} />
+            Nieuw kennisdocument
+          </Link>
+        </div>
       </div>
 
       {totalCount > 0 && (

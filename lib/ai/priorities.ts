@@ -34,10 +34,11 @@ interface Q {
   options?: { value: string; label: string }[]
 }
 
-const DISEASE: Record<string, string> = {
+export const DISEASE_LABELS: Record<string, string> = {
   heart_attack: 'hartaanval', ischemic_stroke: 'herseninfarct', type2_diabetes: 'diabetes type 2',
   chronic_kidney_disease: 'chronische nierziekte', fatty_liver_disease: 'leververvetting',
 }
+const DISEASE = DISEASE_LABELS
 
 const nl = (n: number | null | undefined) => (n == null ? '—' : String(n).replace('.', ','))
 
