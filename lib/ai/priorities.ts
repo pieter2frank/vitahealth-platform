@@ -188,9 +188,12 @@ export async function buildClientPriorities(clientId: string): Promise<ClientPri
       if (q.type === 'scale' || q.type === 'rating_10') {
         const f = favorability(q, responses[q.id])
         if (f !== null && f <= 5) {
+          // Toon de ruwe score (zoals in het casusdocument), niet de omgerekende
+          // 1-10-gunstigheid — anders noemen prompt en casus verschillende getallen.
+          const max = q.type === 'rating_10' ? 10 : (q.max ?? 5)
           priorities.push({
             titel:  q.label.replace(/\s*\?$/, ''),
-            detail: `score ${Math.round(f)}/10 (ongunstig)`,
+            detail: `score ${Number(responses[q.id])}/${max} (ongunstig)`,
             domain: domainForCategory(q.category),
             weight: 30 + (5 - Math.round(f)) * 8 + lifestyleBoost,
             kind:   'leefstijl',
