@@ -35,6 +35,7 @@ Plaats de bijbehorende documenten in de juiste map. Elke map bevat een README me
 | [`../pii-sleutelbeheer-retentie-v1.0.docx`](../pii-sleutelbeheer-retentie-v1.0.docx) | Zelfde document als Word-versie (checklist aanvinkbaar) |
 | [`../beveiligingsmaatregelen-vita-health-v1.1.docx`](../beveiligingsmaatregelen-vita-health-v1.1.docx) | Beveiligingsmaatregelen — overkoepelend maatregelen-document (Word, actueel) |
 | [`13-agenda planning/vita-health-beveiligingsplanning.ics`](13-agenda%20planning/vita-health-beveiligingsplanning.ics) | Agenda-bestand bij de jaarplanning (importeren in Outlook/Google/Apple) |
+| [`ai-modelkeuze-v1.0.md`](ai-modelkeuze-v1.0.md) | Beslisnotitie modelkeuze AI-adviesgeneratie (Qwen3-235B, EU) met eval-scores en AVG-afwegingen |
 | [`avg-briefing-functionaris-v1.1.md`](avg-briefing-functionaris-v1.1.md) | AVG-briefing voor het gesprek met de AVG-functionaris: platform, gegevens, maatregelen, dossier, resterende route, bijlagen |
 | [`../avg-briefing-functionaris-v1.1.docx`](../avg-briefing-functionaris-v1.1.docx) | Zelfde document als Word-versie |
 
