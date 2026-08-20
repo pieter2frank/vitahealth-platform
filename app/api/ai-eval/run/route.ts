@@ -6,6 +6,7 @@ import { isUuid } from '@/lib/validation'
 import { getAiProvider } from '@/lib/ai'
 import { anthropicProvider } from '@/lib/ai/anthropic'
 import { buildAdviceContext } from '@/lib/ai/advice'
+import { judgeAdvice, type AdviceScores } from '@/lib/ai/judge'
 import { caseLabel } from '@/lib/annotation'
 import { logAuditEvent } from '@/lib/audit'
 import type { AiProvider } from '@/lib/ai/types'
@@ -25,7 +26,8 @@ type ClientRel = { gender: string | null; birth_date: string | null }
 async function runOne(p: AiProvider, system: string, user: string) {
   const t0 = Date.now()
   try {
-    const text = await p.chat({ system, user, maxTokens: 1200, temperature: 0.3 })
+    // Zelfde maxTokens als productie (generateAdvice) — anders eval je een ander regime.
+    const text = await p.chat({ system, user, maxTokens: 2500, temperature: 0.3 })
     return { text, ms: Date.now() - t0 }
   } catch (e) {
     return { text: '', ms: Date.now() - t0, error: e instanceof Error ? e.message : 'Onbekende fout.' }
@@ -78,8 +80,23 @@ export async function POST(req: Request) {
     const identity = await getIdentity(admin, clientId)
     const c: ClientRel | null = client ? { gender: (client as { gender: string | null }).gender, birth_date: identity?.birthDate ?? null } : null
 
-    const outputs: Record<string, { text: string; ms: number; error?: string }> = {}
+    const outputs: Record<string, { text: string; ms: number; error?: string; scores?: AdviceScores | null }> = {}
     for (const v of variants) outputs[v.key] = await runOne(v.provider, ctx.system, ctx.user)
+
+    // Rubric-beoordeling per uitvoer door de sterkst beschikbare provider —
+    // maakt het verschil tussen modellen en promptversies meetbaar in cijfers.
+    const judge = anthropicProvider.isConfigured() ? anthropicProvider : current
+    for (const v of variants) {
+      const o = outputs[v.key]
+      if (!o.error && o.text) {
+        o.scores = await judgeAdvice({
+          judge,
+          adviceText: o.text,
+          priorities: ctx.priorities,
+          artsAdvies: ann?.advies ?? null,
+        })
+      }
+    }
 
     results.push({
       clientId,
@@ -104,6 +121,7 @@ export async function POST(req: Request) {
   return NextResponse.json({
     ok: true,
     variants: variants.map(v => ({ key: v.key, name: v.name })),
+    judgeName: (anthropicProvider.isConfigured() ? anthropicProvider : current).name,
     results,
   })
 }

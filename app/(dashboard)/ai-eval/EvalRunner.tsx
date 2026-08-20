@@ -1,9 +1,13 @@
 'use client'
 import { useState } from 'react'
-import { Loader2, Play, AlertTriangle, Stethoscope, Sparkles, Timer } from 'lucide-react'
+import { Loader2, Play, AlertTriangle, Stethoscope, Sparkles, Timer, Scale } from 'lucide-react'
 
 interface Option { id: string; label: string }
-interface Output { text: string; ms: number; error?: string }
+interface Scores {
+  structuur: number; bronnen: number; top3: number; concreetheid: number; veiligheid: number
+  gemiddelde: number; toelichting: string
+}
+interface Output { text: string; ms: number; error?: string; scores?: Scores | null }
 interface Result {
   clientId:   string
   label:      string
@@ -25,6 +29,7 @@ export function EvalRunner({ options, currentName, claudeName }: {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [variants, setVariants] = useState<{ key: string; name: string }[]>([])
+  const [judgeName, setJudgeName] = useState<string | null>(null)
   const [results, setResults] = useState<Result[]>([])
 
   function toggle(id: string) {
@@ -48,6 +53,7 @@ export function EvalRunner({ options, currentName, claudeName }: {
     setBusy(false)
     if (!res.ok) { setError(j.error ?? 'Uitvoeren mislukt.'); return }
     setVariants(j.variants ?? [])
+    setJudgeName(j.judgeName ?? null)
     setResults(j.results ?? [])
   }
 
@@ -163,6 +169,26 @@ export function EvalRunner({ options, currentName, claudeName }: {
                         </span>
                       )}
                     </div>
+                    {o && !o.error && o.scores && (
+                      <div className="mb-2.5 rounded-lg border border-[#e2e8f0] bg-[#f8fafc] px-2.5 py-2">
+                        <div className="mb-1.5 flex items-center justify-between">
+                          <span className="inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide text-[#64748b]">
+                            <Scale size={10} /> Rubric{judgeName ? ` · ${judgeName}` : ''}
+                          </span>
+                          <span className={`rounded-full px-2 py-0.5 text-[11px] font-bold ${o.scores.gemiddelde >= 4 ? 'bg-[#17e4a1]/15 text-[#0d7a5f]' : o.scores.gemiddelde >= 3 ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-700'}`}>
+                            {o.scores.gemiddelde.toFixed(1)}
+                          </span>
+                        </div>
+                        <div className="flex flex-wrap gap-1">
+                          {([['structuur', 'Structuur'], ['bronnen', 'Bronnen'], ['top3', 'Top 3'], ['concreetheid', 'Concreet'], ['veiligheid', 'Veilig']] as const).map(([k, lbl]) => (
+                            <span key={k} className="rounded border border-[#e2e8f0] bg-white px-1.5 py-0.5 text-[10px] text-[#475569]">
+                              {lbl} <b className={o.scores![k] >= 4 ? 'text-[#0d7a5f]' : o.scores![k] >= 3 ? 'text-amber-600' : 'text-red-600'}>{o.scores![k]}</b>
+                            </span>
+                          ))}
+                        </div>
+                        {o.scores.toelichting && <p className="mt-1.5 text-[10.5px] italic leading-snug text-[#94a3b8]">{o.scores.toelichting}</p>}
+                      </div>
+                    )}
                     {o?.error
                       ? <p className="text-xs text-red-600">{o.error}</p>
                       : <p className="whitespace-pre-wrap text-[13px] text-[#334155]">{o?.text || '—'}</p>}
