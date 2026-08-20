@@ -44,6 +44,7 @@ function condLabel(c: Cond, biomarkers: Biomarker[], questions: Question[]): str
   if (c.kind === 'disease') return `Verhoogd risico: ${DISEASES.find(d => d.value === c.code)?.label ?? c.code}`
   if (c.kind === 'bmi') return `BMI ${op} ${c.value}`
   if (c.kind === 'age') return `Leeftijd ${op} ${c.value}`
+  if (c.kind === 'resilience') return `Resilience Score ${op} ${c.value}`
   if (c.kind === 'gender') return `Geslacht = ${c.value}`
   return c.kind
 }
@@ -151,6 +152,7 @@ export function RulesManager({ initialRules, biomarkers, questions }: {
                     <option value="disease">Ziekterisico</option>
                     <option value="bmi">BMI</option>
                     <option value="age">Leeftijd</option>
+                    <option value="resilience">Resilience Score</option>
                     <option value="gender">Geslacht</option>
                   </select>
 
@@ -207,7 +209,7 @@ export function RulesManager({ initialRules, biomarkers, questions }: {
                     </select>
                   )}
 
-                  {(c.kind === 'bmi' || c.kind === 'age') && (<>
+                  {(c.kind === 'bmi' || c.kind === 'age' || c.kind === 'resilience') && (<>
                     <select value={c.op} onChange={e => setCond(i, { op: e.target.value })} className={inputCls}>
                       {NUM_OPS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                     </select>

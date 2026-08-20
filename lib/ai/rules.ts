@@ -15,7 +15,7 @@ export interface MatchedRule {
 }
 
 export type Cond = {
-  kind: 'biomarker' | 'question' | 'disease' | 'bmi' | 'age' | 'gender'
+  kind: 'biomarker' | 'question' | 'disease' | 'bmi' | 'age' | 'gender' | 'resilience'
   code?: string; qid?: string
   op?: 'gt' | 'gte' | 'lt' | 'lte' | 'eq' | 'attention' | 'elevated'
   value?: unknown
@@ -63,7 +63,7 @@ export function sanitizeConditions(input: unknown): Cond[] | null {
         out.push({ kind: 'disease', code, op: 'elevated' })
         break
       }
-      case 'bmi': case 'age': {
+      case 'bmi': case 'age': case 'resilience': {
         const v = numeric(c.value)
         if (!NUM_OPS.includes(c.op as typeof NUM_OPS[number]) || v === null) return null
         out.push({ kind: c.kind, op: c.op as Cond['op'], value: v })
@@ -126,7 +126,7 @@ export async function evaluateAdviceRules(clientId: string): Promise<MatchedRule
       .select('responses, questionnaire_id')
       .eq('client_id', clientId).order('completed_at', { ascending: false }).limit(1).maybeSingle(),
     admin.from('vh_report')
-      .select('vh_report_disease_risk(disease, result_category), vh_report_biomarker(marker_code, value, ref_optimal)')
+      .select('resilience_score, vh_report_disease_risk(disease, result_category), vh_report_biomarker(marker_code, value, ref_optimal)')
       .eq('client_id', clientId).order('sample_date', { ascending: false }).limit(1).maybeSingle(),
     admin.from('vh_biomarker_ref').select('code, direction'),
   ])
@@ -178,6 +178,10 @@ export async function evaluateAdviceRules(clientId: string): Promise<MatchedRule
       }
       case 'bmi':    return bmi !== null && compare(bmi, c.op, c.value)
       case 'age':    return age !== null && compare(age, c.op, c.value)
+      case 'resilience': {
+        const score = (rep as { resilience_score?: number | null } | null)?.resilience_score ?? null
+        return score !== null && compare(score, c.op, c.value)
+      }
       case 'gender': return gender !== null && gender === c.value
       default:       return false
     }

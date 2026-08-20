@@ -19,12 +19,35 @@ const SYSTEM = [
   'leefstijladvies voor een cliënt op basis van een biomarkertest en een intakevragenlijst.',
   'Een arts beoordeelt jouw concept vóór verzending.',
   '',
+  'INTERPRETATIEKADER (zo beoordeelt de leefstijlarts van Vita Health metingen):',
+  '- Eerst het landschap, dan de bomen: begin bij het totaalbeeld (metabole leeftijd,',
+  '  Metabolic Resilience Score, ziekterisico’s) en gebruik biomarkers om dat beeld te',
+  '  verklaren — nooit andersom.',
+  '- Eén afwijkende biomarker bij een verder sterk profiel betekent weinig; pas een',
+  '  cluster van afwijkingen in hetzelfde systeem (bv. lipiden, glucose) is een patroon.',
+  '  Dramatiseer geïsoleerde afwijkingen niet — duid ze en stel monitoring voor.',
+  '- Een biomarker is een signaal, geen oordeel: verbind hem altijd met de leefstijl en',
+  '  context van deze persoon ("wat vertelt dit over uw leefstijl?"), en laat elk advies',
+  '  uitkomen bij een leefstijlpijler (voeding, beweging, slaap, stress, herstel,',
+  '  alcohol, roken, gewicht, sociale verbinding).',
+  '- Herstel weegt even zwaar als voeding: bij een sterk metabool profiel zit de grootste',
+  '  winst vaak in slaap, ontspanning en stressregulatie — een hoge Resilience Score',
+  '  meet metabole flexibiliteit, géén autonome balans of ervaren stress.',
+  '- Cholesterol: redeneer vanuit atherogene deeltjes (ApoB, ApoB/ApoA1) vóór LDL en',
+  '  totaal cholesterol; HDL is geen behandeldoel.',
+  '- Verhoogde creatinine bij een sporter past meestal bij spiermassa, niet bij nierschade.',
+  '- Ziekterisico is relatief t.o.v. leeftijdsgenoten en is geen diagnose: leg dat rustig',
+  '  uit bij kleine absolute percentages.',
+  '- Bij een sterk profiel mag één van de aanbevelingen "behouden en monitoren wat goed',
+  '  gaat" zijn.',
+  '',
   'Regels:',
-  '- Baseer elk advies UITSLUITEND op de meegeleverde kennisfragmenten; verzin niets.',
+  '- Baseer concrete adviezen UITSLUITEND op de meegeleverde kennisfragmenten; verzin niets.',
   '- Verwijs bij elk advies naar het gebruikte fragment met [nr].',
   '- Is er voor een aandachtspunt geen passende kennis meegeleverd, schrijf dan letterlijk:',
   '  "Voor dit punt is nog geen kennis beschikbaar in de kennisbank; de arts vult dit aan."',
-  '- Geen diagnoses, geen medicatie-adviezen of doseringen, geen behandeladvies.',
+  '- Geen diagnoses, geen medicatie-adviezen of doseringen, geen behandeladvies. Is een',
+  '  medische beoordeling wenselijk, adviseer dan overleg met de (huis)arts.',
   '- Noem bij elk aandachtspunt de concrete meetwaarde uit de casus waarop het gebaseerd is.',
   '- Staan er RICHTLIJNEN VAN DE ARTS in de opdracht, pas die dan verplicht toe in het',
   '  bijbehorende aandachtspunt en markeer dat met (richtlijn arts).',
@@ -33,20 +56,23 @@ const SYSTEM = [
   '  geen secties toevoegen of weglaten. Gebruik geen markdown-tekens (geen # of **).',
 ].join('\n')
 
+// Sjabloon in de stijl van de arts-adviezen (algemeen beeld → top 3 aanbevelingen
+// met titel + alinea → vervolg).
 const TEMPLATE = [
-  'IN HET KORT',
-  '(2 à 3 zinnen: het algemene beeld; begin met wat goed gaat.)',
+  'ALGEMEEN BEELD',
+  '(3 à 5 zinnen: eerst het totaalbeeld — metabole leeftijd, Resilience Score, wat goed',
+  'gaat — daarna in gewone taal wat aandacht vraagt en waarom dat bij deze persoon past.)',
   '',
-  'BELANGRIJKSTE AANDACHTSPUNTEN',
+  'TOP 3 AANBEVELINGEN',
   '',
-  '1. (titel aandachtspunt 1)',
-  'Wat we zien: (de concrete meetwaarde(n) uit de casus)',
-  'Advies: (2 à 4 concrete acties, met [nr]-verwijzing naar de gebruikte kennis)',
-  'Eerste doel: (één klein, meetbaar doel voor de komende 4 weken)',
+  '1. (korte, actieve titel — bv. "Prioriteit geven aan slaap en herstel")',
+  '(één alinea: wat we zien met de concrete meetwaarden → wat dit in deze context',
+  'waarschijnlijk betekent → 2 à 3 concrete acties met [nr]-verwijzing → één haalbaar',
+  'eerste doel voor de komende 4 weken)',
   '',
-  '2. (titel aandachtspunt 2 — zelfde opbouw)',
+  '2. (zelfde opbouw)',
   '',
-  '3. (titel aandachtspunt 3 — zelfde opbouw)',
+  '3. (zelfde opbouw — bij een sterk profiel mag dit "behouden en monitoren" zijn)',
   '',
   'OVERIGE PUNTEN',
   '(per overig signaal maximaal 2 zinnen; sla dit kopje over als er niets is)',
@@ -77,6 +103,8 @@ export interface AdviceContext {
 // van ándere cliënten als voorbeeldbeurten. Zo leert het model toon, diepgang
 // en sjabloon van door de arts gevalideerde output — en wordt elke goedkeuring
 // vanzelf trainingsmateriaal voor het volgende advies.
+// Cold-start: zolang die er niet zijn, dienen ingediende arts-annotaties als
+// voorbeeld (algemeen beeld + top 3-advies, gegoten in de sjabloonvorm).
 async function buildExamples(clientId: string): Promise<ChatMessage[]> {
   const admin = createAdminClient()
   const { data } = await admin
@@ -102,6 +130,44 @@ async function buildExamples(clientId: string): Promise<ChatMessage[]> {
         content: `VOORBEELDCASUS (verkort signaalprofiel):\n${summary}\n\nSchrijf het conceptadvies volgens het sjabloon.`,
       },
       { role: 'assistant', content: text.slice(0, EXAMPLE_MAX_CHARS) },
+    )
+  }
+  if (examples.length > 0) return examples
+
+  // Cold-start-fallback: arts-annotaties als voorbeeld.
+  const { data: anns } = await admin
+    .from('vh_annotation')
+    .select('client_id, algemeen_beeld, advies, submitted_at')
+    .eq('status', 'ingediend')
+    .neq('client_id', clientId)
+    .not('advies', 'is', null)
+    .order('submitted_at', { ascending: false })
+    .limit(6)
+
+  for (const ann of anns ?? []) {
+    if (examples.length >= EXAMPLE_COUNT * 2) break
+    if (seenClients.has(ann.client_id as string)) continue
+    const advies = (ann.advies ?? '').trim()
+    if (!advies) continue
+    seenClients.add(ann.client_id as string)
+    let caseText = ''
+    try {
+      caseText = (await buildClientCaseText(ann.client_id as string)).text
+    } catch {
+      continue
+    }
+    const assistant = [
+      'ALGEMEEN BEELD',
+      (ann.algemeen_beeld ?? '').trim() || '(zie advies)',
+      '',
+      advies.replace(/^\s*Top 3 aanbevelingen\s*/i, 'TOP 3 AANBEVELINGEN\n'),
+    ].join('\n').slice(0, EXAMPLE_MAX_CHARS)
+    examples.push(
+      {
+        role: 'user',
+        content: `VOORBEELDCASUS\n${caseText.slice(0, 4000)}\n\nSchrijf het conceptadvies volgens het sjabloon.`,
+      },
+      { role: 'assistant', content: assistant },
     )
   }
   return examples
