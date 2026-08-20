@@ -56,9 +56,10 @@ export function makeOpenAiCompatibleProvider(cfg: Config): AiProvider {
       return data.data.map(d => fitDimensions(d.embedding, cfg.embedDimensions))
     },
 
-    async chat({ system, user, maxTokens = 900, temperature = 0.3 }: ChatOptions): Promise<string> {
+    async chat({ system, user, examples, maxTokens = 900, temperature = 0.3 }: ChatOptions): Promise<string> {
       const messages: { role: string; content: string }[] = []
       if (system) messages.push({ role: 'system', content: system })
+      for (const ex of examples ?? []) messages.push({ role: ex.role, content: ex.content })
       messages.push({ role: 'user', content: user })
 
       const res = await fetch(`${baseUrl}/chat/completions`, {

@@ -32,7 +32,7 @@ export const anthropicProvider: AiProvider = {
     )
   },
 
-  async chat({ system, user, maxTokens = 1200 }: ChatOptions): Promise<string> {
+  async chat({ system, user, examples, maxTokens = 1200 }: ChatOptions): Promise<string> {
     const client = new Anthropic({ apiKey: KEY })
 
     // Let op: temperature/top_p bestaan niet meer op Opus 4.8 (400 bij meesturen);
@@ -43,7 +43,10 @@ export const anthropicProvider: AiProvider = {
       max_tokens: maxTokens,
       thinking:   { type: 'adaptive' },
       ...(system ? { system } : {}),
-      messages: [{ role: 'user', content: user }],
+      messages: [
+        ...(examples ?? []).map(ex => ({ role: ex.role, content: ex.content })),
+        { role: 'user' as const, content: user },
+      ],
     })
 
     return res.content

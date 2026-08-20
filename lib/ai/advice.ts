@@ -3,6 +3,7 @@ import { getAiProvider } from './index'
 import { retrieveKnowledge, type RetrievedChunk } from './knowledge'
 import { buildClientCaseText } from './case-document'
 import { buildClientPriorities, type Priority } from './priorities'
+import type { ChatMessage } from './types'
 
 // Adviesgeneratie in drie lagen:
 //   1. context   — het volledige gepseudonimiseerde casusdocument (leeftijd,
@@ -55,23 +56,61 @@ const TEMPLATE = [
 const TOP_COUNT = 3        // aandachtspunten in het advies
 const CHUNKS_PER_TOPIC = 4 // kennisfragmenten per aandachtspunt
 const FALLBACK_CHUNKS = 8  // brede greep als er geen aandachtspunten zijn
+const EXAMPLE_COUNT = 2    // few-shot voorbeelden uit goedgekeurde adviezen
+const EXAMPLE_MAX_CHARS = 3500
 
 export interface AdviceContext {
   system:      string
   user:        string
+  examples:    ChatMessage[]
   chunkIds:    string[]
   chunksUsed:  number
   summaryText: string
   priorities:  Priority[]
 }
 
+// Few-shot: de meest recente door de arts goedgekeurde (of verzonden) adviezen
+// van ándere cliënten als voorbeeldbeurten. Zo leert het model toon, diepgang
+// en sjabloon van door de arts gevalideerde output — en wordt elke goedkeuring
+// vanzelf trainingsmateriaal voor het volgende advies.
+async function buildExamples(clientId: string): Promise<ChatMessage[]> {
+  const admin = createAdminClient()
+  const { data } = await admin
+    .from('vh_advice')
+    .select('client_id, content, signals, created_at')
+    .in('status', ['approved', 'sent'])
+    .neq('client_id', clientId)
+    .order('created_at', { ascending: false })
+    .limit(8)
+
+  const examples: ChatMessage[] = []
+  const seenClients = new Set<string>()
+  for (const row of data ?? []) {
+    if (examples.length >= EXAMPLE_COUNT * 2) break
+    if (seenClients.has(row.client_id as string)) continue // variatie: max 1 per cliënt
+    const text = ((row.content as { text?: string } | null)?.text ?? '').trim()
+    const summary = ((row.signals as { summary?: string } | null)?.summary ?? '').trim()
+    if (!text || !summary) continue
+    seenClients.add(row.client_id as string)
+    examples.push(
+      {
+        role: 'user',
+        content: `VOORBEELDCASUS (verkort signaalprofiel):\n${summary}\n\nSchrijf het conceptadvies volgens het sjabloon.`,
+      },
+      { role: 'assistant', content: text.slice(0, EXAMPLE_MAX_CHARS) },
+    )
+  }
+  return examples
+}
+
 // Bouwt de prompt + opgehaalde kennis voor één cliënt. Apart van generateAdvice
 // zodat de model-vergelijking (AI-eval) exact dezelfde context en prompt gebruikt
 // als productie — anders vergelijk je modellen op ongelijke input.
 export async function buildAdviceContext(clientId: string): Promise<AdviceContext> {
-  const [caseDoc, { priorities }] = await Promise.all([
+  const [caseDoc, { priorities }, examples] = await Promise.all([
     buildClientCaseText(clientId),
     buildClientPriorities(clientId),
+    buildExamples(clientId),
   ])
   const top = priorities.slice(0, TOP_COUNT)
   const rest = priorities.slice(TOP_COUNT)
@@ -134,6 +173,7 @@ export async function buildAdviceContext(clientId: string): Promise<AdviceContex
   return {
     system:      SYSTEM,
     user,
+    examples,
     chunkIds:    numbered.map(x => x.chunk.chunk_id),
     chunksUsed:  numbered.length,
     summaryText,
@@ -145,7 +185,7 @@ export async function generateAdvice(clientId: string, createdBy: string): Promi
   const provider = getAiProvider()
   const ctx = await buildAdviceContext(clientId)
 
-  const text = await provider.chat({ system: ctx.system, user: ctx.user, maxTokens: 2500, temperature: 0.3 })
+  const text = await provider.chat({ system: ctx.system, user: ctx.user, examples: ctx.examples, maxTokens: 2500, temperature: 0.3 })
 
   const admin = createAdminClient()
   const { data: rec, error } = await admin
