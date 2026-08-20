@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
-import { BookOpen, Plus, GraduationCap, Highlighter, GitBranch } from 'lucide-react'
+import { BookOpen, Plus, GraduationCap, Highlighter, GitBranch, FileText } from 'lucide-react'
 import { requireRolePage } from '@/lib/auth/guard'
 import { CASE_SOURCE, isAnnotatedCaseSource } from '@/lib/knowledge-domains'
 import { KnowledgeTable } from './KnowledgeTable'
@@ -48,6 +48,13 @@ export default async function KennisbankPage({ searchParams }: { searchParams: P
           </p>
         </div>
         <div className="flex items-center gap-2">
+          <Link
+            href="/kennisbank/sjabloon"
+            className="inline-flex items-center gap-2 rounded-lg border border-[#e2e8f0] bg-white px-4 py-2 text-sm font-medium text-[#1e293b] hover:bg-[#f8fafc] transition-colors"
+          >
+            <FileText size={15} />
+            Adviessjabloon
+          </Link>
           <Link
             href="/kennisbank/regels"
             className="inline-flex items-center gap-2 rounded-lg border border-[#e2e8f0] bg-white px-4 py-2 text-sm font-medium text-[#1e293b] hover:bg-[#f8fafc] transition-colors"

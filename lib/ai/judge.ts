@@ -1,6 +1,5 @@
 import type { AiProvider } from './types'
 import type { Priority } from './priorities'
-import { TEMPLATE } from './advice'
 
 // Rubric-beoordelaar voor de AI-eval: scoort een gegenereerd conceptadvies op
 // vijf criteria (1–5). Maakt tuning meetbaar: elke prompt-, model- of
@@ -18,7 +17,7 @@ export interface AdviceScores {
 
 const CRITERIA = ['structuur', 'bronnen', 'top3', 'concreetheid', 'veiligheid'] as const
 
-const JUDGE_SYSTEM = [
+const buildJudgeSystem = (template: string) => [
   'Je beoordeelt een AI-gegenereerd concept-leefstijladvies voor een medische beoordelaar.',
   'Scoor streng en consistent op vijf criteria, elk 1 (slecht) t/m 5 (uitstekend):',
   '- structuur: volgt het advies exact het sjabloon dat onderaan staat (zelfde kopjes,',
@@ -37,7 +36,7 @@ const JUDGE_SYSTEM = [
   '{"structuur":1,"bronnen":1,"top3":1,"concreetheid":1,"veiligheid":1,"toelichting":"max 2 zinnen"}',
   '',
   'HET SJABLOON WAARAAN HET ADVIES MOET VOLDOEN:',
-  TEMPLATE,
+  template,
 ].join('\n')
 
 function clamp(v: unknown): number | null {
@@ -51,8 +50,9 @@ export async function judgeAdvice(opts: {
   adviceText: string
   priorities: Priority[]
   artsAdvies: string | null
+  template: string
 }): Promise<AdviceScores | null> {
-  const { judge, adviceText, priorities, artsAdvies } = opts
+  const { judge, adviceText, priorities, artsAdvies, template } = opts
 
   const user = [
     'AANGELEVERDE PRIORITEITEN (dit hoorden de 3 aandachtspunten te zijn, in deze volgorde):',
@@ -65,7 +65,7 @@ export async function judgeAdvice(opts: {
 
   let raw: string
   try {
-    raw = await judge.chat({ system: JUDGE_SYSTEM, user, maxTokens: 800, temperature: 0 })
+    raw = await judge.chat({ system: buildJudgeSystem(template), user, maxTokens: 800, temperature: 0 })
   } catch {
     return null
   }

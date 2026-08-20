@@ -59,10 +59,11 @@ const SYSTEM = [
   '  geen secties toevoegen of weglaten. Gebruik geen markdown-tekens (geen # of **).',
 ].join('\n')
 
-// Sjabloon in de stijl van de arts-adviezen (algemeen beeld → top 3 aanbevelingen
-// met titel + alinea → vervolg). Geëxporteerd zodat de rubric-beoordelaar
-// (lib/ai/judge.ts) tegen exact hetzelfde sjabloon toetst.
-export const TEMPLATE = [
+// Standaardsjabloon in de stijl van de arts-adviezen (algemeen beeld → top 3
+// aanbevelingen met titel + alinea → vervolg). De arts kan het sjabloon
+// aanpassen via Kennisbank → Adviessjabloon (vh_ai_setting, key
+// 'advies_sjabloon'); deze constante is de fallback én de "herstel standaard".
+export const DEFAULT_TEMPLATE = [
   'ALGEMEEN BEELD',
   '(3 à 5 zinnen: eerst het totaalbeeld — metabole leeftijd, Resilience Score, wat goed',
   'gaat — daarna in gewone taal wat aandacht vraagt en waarom dat bij deze persoon past.)',
@@ -86,6 +87,23 @@ export const TEMPLATE = [
   'wordt beoordeeld en geen medisch advies vervangt)',
 ].join('\n')
 
+export const TEMPLATE_SETTING_KEY = 'advies_sjabloon'
+
+// Actueel sjabloon: de door de arts opgeslagen versie, anders de standaard.
+// Graceful zolang migratie 082 (vh_ai_setting) nog niet is gedraaid.
+export async function getAdviceTemplate(): Promise<string> {
+  try {
+    const admin = createAdminClient()
+    const { data, error } = await admin
+      .from('vh_ai_setting').select('value').eq('key', TEMPLATE_SETTING_KEY).maybeSingle()
+    if (error) return DEFAULT_TEMPLATE
+    const v = (data?.value ?? '').trim()
+    return v || DEFAULT_TEMPLATE
+  } catch {
+    return DEFAULT_TEMPLATE
+  }
+}
+
 const TOP_COUNT = 3        // aandachtspunten in het advies
 const CHUNKS_PER_TOPIC = 4 // kennisfragmenten per aandachtspunt
 const FALLBACK_CHUNKS = 8  // brede greep als er geen aandachtspunten zijn
@@ -101,6 +119,7 @@ export interface AdviceContext {
   summaryText: string
   priorities:  Priority[]
   rules:       MatchedRule[]
+  template:    string
 }
 
 // Few-shot: de meest recente door de arts goedgekeurde (of verzonden) adviezen
@@ -181,11 +200,12 @@ async function buildExamples(clientId: string): Promise<ChatMessage[]> {
 // zodat de model-vergelijking (AI-eval) exact dezelfde context en prompt gebruikt
 // als productie — anders vergelijk je modellen op ongelijke input.
 export async function buildAdviceContext(clientId: string): Promise<AdviceContext> {
-  const [caseDoc, { priorities }, examples, rules] = await Promise.all([
+  const [caseDoc, { priorities }, examples, rules, template] = await Promise.all([
     buildClientCaseText(clientId),
     buildClientPriorities(clientId),
     buildExamples(clientId),
     evaluateAdviceRules(clientId),
+    getAdviceTemplate(),
   ])
   const top = priorities.slice(0, TOP_COUNT)
   const rest = priorities.slice(TOP_COUNT)
@@ -245,7 +265,7 @@ export async function buildAdviceContext(clientId: string): Promise<AdviceContex
     '',
     'OPDRACHT: schrijf het conceptadvies en vul daarbij exact dit sjabloon in:',
     '',
-    TEMPLATE,
+    template,
   ].join('\n')
 
   const summaryText = [
@@ -262,6 +282,7 @@ export async function buildAdviceContext(clientId: string): Promise<AdviceContex
     summaryText,
     priorities:  top,
     rules,
+    template,
   }
 }
 

@@ -97,6 +97,7 @@ export async function POST(req: Request) {
           adviceText: o.text,
           priorities: ctx.priorities,
           artsAdvies: ann?.advies ?? null,
+          template: ctx.template,
         })
       }
     }))
