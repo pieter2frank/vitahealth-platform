@@ -22,6 +22,7 @@ import { CopyIntakeLink } from './CopyIntakeLink'
 import { ReminderButton } from './ReminderButton'
 import { InsightsModal } from './InsightsModal'
 import { AdviceSection } from './AdviceSection'
+import { TeamReviewSection } from './TeamReviewSection'
 import { AnnotationsSection } from './AnnotationsSection'
 import { TrainingDocModal } from './TrainingDocModal'
 
@@ -356,6 +357,9 @@ export default async function ClientDetailPage({
         clientId={client.id}
         initialAdvices={advicesRaw ?? []}
       />
+
+      {/* ── Medisch team — bespreken + vraag (alleen arts/leefstijlarts) ────── */}
+      <TeamReviewSection clientId={client.id} viewerRole={me?.role} />
 
       {/* ── Annotaties (medisch team) — consensus + per arts ────────────────── */}
       <AnnotationsSection clientId={client.id} viewerRole={me?.role} />

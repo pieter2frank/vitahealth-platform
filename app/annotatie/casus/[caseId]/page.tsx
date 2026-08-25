@@ -32,7 +32,7 @@ export default async function CasusPage({ params }: { params: Promise<{ caseId: 
   const [{ sections }, { data: existing }, { data: report }] = await Promise.all([
     buildClientCaseStructured(caseRow.client_id),
     admin.from('vh_annotation')
-      .select('id, algemeen_beeld, bespreken_team, advies, verbeterpotentieel, vervolg_domeinen, wearables_nuttig, status')
+      .select('id, algemeen_beeld, bespreken_team, team_vraag, advies, verbeterpotentieel, vervolg_domeinen, wearables_nuttig, status')
       .eq('round_id', caseRow.round_id).eq('client_id', caseRow.client_id).eq('arts_user_id', userId)
       .maybeSingle(),
     admin.from('vh_report').select('document_id').eq('client_id', caseRow.client_id)
@@ -61,6 +61,7 @@ export default async function CasusPage({ params }: { params: Promise<{ caseId: 
   const initial: AnnotationFields & { status: string } = {
     algemeen_beeld:     existing?.algemeen_beeld ?? '',
     bespreken_team:     existing?.bespreken_team ?? null,
+    team_vraag:         existing?.team_vraag ?? '',
     advies:             existing?.advies ?? '',
     verbeterpotentieel: existing?.verbeterpotentieel ?? null,
     vervolg_domeinen:   existing?.vervolg_domeinen ?? [],

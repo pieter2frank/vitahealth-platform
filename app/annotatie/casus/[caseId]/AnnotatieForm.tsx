@@ -308,6 +308,14 @@ export function AnnotatieForm({ roundId, clientId, sections, hasPdf, initial, in
             <YesNo value={f.bespreken_team} onChange={v => upd('bespreken_team', v)} />
           </div>
 
+          {/* Vraag aan het medisch team */}
+          <div>
+            <label className="block text-sm font-medium text-[#1e293b]">Vraag aan het medisch team <span className="text-[#94a3b8] font-normal">(optioneel)</span></label>
+            <textarea value={f.team_vraag} onChange={e => upd('team_vraag', e.target.value)} rows={3}
+              placeholder="Wat wil je aan het medisch team voorleggen over deze casus?"
+              className="mt-1.5 w-full rounded-lg border border-[#e2e8f0] px-3 py-2 text-sm text-[#1e293b] placeholder:text-[#cbd5e1] focus:outline-none focus:ring-2 focus:ring-[#1f1683]/30 focus:border-[#1f1683] resize-y" />
+          </div>
+
           {/* Advies */}
           <div>
             <label className="block text-sm font-medium text-[#1e293b]">Advies <span className="text-[#94a3b8] font-normal">(top 3)</span></label>

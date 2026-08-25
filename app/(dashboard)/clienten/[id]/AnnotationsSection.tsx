@@ -20,7 +20,7 @@ function initials(name: string): string {
 
 interface Ann {
   id: string; round_id: string; arts_user_id: string
-  algemeen_beeld: string | null; bespreken_team: boolean | null; advies: string | null
+  algemeen_beeld: string | null; bespreken_team: boolean | null; team_vraag: string | null; advies: string | null
   verbeterpotentieel: number | null; vervolg_domeinen: string[] | null; wearables_nuttig: boolean | null
   status: string; time_spent_seconds: number | null
 }
@@ -32,7 +32,7 @@ export async function AnnotationsSection({ clientId, viewerRole }: { clientId: s
   const admin = createAdminClient()
   const { data: annsRaw } = await admin
     .from('vh_annotation')
-    .select('id, round_id, arts_user_id, algemeen_beeld, bespreken_team, advies, verbeterpotentieel, vervolg_domeinen, wearables_nuttig, status, time_spent_seconds')
+    .select('id, round_id, arts_user_id, algemeen_beeld, bespreken_team, team_vraag, advies, verbeterpotentieel, vervolg_domeinen, wearables_nuttig, status, time_spent_seconds')
     .eq('client_id', clientId)
   const anns = (annsRaw ?? []) as Ann[]
   if (anns.length === 0) return null
@@ -176,6 +176,12 @@ export async function AnnotationsSection({ clientId, viewerRole }: { clientId: s
                       )}
 
                       {a.algemeen_beeld && (<><p className="mt-3 text-[10.5px] font-semibold uppercase tracking-wide text-[#94a3b8]">Algemeen beeld</p><p className="text-[13px] text-[#334155]">{a.algemeen_beeld}</p></>)}
+                      {a.team_vraag && (
+                        <div className="mt-2.5 rounded-lg border border-[#c7d7fd] bg-[#eef4ff] px-2.5 py-1.5">
+                          <p className="text-[10.5px] font-semibold uppercase tracking-wide text-[#1f1683]">Vraag aan medisch team</p>
+                          <p className="whitespace-pre-wrap text-[13px] text-[#334155]">{a.team_vraag}</p>
+                        </div>
+                      )}
                       {a.advies && (<><p className="mt-2.5 text-[10.5px] font-semibold uppercase tracking-wide text-[#94a3b8]">Advies</p><p className="whitespace-pre-wrap text-[13px] text-[#334155]">{a.advies}</p></>)}
 
                       {hl.length > 0 && (

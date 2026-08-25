@@ -38,6 +38,7 @@ export async function POST(req: Request) {
     arts_user_id:       auth.userId,
     algemeen_beeld:     typeof body.algemeen_beeld === 'string' ? body.algemeen_beeld.slice(0, 4000) : null,
     bespreken_team:     typeof body.bespreken_team === 'boolean' ? body.bespreken_team : null,
+    team_vraag:         typeof body.team_vraag === 'string' ? (body.team_vraag.trim().slice(0, 2000) || null) : null,
     advies:             typeof body.advies === 'string' ? body.advies.slice(0, 4000) : null,
     verbeterpotentieel: Number.isInteger(potentieel) && potentieel >= 0 && potentieel <= 10 ? potentieel : null,
     vervolg_domeinen:   domeinen,

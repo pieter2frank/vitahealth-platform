@@ -34,6 +34,7 @@ export function caseLabel(birthDate: string | null, gender: string | null): stri
 export interface AnnotationFields {
   algemeen_beeld:     string
   bespreken_team:     boolean | null
+  team_vraag:         string
   advies:             string
   verbeterpotentieel: number | null
   vervolg_domeinen:   string[]
