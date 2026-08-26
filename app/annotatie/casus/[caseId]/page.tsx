@@ -83,6 +83,11 @@ export default async function CasusPage({ params }: { params: Promise<{ caseId: 
 
       <h1 className="mb-4 text-xl font-semibold text-[#1e293b]">
         {caseLabel(identity?.birthDate ?? null, client?.gender ?? null)}
+        {(identity?.firstName || identity?.lastName) && (
+          <span className="ml-2.5 text-base font-normal text-[#64748b]">
+            · {[identity?.firstName, identity?.lastName].filter(Boolean).join(' ')}
+          </span>
+        )}
       </h1>
 
       <AnnotatieForm

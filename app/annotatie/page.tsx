@@ -3,7 +3,7 @@ import { redirect } from 'next/navigation'
 import { requireAnnotationAccess } from '@/lib/auth/guard'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { caseLabel } from '@/lib/annotation'
-import { getIdentity } from '@/lib/pii/identity'
+import { getIdentities } from '@/lib/pii/identity'
 import { ClipboardList, CheckCircle2, Clock, ChevronRight } from 'lucide-react'
 
 export const dynamic = 'force-dynamic'
@@ -42,14 +42,15 @@ export default async function AnnotatieHome() {
         .in('round_id', roundIds)
     : { data: [] as CaseRow[] }
 
-  // PII-kluis fase 4: geboortedatum staat niet meer op vh_client — via de
-  // toegangslaag ophalen voor het pseudonieme caselabel (leeftijd + geslacht).
+  // PII-kluis fase 4: geboortedatum en naam via de toegangslaag. De naam is
+  // alleen schermweergave voor het medisch team — het casusdocument en de
+  // trainingsdata blijven pseudoniem.
   const clientIds = [...new Set(((cases ?? []) as CaseRow[]).map(c => c.client_id))]
-  const birthByClient = new Map<string, string | null>()
-  await Promise.all(clientIds.map(async id => {
-    const identity = await getIdentity(admin, id)
-    birthByClient.set(id, identity?.birthDate ?? null)
-  }))
+  const identByClient = await getIdentities(admin, clientIds)
+  const nameOf = (id: string) => {
+    const ident = identByClient.get(id)
+    return [ident?.firstName, ident?.lastName].filter(Boolean).join(' ') || null
+  }
 
   const { data: mine } = await admin
     .from('vh_annotation')
@@ -102,7 +103,8 @@ export default async function AnnotatieHome() {
                   <li key={c.id}>
                     <Link href={`/casus/${c.id}`} className="flex items-center justify-between gap-3 px-5 py-3.5 hover:bg-[#f8fafc] transition-colors">
                       <span className="text-sm font-medium text-[#1e293b]">
-                        {caseLabel(birthByClient.get(c.client_id) ?? null, client?.gender ?? null)}
+                        {caseLabel(identByClient.get(c.client_id)?.birthDate ?? null, client?.gender ?? null)}
+                        {nameOf(c.client_id) && <span className="ml-2 font-normal text-[#64748b]">· {nameOf(c.client_id)}</span>}
                       </span>
                       <span className="flex items-center gap-3">
                         {done ? (

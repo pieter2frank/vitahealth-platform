@@ -30,12 +30,14 @@ export default async function RondeDetail({ params }: { params: Promise<{ roundI
       .eq('round_id', roundId),
   ])
 
-  // PII-kluis fase 4: geboortedatum via de toegangslaag (niet meer op vh_client).
+  // PII-kluis fase 4: geboortedatum en naam via de toegangslaag. Naam alleen
+  // in de schermweergave — trainingsdata blijft pseudoniem.
   const labelByClient = new Map<string, string>()
   await Promise.all((cases ?? []).map(async c => {
     const cl = (Array.isArray(c.vh_client) ? c.vh_client[0] : c.vh_client) as ClientRel | null
     const identity = await getIdentity(admin, c.client_id)
-    labelByClient.set(c.client_id, caseLabel(identity?.birthDate ?? null, cl?.gender ?? null))
+    const naam = [identity?.firstName, identity?.lastName].filter(Boolean).join(' ')
+    labelByClient.set(c.client_id, caseLabel(identity?.birthDate ?? null, cl?.gender ?? null) + (naam ? ` · ${naam}` : ''))
   }))
 
   const artsIds = [...new Set((anns ?? []).map(a => a.arts_user_id))]
