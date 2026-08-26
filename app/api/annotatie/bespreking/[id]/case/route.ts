@@ -37,6 +37,15 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   if (!data) return NextResponse.json({ error: 'Casus niet gevonden in deze bespreking.' }, { status: 404 })
 
   if (typeof b.discussed === 'boolean' && b.discussed) {
+    // Casus is besproken → het dossiervlaggetje "bespreken in team" gaat uit,
+    // zodat het dossier niet opnieuw wordt voorgeselecteerd bij een volgende
+    // bespreking. (De vraagtekst blijft staan als context.)
+    await admin
+      .from('vh_client_team_review')
+      .update({ bespreken_team: false, updated_by: auth.userId, updated_at: new Date().toISOString() })
+      .eq('client_id', clientId)
+      .eq('bespreken_team', true)
+
     logAuditEvent({
       actorUserId:     auth.userId,
       actorRole:       'medisch_deskundige',

@@ -6,8 +6,9 @@ import { buildClientCaseStructured, type CaseSection, type ItemStatus } from '@/
 import { caseLabel, FOLLOWUP_DOMAINS } from '@/lib/annotation'
 import { getIdentity } from '@/lib/pii/identity'
 import { isUuid } from '@/lib/validation'
-import { ArrowLeft, ChevronLeft, ChevronRight, CheckCircle2, MessageCircleQuestion, Stethoscope } from 'lucide-react'
+import { ArrowLeft, ChevronLeft, ChevronRight, CheckCircle2, MessageCircleQuestion, Stethoscope, FileDown } from 'lucide-react'
 import { CaseActions } from './CaseActions'
+import { AiPrep } from './AiPrep'
 
 // MDO-dashboard: per casus alle informatie op één (volledig) scherm — casus-
 // gegevens, arts-input uit de annotatiemodule, de vraag aan het team prominent
@@ -53,7 +54,7 @@ export default async function BesprekingDashboard({ params, searchParams }: {
   const [{ data: meeting }, { data: cases }] = await Promise.all([
     admin.from('vh_team_meeting').select('id, title, meeting_date, status').eq('id', id).maybeSingle(),
     admin.from('vh_team_meeting_case')
-      .select('id, client_id, position, discussed, notes')
+      .select('id, client_id, position, discussed, notes, ai_prep, ai_prep_at')
       .eq('meeting_id', id).order('position'),
   ])
   if (!meeting || !cases?.length) notFound()
@@ -105,6 +106,10 @@ export default async function BesprekingDashboard({ params, searchParams }: {
             <h1 className="text-lg font-semibold leading-tight text-[#1e293b]">{meeting.title}</h1>
             <p className="text-xs text-[#94a3b8]">{fmtDatum(meeting.meeting_date)}</p>
           </div>
+          <a href={`/api/annotatie/bespreking/${meeting.id}/verslag`}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-[#e2e8f0] bg-white px-3 py-1.5 text-xs font-medium text-[#1f1683] hover:bg-[#f8fafc]">
+            <FileDown size={13} /> Verslag (PDF)
+          </a>
         </div>
 
         <div className="flex items-center gap-2">
@@ -160,6 +165,14 @@ export default async function BesprekingDashboard({ params, searchParams }: {
           ))}
         </div>
       )}
+
+      {/* ── AI-voorbereiding ─────────────────────────────────────────────────── */}
+      <AiPrep
+        meetingId={meeting.id}
+        clientId={cur.client_id}
+        initial={(cur as { ai_prep?: string | null }).ai_prep ?? null}
+        generatedAt={(cur as { ai_prep_at?: string | null }).ai_prep_at ?? null}
+      />
 
       {/* ── Casusgegevens: volle breedte ─────────────────────────────────────── */}
       <div className="grid gap-4 xl:grid-cols-12">
