@@ -21,6 +21,7 @@ export default async function AnnotatieLayout({ children }: { children: React.Re
           {user && (
             <nav className="flex items-center gap-4 text-sm">
               {!isAdmin && <Link href="/" className="text-[#64748b] hover:text-[#1f1683]">Casussen</Link>}
+              {(isAdmin || isMedical) && <Link href="/besprekingen" className="text-[#64748b] hover:text-[#1f1683]">Besprekingen</Link>}
               {isAdmin && <Link href="/admin" className="text-[#64748b] hover:text-[#1f1683]">Rondes</Link>}
               <span className="flex flex-col items-end leading-tight">
                 <span className="text-[#334155]">{user.name}</span>
