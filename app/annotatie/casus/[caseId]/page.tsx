@@ -4,6 +4,7 @@ import { requireAnnotationAccess } from '@/lib/auth/guard'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { buildClientCaseStructured } from '@/lib/annotation-case'
 import { caseLabel, type AnnotationFields } from '@/lib/annotation'
+import { getIdentity } from '@/lib/pii/identity'
 import { AnnotatieForm } from './AnnotatieForm'
 import { isUuid } from '@/lib/validation'
 import { logAuditEvent } from '@/lib/audit'
@@ -20,7 +21,7 @@ export default async function CasusPage({ params }: { params: Promise<{ caseId: 
 
   const { data: caseRow } = await admin
     .from('vh_annotation_case')
-    .select('id, round_id, client_id, vh_annotation_round ( title, status ), vh_client ( gender, birth_date )')
+    .select('id, round_id, client_id, vh_annotation_round ( title, status ), vh_client ( gender )')
     .eq('id', caseId)
     .maybeSingle()
 
@@ -28,6 +29,8 @@ export default async function CasusPage({ params }: { params: Promise<{ caseId: 
 
   const round  = Array.isArray(caseRow.vh_annotation_round) ? caseRow.vh_annotation_round[0] : caseRow.vh_annotation_round
   const client = Array.isArray(caseRow.vh_client) ? caseRow.vh_client[0] : caseRow.vh_client
+  // PII-kluis fase 4: geboortedatum via de toegangslaag (niet meer op vh_client).
+  const identity = await getIdentity(admin, caseRow.client_id)
 
   const [{ sections }, { data: existing }, { data: report }] = await Promise.all([
     buildClientCaseStructured(caseRow.client_id),
@@ -79,7 +82,7 @@ export default async function CasusPage({ params }: { params: Promise<{ caseId: 
       </div>
 
       <h1 className="mb-4 text-xl font-semibold text-[#1e293b]">
-        {caseLabel(client?.birth_date ?? null, client?.gender ?? null)}
+        {caseLabel(identity?.birthDate ?? null, client?.gender ?? null)}
       </h1>
 
       <AnnotatieForm

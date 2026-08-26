@@ -3,13 +3,14 @@ import { notFound } from 'next/navigation'
 import { requireAnnotationAccess } from '@/lib/auth/guard'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { caseLabel } from '@/lib/annotation'
+import { getIdentity } from '@/lib/pii/identity'
 import { isUuid } from '@/lib/validation'
 import { UploadTable, type Row } from './UploadTable'
 import { ArrowLeft } from 'lucide-react'
 
 export const dynamic = 'force-dynamic'
 
-type ClientRel = { gender: string | null; birth_date: string | null }
+type ClientRel = { gender: string | null }
 
 export default async function RondeDetail({ params }: { params: Promise<{ roundId: string }> }) {
   const { roundId } = await params
@@ -23,17 +24,19 @@ export default async function RondeDetail({ params }: { params: Promise<{ roundI
   if (!round) notFound()
 
   const [{ data: cases }, { data: anns }] = await Promise.all([
-    admin.from('vh_annotation_case').select('client_id, vh_client ( gender, birth_date )').eq('round_id', roundId),
+    admin.from('vh_annotation_case').select('client_id, vh_client ( gender )').eq('round_id', roundId),
     admin.from('vh_annotation')
       .select('id, client_id, arts_user_id, status, training_uploaded_at, time_spent_seconds')
       .eq('round_id', roundId),
   ])
 
+  // PII-kluis fase 4: geboortedatum via de toegangslaag (niet meer op vh_client).
   const labelByClient = new Map<string, string>()
-  for (const c of cases ?? []) {
+  await Promise.all((cases ?? []).map(async c => {
     const cl = (Array.isArray(c.vh_client) ? c.vh_client[0] : c.vh_client) as ClientRel | null
-    labelByClient.set(c.client_id, caseLabel(cl?.birth_date ?? null, cl?.gender ?? null))
-  }
+    const identity = await getIdentity(admin, c.client_id)
+    labelByClient.set(c.client_id, caseLabel(identity?.birthDate ?? null, cl?.gender ?? null))
+  }))
 
   const artsIds = [...new Set((anns ?? []).map(a => a.arts_user_id))]
   const { data: med } = artsIds.length
