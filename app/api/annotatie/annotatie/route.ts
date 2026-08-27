@@ -69,3 +69,48 @@ export async function POST(req: Request) {
 
   return NextResponse.json({ ok: true })
 }
+
+// DELETE /api/annotatie/annotatie?roundId=…&clientId=…
+// Verwijdert de EIGEN annotatie van de arts (incl. highlights via cascade).
+// Geblokkeerd zodra de annotatie als trainingsdocument is geüpload — dan eerst
+// het kennisdocument verwijderen, anders raakt het dossier inconsistent.
+export async function DELETE(req: Request) {
+  const auth = await requireRole(['arts', 'leefstijlarts'])
+  if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.status })
+
+  const url = new URL(req.url)
+  const roundId = url.searchParams.get('roundId') ?? ''
+  const clientId = url.searchParams.get('clientId') ?? ''
+  if (!isUuid(roundId) || !isUuid(clientId)) {
+    return NextResponse.json({ error: 'Ongeldige casus.' }, { status: 400 })
+  }
+
+  const admin = createAdminClient()
+  const { data: ann } = await admin
+    .from('vh_annotation')
+    .select('id, training_uploaded_at')
+    .eq('round_id', roundId).eq('client_id', clientId).eq('arts_user_id', auth.userId)
+    .maybeSingle()
+  if (!ann) return NextResponse.json({ error: 'Geen eigen annotatie gevonden voor deze casus.' }, { status: 404 })
+  if (ann.training_uploaded_at) {
+    return NextResponse.json({
+      error: 'Deze annotatie is al als trainingsdocument geüpload; verwijder eerst het bijbehorende kennisdocument in de kennisbank.',
+    }, { status: 409 })
+  }
+
+  const { error } = await admin.from('vh_annotation').delete().eq('id', ann.id)
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+  logAuditEvent({
+    actorUserId:     auth.userId,
+    actorRole:       'medisch_deskundige',
+    subjectClientId: clientId,
+    resourceType:    'annotation',
+    resourceId:      ann.id as string,
+    action:          'delete',
+    outcome:         'success',
+    reason:          'Eigen annotatie verwijderd',
+  }).catch(() => {})
+
+  return NextResponse.json({ ok: true })
+}

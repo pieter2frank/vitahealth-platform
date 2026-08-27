@@ -97,7 +97,7 @@ export function AnnotatieForm({ roundId, clientId, sections, hasPdf, initial, in
   const router = useRouter()
   const [f, setF] = useState<AnnotationFields>(initial)
   const [status, setStatus] = useState(initial.status)
-  const [busy, setBusy]   = useState<'concept' | 'indienen' | null>(null)
+  const [busy, setBusy]   = useState<'concept' | 'indienen' | 'verwijderen' | null>(null)
   const [pdfBusy, setPdfBusy] = useState(false)
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
@@ -231,6 +231,18 @@ export function AnnotatieForm({ roundId, clientId, sections, hasPdf, initial, in
     if (submit) { router.push('/'); return }
     setStatus('concept')
     setNotice('Concept opgeslagen.')
+  }
+
+  // Eigen annotatie verwijderen (concept of ingediend; geblokkeerd na upload
+  // naar training — de API legt dat uit).
+  async function verwijder() {
+    if (!confirm('Je annotatie voor deze casus verwijderen? Dit kan niet ongedaan worden gemaakt.')) return
+    setBusy('verwijderen'); setError(''); setNotice('')
+    const res = await fetch(`/api/annotatie/annotatie?roundId=${roundId}&clientId=${clientId}`, { method: 'DELETE' })
+    const j = await res.json().catch(() => ({}))
+    setBusy(null)
+    if (!res.ok) { setError(j.error ?? 'Verwijderen mislukt.'); return }
+    router.push('/')
   }
 
   return (
@@ -380,8 +392,14 @@ export function AnnotatieForm({ roundId, clientId, sections, hasPdf, initial, in
               className="inline-flex items-center gap-2 rounded-lg border border-[#e2e8f0] px-4 py-2 text-sm font-medium text-[#64748b] hover:bg-[#f8fafc] disabled:opacity-50">
               {busy === 'concept' ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />} Concept opslaan
             </button>
+            {status !== 'open' && (
+              <button onClick={verwijder} disabled={busy !== null}
+                className="inline-flex items-center gap-2 rounded-lg border border-red-200 px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50 disabled:opacity-50">
+                {busy === 'verwijderen' ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />} Verwijderen
+              </button>
+            )}
             <button onClick={() => save(true)} disabled={busy !== null}
-              className="inline-flex items-center gap-2 rounded-lg bg-[#1f1683] px-4 py-2 text-sm font-medium text-white hover:bg-[#1a1270] disabled:opacity-50">
+              className="ml-auto inline-flex items-center gap-2 rounded-lg bg-[#1f1683] px-4 py-2 text-sm font-medium text-white hover:bg-[#1a1270] disabled:opacity-50">
               {busy === 'indienen' ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />} Indienen
             </button>
           </div>

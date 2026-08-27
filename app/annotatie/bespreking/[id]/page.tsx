@@ -4,11 +4,12 @@ import { requireAnnotationAccess } from '@/lib/auth/guard'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { buildClientCaseStructured, type CaseSection, type ItemStatus } from '@/lib/annotation-case'
 import { caseLabel, FOLLOWUP_DOMAINS } from '@/lib/annotation'
-import { getIdentity } from '@/lib/pii/identity'
+import { getIdentity, getIdentities } from '@/lib/pii/identity'
 import { isUuid } from '@/lib/validation'
 import { ArrowLeft, ChevronLeft, ChevronRight, CheckCircle2, MessageCircleQuestion, Stethoscope, FileDown } from 'lucide-react'
 import { CaseActions } from './CaseActions'
 import { AiPrep } from './AiPrep'
+import { ManageCases, type AddCandidate } from './ManageCases'
 
 // MDO-dashboard: per casus alle informatie op één (volledig) scherm — casus-
 // gegevens, arts-input uit de annotatiemodule, de vraag aan het team prominent
@@ -82,6 +83,33 @@ export default async function BesprekingDashboard({ params, searchParams }: {
   const naam = [identity?.firstName, identity?.lastName].filter(Boolean).join(' ')
   const label = caseLabel(identity?.birthDate ?? null, (client as { gender: string | null } | null)?.gender ?? null)
 
+  // Kandidaten om toe te voegen: dossiers met uitslag of annotatie die nog
+  // niet in deze bespreking zitten.
+  const inMeeting = new Set(cases.map(cc => cc.client_id as string))
+  const [{ data: repIds }, { data: annIds }] = await Promise.all([
+    admin.from('vh_report').select('client_id'),
+    admin.from('vh_annotation').select('client_id'),
+  ])
+  const candidateIds = [...new Set([
+    ...(repIds ?? []).map(r => r.client_id as string),
+    ...(annIds ?? []).map(a => a.client_id as string),
+  ])].filter(cid => !inMeeting.has(cid))
+  const [candIdents, { data: candClients }] = await Promise.all([
+    getIdentities(admin, candidateIds),
+    candidateIds.length
+      ? admin.from('vh_client').select('id, gender').in('id', candidateIds)
+      : Promise.resolve({ data: [] as { id: string; gender: string | null }[] }),
+  ])
+  const candGender = new Map((candClients ?? []).map(cc => [cc.id, cc.gender as string | null]))
+  const candidates: AddCandidate[] = candidateIds.map(cid => {
+    const ident = candIdents.get(cid)
+    return {
+      clientId: cid,
+      label: caseLabel(ident?.birthDate ?? null, candGender.get(cid) ?? null),
+      name: [ident?.firstName, ident?.lastName].filter(Boolean).join(' ') || null,
+    }
+  }).sort((a, b) => a.label.localeCompare(b.label))
+
   const vragen: { bron: string; tekst: string }[] = []
   if (review?.team_vraag) vragen.push({ bron: 'dossier', tekst: review.team_vraag })
   for (const a of anns ?? []) {
@@ -150,6 +178,11 @@ export default async function BesprekingDashboard({ params, searchParams }: {
           hasPdf={Boolean(report?.document_id)}
           compact
         />
+      </div>
+
+      {/* ── Samenstelling aanpassen ──────────────────────────────────────────── */}
+      <div className="mb-4 flex justify-end">
+        <ManageCases meetingId={meeting.id} currentClientId={cur.client_id} candidates={candidates} caseCount={cases.length} />
       </div>
 
       {/* ── Vraag aan het expertteam — prominent ─────────────────────────────── */}
