@@ -65,10 +65,19 @@ const SYSTEM_KEYWORDS: [string, string][] = [
   ['la %', 'vetzuurkwaliteit'], ['sfa', 'vetzuurkwaliteit'],
 ]
 
-function systemFor(displayName: string): string | null {
+export function systemFor(displayName: string): string | null {
   const n = displayName.toLowerCase()
   for (const [needle, sys] of SYSTEM_KEYWORDS) if (n.includes(needle)) return sys
   return null
+}
+
+export const SYSTEM_LABELS: Record<string, string> = {
+  ontsteking:       'Ontsteking',
+  glucose:          'Glucose & insuline',
+  vetstofwisseling: 'Vetstofwisseling',
+  lipoproteinen:    'Lipoproteïnen',
+  nier:             'Nierfunctie',
+  vetzuurkwaliteit: 'Vetzuurkwaliteit',
 }
 
 const isApoB = (name: string) => /apob|apolipoprotein b/i.test(name)

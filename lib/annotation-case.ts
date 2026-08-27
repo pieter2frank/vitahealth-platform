@@ -1,6 +1,7 @@
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getIdentity } from '@/lib/pii/identity'
 import { favorability, calcBmi, bmiLabel, ageFrom, markerStatus } from '@/lib/health-scoring'
+import { systemFor, SYSTEM_LABELS } from '@/lib/ai/priorities'
 
 // Gestructureerde casusweergave voor het annotatiescherm: dezelfde inhoud als
 // buildClientCaseText, maar per item met een status (kleur) zodat de arts in één
@@ -8,9 +9,24 @@ import { favorability, calcBmi, bmiLabel, ageFrom, markerStatus } from '@/lib/he
 // (buildClientCaseText) blijft bestaan voor de trainingsupload.
 
 export type ItemStatus = 'good' | 'warn' | 'alert' | 'neutral'
-export interface CaseItem { text: string; status: ItemStatus }
+export interface CaseItem { text: string; status: ItemStatus; group?: string }
 export interface CaseSection { heading: string; items: CaseItem[] }
-export interface StructuredCase { title: string; sections: CaseSection[]; hasData: boolean }
+
+// Kerngetallen voor het MDO-scoreboard (grote tegels).
+export interface CaseStats {
+  age:              number | null
+  metabolicAge:     number | null
+  metabolicStatus:  ItemStatus
+  resilience:       number | null
+  resilienceStatus: ItemStatus
+  bmi:              number | null
+  bmiLabel:         string | null
+  bmiStatus:        ItemStatus
+  projectionAge:    number | null
+  topRisk:          { label: string; pct: number | null; notably: boolean } | null
+}
+
+export interface StructuredCase { title: string; sections: CaseSection[]; stats: CaseStats; hasData: boolean }
 
 interface Q {
   id: string; type: string; label: string; category?: string | null
@@ -113,7 +129,7 @@ export async function buildClientCaseStructured(clientId: string): Promise<Struc
       const a = answerText(q, responses[q.id])
       if (!a) continue
       const status = favStatus(favorability(q, responses[q.id]))
-      vragenlijst.push({ text: `${q.label.replace(/\s*\?$/, '')}: ${a}`, status })
+      vragenlijst.push({ text: `${q.label.replace(/\s*\?$/, '')}: ${a}`, status, group: q.category ?? 'Overig' })
     }
   }
 
@@ -124,9 +140,11 @@ export async function buildClientCaseStructured(clientId: string): Promise<Struc
     const ref = refByCode.get(b.marker_code)
     const name = ref?.display_name ?? b.marker_code
     const opt = b.ref_optimal != null ? `, optimaal ${nl(b.ref_optimal)}` : ''
+    const sys = systemFor(name)
     biomarkers.push({
       text: `${name}: ${b.value_qualifier ?? ''}${nl(b.value)}${b.unit ? ' ' + b.unit : ''}${opt}`,
       status: markerColor(b.value, b.ref_optimal, ref?.direction ?? null),
+      group: sys ? (SYSTEM_LABELS[sys] ?? sys) : 'Overig',
     })
   }
 
@@ -146,5 +164,31 @@ export async function buildClientCaseStructured(clientId: string): Promise<Struc
   ]
   if (ziekterisico.length) sections.push({ heading: 'Verhoogd ziekterisico', items: ziekterisico })
 
-  return { title: `Casus — ${titleBits || 'cliënt'}`, sections, hasData: Boolean(responses || rep) }
+  // Hoogste ziekterisico voor de scoreboard-tegel: eerst "opvallend hoger",
+  // daarbinnen het hoogste percentage.
+  const elevated = dis
+    .filter(x => x.result_category && x.result_category !== 'average_or_lower')
+    .sort((a, b) =>
+      Number(b.result_category === 'notably_above_average') - Number(a.result_category === 'notably_above_average') ||
+      (b.risk_current_pct ?? 0) - (a.risk_current_pct ?? 0))
+  const stats: CaseStats = {
+    age,
+    metabolicAge:     rep?.metabolic_age ?? null,
+    metabolicStatus:  metAgeStatus(rep?.metabolic_age ?? null, age),
+    resilience:       rep?.resilience_score ?? null,
+    resilienceStatus: resilienceStatus(rep?.resilience_score ?? null),
+    bmi,
+    bmiLabel:         bmi != null ? bmiLabel(bmi) : null,
+    bmiStatus:        bmi != null ? bmiStatus(bmi) : 'neutral',
+    projectionAge:    rep?.projection_age ?? null,
+    topRisk: elevated.length
+      ? {
+          label:   DISEASE[elevated[0].disease] ?? elevated[0].disease,
+          pct:     elevated[0].risk_current_pct,
+          notably: elevated[0].result_category === 'notably_above_average',
+        }
+      : null,
+  }
+
+  return { title: `Casus — ${titleBits || 'cliënt'}`, sections, stats, hasData: Boolean(responses || rep) }
 }

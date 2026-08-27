@@ -6,10 +6,11 @@ import { buildClientCaseStructured, type CaseSection, type ItemStatus } from '@/
 import { caseLabel, FOLLOWUP_DOMAINS } from '@/lib/annotation'
 import { getIdentity, getIdentities } from '@/lib/pii/identity'
 import { isUuid } from '@/lib/validation'
-import { ArrowLeft, ChevronLeft, ChevronRight, CheckCircle2, MessageCircleQuestion, Stethoscope, FileDown } from 'lucide-react'
+import { ArrowLeft, ChevronLeft, ChevronRight, CheckCircle2, MessageCircleQuestion, Stethoscope, FileDown, Monitor } from 'lucide-react'
 import { CaseActions } from './CaseActions'
 import { AiPrep } from './AiPrep'
 import { ManageCases, type AddCandidate } from './ManageCases'
+import { GroupedPanel } from './GroupedPanel'
 
 // MDO-dashboard: per casus alle informatie op één (volledig) scherm — casus-
 // gegevens, arts-input uit de annotatiemodule, de vraag aan het team prominent
@@ -24,16 +25,16 @@ const DOT: Record<ItemStatus, string> = {
 const DOMAIN_LABEL: Record<string, string> = Object.fromEntries(FOLLOWUP_DOMAINS.map(d => [d.value, d.label]))
 const fmtDatum = (d: string) => new Date(d + 'T00:00:00').toLocaleDateString('nl-NL', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
 
-function SectionCard({ section, dense }: { section: CaseSection; dense?: boolean }) {
+function SectionCard({ section, pres }: { section: CaseSection; pres?: boolean }) {
   return (
     <div className="rounded-xl border border-[#e2e8f0] bg-white shadow-sm">
       <div className="border-b border-[#e2e8f0] px-4 py-2.5">
-        <h3 className="text-[13px] font-semibold text-[#1e293b]">{section.heading}</h3>
+        <h3 className={`font-semibold text-[#1e293b] ${pres ? 'text-[15px]' : 'text-[13px]'}`}>{section.heading}</h3>
       </div>
-      <ul className={`px-4 py-3 ${dense ? 'columns-2 gap-6 [&>li]:break-inside-avoid' : ''}`}>
+      <ul className="px-4 py-3">
         {section.items.map((it, i) => (
-          <li key={i} className="mb-1.5 flex items-start gap-2 text-[12.5px] leading-snug text-[#334155]">
-            <span className={`mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full ${DOT[it.status]}`} />
+          <li key={i} className={`mb-1.5 flex items-start gap-2 text-[#334155] ${pres ? 'text-[16px] leading-relaxed' : 'text-[13.5px] leading-snug'}`}>
+            <span className={`mt-[0.5em] h-2 w-2 shrink-0 rounded-full ${DOT[it.status]}`} />
             <span>{it.text}</span>
           </li>
         ))}
@@ -42,13 +43,36 @@ function SectionCard({ section, dense }: { section: CaseSection; dense?: boolean
   )
 }
 
+// Scoreboard-tegel: groot kerngetal met status-kleur, leesbaar vanaf een beamer.
+const TILE: Record<ItemStatus, string> = {
+  good:    'border-emerald-200 bg-emerald-50',
+  warn:    'border-amber-200 bg-amber-50',
+  alert:   'border-red-200 bg-red-50',
+  neutral: 'border-[#e2e8f0] bg-white',
+}
+const TILE_VALUE: Record<ItemStatus, string> = {
+  good: 'text-emerald-700', warn: 'text-amber-700', alert: 'text-red-700', neutral: 'text-[#1e293b]',
+}
+function Tile({ label, value, sub, status, pres }: {
+  label: string; value: string; sub: string | null; status: ItemStatus; pres: boolean
+}) {
+  return (
+    <div className={`rounded-xl border-2 px-4 py-3 shadow-sm ${TILE[status]}`}>
+      <p className={`font-semibold uppercase tracking-wide text-[#64748b] ${pres ? 'text-[13px]' : 'text-[11px]'}`}>{label}</p>
+      <p className={`font-bold leading-tight ${TILE_VALUE[status]} ${pres ? 'text-6xl' : 'text-3xl'}`}>{value}</p>
+      {sub && <p className={`mt-0.5 text-[#64748b] ${pres ? 'text-[15px]' : 'text-[12px]'}`}>{sub}</p>}
+    </div>
+  )
+}
+
 export default async function BesprekingDashboard({ params, searchParams }: {
   params: Promise<{ id: string }>
-  searchParams: Promise<{ c?: string }>
+  searchParams: Promise<{ c?: string; p?: string }>
 }) {
   await requireAnnotationAccess(['arts', 'leefstijlarts'])
   const { id } = await params
-  const { c } = await searchParams
+  const { c, p } = await searchParams
+  const pres = p === '1' // presentatiemodus: grotere typografie, beheer verborgen
   if (!isUuid(id)) notFound()
 
   const admin = createAdminClient()
@@ -62,6 +86,7 @@ export default async function BesprekingDashboard({ params, searchParams }: {
 
   const idx = Math.min(Math.max(Number(c ?? 0) || 0, 0), cases.length - 1)
   const cur = cases[idx]
+  const qs = (i: number) => `?c=${i}${pres ? '&p=1' : ''}`
 
   const [{ data: client }, identity, structured, { data: review }, { data: anns }, { data: report }] = await Promise.all([
     admin.from('vh_client').select('gender').eq('id', cur.client_id).maybeSingle(),
@@ -116,7 +141,7 @@ export default async function BesprekingDashboard({ params, searchParams }: {
     if (a.team_vraag) vragen.push({ bron: artsName.get(a.arts_user_id as string) ?? 'arts', tekst: a.team_vraag as string })
   }
 
-  const kenmerken = structured.sections.find(s => s.heading === 'Kenmerken')
+  // Kenmerken-sectie niet meer als kaart: het scoreboard toont de kerngetallen.
   const vragenlijst = structured.sections.find(s => s.heading.startsWith('Vragenlijst'))
   const biomarkers = structured.sections.find(s => s.heading.startsWith('Biomarkers'))
   const risico = structured.sections.find(s => s.heading.startsWith('Verhoogd'))
@@ -138,22 +163,26 @@ export default async function BesprekingDashboard({ params, searchParams }: {
             className="inline-flex items-center gap-1.5 rounded-lg border border-[#e2e8f0] bg-white px-3 py-1.5 text-xs font-medium text-[#1f1683] hover:bg-[#f8fafc]">
             <FileDown size={13} /> Verslag (PDF)
           </a>
+          <Link href={`?c=${idx}${pres ? '' : '&p=1'}`}
+            className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium ${pres ? 'border-[#1f1683] bg-[#1f1683] text-white hover:bg-[#1a1270]' : 'border-[#e2e8f0] bg-white text-[#1f1683] hover:bg-[#f8fafc]'}`}>
+            <Monitor size={13} /> {pres ? 'Normale weergave' : 'Presentatie'}
+          </Link>
         </div>
 
         <div className="flex items-center gap-2">
           {/* Casus-stippen: klik om te springen; groen = besproken */}
           <div className="mr-2 flex items-center gap-1.5">
             {cases.map((cc, i) => (
-              <Link key={cc.id} href={`?c=${i}`} title={`Casus ${i + 1}`}
+              <Link key={cc.id} href={qs(i)} title={`Casus ${i + 1}`}
                 className={`h-2.5 w-2.5 rounded-full transition-transform hover:scale-125 ${cc.discussed ? 'bg-emerald-500' : i === idx ? 'bg-[#1f1683]' : 'bg-[#cbd5e1]'} ${i === idx ? 'ring-2 ring-[#1f1683]/30' : ''}`} />
             ))}
           </div>
-          <Link href={`?c=${idx - 1}`} aria-disabled={idx === 0}
+          <Link href={qs(idx - 1)} aria-disabled={idx === 0}
             className={`inline-flex items-center gap-1 rounded-lg border border-[#e2e8f0] bg-white px-3 py-1.5 text-sm text-[#1e293b] ${idx === 0 ? 'pointer-events-none opacity-40' : 'hover:bg-[#f8fafc]'}`}>
             <ChevronLeft size={14} /> Vorige
           </Link>
           <span className="text-xs text-[#94a3b8]">casus {idx + 1} / {cases.length}</span>
-          <Link href={`?c=${idx + 1}`} aria-disabled={idx === cases.length - 1}
+          <Link href={qs(idx + 1)} aria-disabled={idx === cases.length - 1}
             className={`inline-flex items-center gap-1 rounded-lg border border-[#e2e8f0] bg-white px-3 py-1.5 text-sm text-[#1e293b] ${idx === cases.length - 1 ? 'pointer-events-none opacity-40' : 'hover:bg-[#f8fafc]'}`}>
             Volgende <ChevronRight size={14} />
           </Link>
@@ -163,8 +192,8 @@ export default async function BesprekingDashboard({ params, searchParams }: {
       {/* ── Casuskop: wie + acties ───────────────────────────────────────────── */}
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[#e2e8f0] bg-white px-5 py-3.5 shadow-sm">
         <div className="flex items-center gap-3">
-          <h2 className="text-base font-semibold text-[#1e293b]">{label}</h2>
-          {naam && <span className="text-base text-[#64748b]">· {naam}</span>}
+          <h2 className={`font-semibold text-[#1e293b] ${pres ? 'text-2xl' : 'text-base'}`}>{label}</h2>
+          {naam && <span className={`text-[#64748b] ${pres ? 'text-2xl' : 'text-base'}`}>· {naam}</span>}
           {cur.discussed && (
             <span className="inline-flex items-center gap-1 rounded-full border border-green-200 bg-green-50 px-2.5 py-0.5 text-xs font-medium text-green-700">
               <CheckCircle2 size={11} /> Besproken
@@ -180,20 +209,51 @@ export default async function BesprekingDashboard({ params, searchParams }: {
         />
       </div>
 
-      {/* ── Samenstelling aanpassen ──────────────────────────────────────────── */}
-      <div className="mb-4 flex justify-end">
-        <ManageCases meetingId={meeting.id} currentClientId={cur.client_id} candidates={candidates} caseCount={cases.length} />
+      {/* ── Samenstelling aanpassen (niet in presentatiemodus) ───────────────── */}
+      {!pres && (
+        <div className="mb-4 flex justify-end">
+          <ManageCases meetingId={meeting.id} currentClientId={cur.client_id} candidates={candidates} caseCount={cases.length} />
+        </div>
+      )}
+
+      {/* ── Scoreboard: kerngetallen als grote tegels ────────────────────────── */}
+      <div className="mb-4 grid grid-cols-2 gap-3 xl:grid-cols-4">
+        <Tile label="Metabole leeftijd" pres={pres}
+          value={structured.stats.metabolicAge != null ? `${structured.stats.metabolicAge}` : '—'}
+          sub={structured.stats.metabolicAge != null && structured.stats.age != null
+            ? `kalender ${structured.stats.age} (${structured.stats.metabolicAge - structured.stats.age >= 0 ? '+' : ''}${structured.stats.metabolicAge - structured.stats.age} jr)`
+            : null}
+          status={structured.stats.metabolicStatus} />
+        <Tile label="Resilience Score" pres={pres}
+          value={structured.stats.resilience != null ? `${structured.stats.resilience}` : '—'}
+          sub={structured.stats.resilience != null ? 'van 100' : null}
+          status={structured.stats.resilienceStatus} />
+        <Tile label="BMI" pres={pres}
+          value={structured.stats.bmi != null ? String(structured.stats.bmi).replace('.', ',') : '—'}
+          sub={structured.stats.bmiLabel}
+          status={structured.stats.bmiStatus} />
+        <Tile label="Hoogste ziekterisico" pres={pres}
+          value={structured.stats.topRisk ? `${String(structured.stats.topRisk.pct ?? '—').replace('.', ',')}%` : 'geen'}
+          sub={structured.stats.topRisk
+            ? `${structured.stats.topRisk.label} — ${structured.stats.topRisk.notably ? 'opvallend hoger' : 'hoger dan gemiddeld'}`
+            : 'geen verhoogd risico'}
+          status={structured.stats.topRisk ? (structured.stats.topRisk.notably ? 'alert' : 'warn') : 'good'} />
       </div>
+      {structured.stats.projectionAge != null && (
+        <p className={`mb-4 -mt-2 text-[#94a3b8] ${pres ? 'text-[14px]' : 'text-[12px]'}`}>
+          Projectieleeftijd: {structured.stats.projectionAge} jaar
+        </p>
+      )}
 
       {/* ── Vraag aan het expertteam — prominent ─────────────────────────────── */}
       {vragen.length > 0 && (
         <div className="mb-4 rounded-xl border-2 border-[#1f1683]/30 bg-[#eef4ff] px-5 py-4 shadow-sm">
-          <p className="mb-1.5 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-[#1f1683]">
-            <MessageCircleQuestion size={14} /> Vraag aan het expertteam
+          <p className={`mb-1.5 flex items-center gap-1.5 font-semibold uppercase tracking-wide text-[#1f1683] ${pres ? 'text-[14px]' : 'text-xs'}`}>
+            <MessageCircleQuestion size={pres ? 17 : 14} /> Vraag aan het expertteam
           </p>
           {vragen.map((v, i) => (
-            <p key={i} className="text-[15px] leading-relaxed text-[#1e293b]">
-              {v.tekst} <span className="text-xs text-[#64748b]">— {v.bron}</span>
+            <p key={i} className={`leading-relaxed text-[#1e293b] ${pres ? 'text-xl' : 'text-[15px]'}`}>
+              {v.tekst} <span className={`text-[#64748b] ${pres ? 'text-[14px]' : 'text-xs'}`}>— {v.bron}</span>
             </p>
           ))}
         </div>
@@ -207,17 +267,14 @@ export default async function BesprekingDashboard({ params, searchParams }: {
         generatedAt={(cur as { ai_prep_at?: string | null }).ai_prep_at ?? null}
       />
 
-      {/* ── Casusgegevens: volle breedte ─────────────────────────────────────── */}
-      <div className="grid gap-4 xl:grid-cols-12">
-        <div className="space-y-4 xl:col-span-3">
-          {kenmerken && <SectionCard section={kenmerken} />}
-          {risico && <SectionCard section={risico} />}
+      {/* ── Casusgegevens: standaard alleen wat aandacht vraagt ──────────────── */}
+      <div className="grid gap-4 xl:grid-cols-2">
+        <div>
+          {vragenlijst && <GroupedPanel title="Vragenlijst" items={vragenlijst.items} presentation={pres} />}
         </div>
-        <div className="xl:col-span-5">
-          {vragenlijst && <SectionCard section={vragenlijst} dense />}
-        </div>
-        <div className="xl:col-span-4">
-          {biomarkers && <SectionCard section={biomarkers} dense />}
+        <div className="space-y-4">
+          {risico && <SectionCard section={risico} pres={pres} />}
+          {biomarkers && <GroupedPanel title="Biomarkers" items={biomarkers.items} presentation={pres} />}
         </div>
       </div>
 
