@@ -267,11 +267,17 @@ export function EnrollmentForm({
         return
       }
 
-      // Status bijwerken
-      await supabase
-        .from('vh_client')
-        .update({ enrollment_status: 'toestemming_gegeven' })
-        .eq('id', clientId)
+      // Status bijwerken — server-side: de vroegere anonieme client-update
+      // faalde stil (RLS → 0 rijen), waardoor cliënten op 'aangemeld' bleven.
+      const stRes = await fetch('/api/portal/enrollment-status', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ clientId, to: 'toestemming_gegeven' }),
+      })
+      if (!stRes.ok) {
+        setSaving(false)
+        setError('Status bijwerken mislukt — probeer het opnieuw.')
+        return
+      }
 
       // Intake vragenlijst toewijzen (indien geconfigureerd)
       if (intakeQuestionnaire) {
@@ -412,10 +418,11 @@ export function EnrollmentForm({
       .update({ status: 'completed', completed_at: new Date().toISOString() })
       .eq('id', assignmentId)
 
-    await supabase
-      .from('vh_client')
-      .update({ enrollment_status: 'vragenlijst_ingevuld' })
-      .eq('id', clientId)
+    // Status server-side doorzetten (anonieme client-update faalde stil).
+    await fetch('/api/portal/enrollment-status', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ clientId, to: 'vragenlijst_ingevuld' }),
+    }).catch(() => {})
 
     // Bevestigings-e-mail — awaiten om statusUrl terug te krijgen
     try {

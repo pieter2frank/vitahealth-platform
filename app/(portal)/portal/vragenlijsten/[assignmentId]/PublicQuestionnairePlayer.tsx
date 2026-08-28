@@ -82,15 +82,14 @@ export function PublicQuestionnairePlayer({ questions, assignmentId, questionnai
 
     if (aErr) { setSaveError(aErr.message); setSaving(false); return }
 
-    // Aanmeldstatus doorzetten na invullen intake-vragenlijst. Alleen ophogen
-    // vanuit 'toestemming_gegeven' (guard) zodat een latere status of on-hold
-    // niet wordt overschreven. Best-effort: faalt dit, dan blijft de opdracht
-    // wél als ingevuld geregistreerd.
-    await supabase
-      .from('vh_client')
-      .update({ enrollment_status: 'vragenlijst_ingevuld' })
-      .eq('id', clientId)
-      .eq('enrollment_status', 'toestemming_gegeven')
+    // Aanmeldstatus server-side doorzetten (de route bewaakt de toegestane
+    // overgangen en zet nooit een verder gevorderde status terug). De vroegere
+    // anonieme client-update faalde stil door RLS. Best-effort: faalt dit,
+    // dan blijft de opdracht wél als ingevuld geregistreerd.
+    await fetch('/api/portal/enrollment-status', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ clientId, to: 'vragenlijst_ingevuld' }),
+    }).catch(() => {})
 
     setDone(true)
   }
